@@ -1,6 +1,3 @@
-#!/usr/bin/python3
-# coding=utf-8
-
 #   Copyright 2021 getcarrier.io
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
@@ -40,11 +37,11 @@ class Module(module.ModuleModel):
 
     def init(self):
         """ Init module """
-        log.info("Initializing module Tasks")
+        log.info("Initializing module Backend_performance")
         init_db()
         from .api.tests import TestsApi
         add_resource_to_api(self.context.api, TestsApi, "/backend/<int:project_id>")
 
     def deinit(self):  # pylint: disable=R0201
         """ De-init module """
-        log.info("De-initializing module")
+        log.info("De-initializing Backend_performance")

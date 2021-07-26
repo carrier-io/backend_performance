@@ -41,6 +41,14 @@ class Module(module.ModuleModel):
         init_db()
         from .api.tests import TestsApi
         add_resource_to_api(self.context.api, TestsApi, "/backend/<int:project_id>")
+        from .api.test import TestApiBackend
+        add_resource_to_api(self.context.api, TestApiBackend, "/tests/<int:project_id>/backend/<string:test_id>")
+        from .api.thresholds import BackendThresholdsAPI
+        add_resource_to_api(self.context.api, BackendThresholdsAPI, "/thresholds/<int:project_id>/backend")
+        from .api.baseline import BaselineAPI
+        add_resource_to_api(self.context.api, BaselineAPI, "/baseline/<int:project_id>")
+        from .api.reports import ReportAPI
+        add_resource_to_api(self.context.api, ReportAPI, "/reports/<int:project_id>")
 
     def deinit(self):  # pylint: disable=R0201
         """ De-init module """

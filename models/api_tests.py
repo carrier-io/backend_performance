@@ -151,14 +151,14 @@ class ApiTests(AbstractBaseMixin, Base):
                 execution_json["report_portal"] = "True"
             if "ado" in self.reporting:
                 execution_json["azure_devops"] = "True"
-        if emails:
-            _emails = self.emails
-            for each in emails.split(","):
-                if each not in _emails:
-                    _emails += f",{each}"
-            execution_json["email_recipients"] = _emails
-        else:
-            execution_json["email_recipients"] = self.emails
+        # if emails:
+        #     _emails = self.emails
+        #     for each in emails.split(","):
+        #         if each not in _emails:
+        #             _emails += f",{each}"
+        #     execution_json["email_recipients"] = _emails
+        # else:
+        #     execution_json["email_recipients"] = self.emails
 
         if pairs["env_vars"][0]:
             for key, value in pairs["env_vars"][0].items():

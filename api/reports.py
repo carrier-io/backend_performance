@@ -6,7 +6,7 @@ from ...shared.utils.api_utils import build_req_parser
 from ...projects.models.statistics import Statistic
 from ..models.api_baseline import APIBaseline
 from ..models.api_reports import APIReport
-from .utils import get
+from ..utils.utils import get
 from ..connectors.influx import get_test_details, delete_test_data
 
 

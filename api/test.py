@@ -5,7 +5,7 @@ from copy import deepcopy
 from ...shared.utils.restApi import RestResource
 from ...shared.utils.api_utils import str2bool, build_req_parser
 from ..models.api_tests import ApiTests
-from .utils import exec_test
+from ..utils.utils import exec_test
 
 
 class TestApiBackend(RestResource):

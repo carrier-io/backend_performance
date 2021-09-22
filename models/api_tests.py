@@ -85,9 +85,10 @@ class ApiTests(AbstractBaseMixin, Base):
         if "loki_port" not in self.env_vars.keys():
             self.params["loki_port"] = "{{secret.loki_port}}"
         self.job_type = JOB_CONTAINER_MAPPING[self.runner]['job_type']
-        test_type = "test.type" if self.job_type == "perfmeter" else "test_type"
-        if test_type not in self.params.keys():
-            self.params[test_type] = 'default'
+        if "test_type" not in self.params.keys():
+            self.params["test_type"] = 'default'
+        if "env_type" not in self.params.keys():
+            self.params["env_type"] = 'not_specified'
         if self.region == "":
             self.region = "default"
         self.runner = JOB_CONTAINER_MAPPING[self.runner]['container']  # here because influx_db
@@ -119,10 +120,8 @@ class ApiTests(AbstractBaseMixin, Base):
             entrypoint = self.entrypoint if path.exists(self.entrypoint) else path.join('/mnt/jmeter', self.entrypoint)
             cmd = f"-n -t {entrypoint}"
             for key, value in params.items():
-                if test_type and key == "test.type":
-                    cmd += f" -Jtest.type={test_type}"
-                else:
-                    cmd += f" -J{key}={value}"
+                cmd += f" -J{key}={value}"
+
         execution_json = {
             "container": self.runner,
             "execution_params": {

@@ -7,7 +7,7 @@ from ...shared.utils.restApi import RestResource
 from ...shared.utils.api_utils import build_req_parser, str2bool, get, upload_file
 
 from ..models.api_tests import ApiTests
-from .utils import compile_tests
+from ..utils.utils import compile_tests
 
 
 class TestsApi(RestResource):

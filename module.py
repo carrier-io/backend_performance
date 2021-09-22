@@ -49,6 +49,8 @@ class Module(module.ModuleModel):
         add_resource_to_api(self.context.api, BaselineAPI, "/baseline/<int:project_id>")
         from .api.reports import ReportAPI
         add_resource_to_api(self.context.api, ReportAPI, "/reports/<int:project_id>")
+        from .api.charts import ReportChartsAPI
+        add_resource_to_api(self.context.api, ReportChartsAPI, "/chart/<string:source>/<string:target>")
 
     def deinit(self):  # pylint: disable=R0201
         """ De-init module """

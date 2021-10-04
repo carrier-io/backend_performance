@@ -62,33 +62,48 @@ class ApiTests(AbstractBaseMixin, Base):
         self.name = self.sanitize(self.name)
         if not self.test_uid:
             self.test_uid = str(uuid4())
-        if "influx.port" not in self.params.keys():
-            self.params["influx.port"] = "{{secret.influx_port}}"
-        if "influx.host" not in self.params.keys():
-            self.params["influx.host"] = "{{secret.influx_ip}}"
-        if "influx_user" not in self.params.keys():
-            self.params["influx.username"] = "{{secret.influx_user}}"
-        if "influx_password" not in self.params.keys():
-            self.params["influx.password"] = "{{secret.influx_password}}"
-        if "galloper_url" not in self.env_vars.keys():
-            self.params["galloper_url"] = "{{secret.galloper_url}}"
-        if "influx.db" not in self.params.keys():
-            self.params["influx.db"] = JOB_CONTAINER_MAPPING[self.runner]['influx_db']
-        if "test_name" not in self.params.keys():
-            self.params["test_name"] = self.name  # TODO: add sanitization
-        if "comparison_db" not in self.params.keys():
-            self.params["comparison_db"] = "{{secret.comparison_db}}"
-        if "telegraf_db" not in self.params.keys():
-            self.params["telegraf_db"] = "{{secret.telegraf_db}}"
-        if "loki_host" not in self.env_vars.keys():
-            self.params["loki_host"] = "{{secret.loki_host}}"
-        if "loki_port" not in self.env_vars.keys():
-            self.params["loki_port"] = "{{secret.loki_port}}"
+        test_params_list = []
+        for each in self.params:
+            test_params_list.append(each["name"])
+        if "influx.port" not in test_params_list:
+            self.params.append({"name": "influx.port", "default": "{{secret.influx_port}}", "description": "",
+                                "type": "", "action": ""})
+        if "influx.host" not in test_params_list:
+            self.params.append({"name": "influx.host", "default": "{{secret.influx_ip}}", "description": "",
+                                "type": "", "action": ""})
+        if "influx_user" not in test_params_list:
+            self.params.append({"name": "influx.username", "default": "{{secret.influx_user}}", "description": "",
+                                "type": "", "action": ""})
+        if "influx_password" not in test_params_list:
+            self.params.append({"name": "influx.password", "default": "{{secret.influx_password}}", "description": "",
+                                "type": "", "action": ""})
+        if "galloper_url" not in test_params_list:
+            self.params.append({"name": "galloper_url", "default": "{{secret.galloper_url}}", "description": "",
+                                "type": "", "action": ""})
+        if "influx.db" not in test_params_list:
+            self.params.append({"name": "influx.db", "default": JOB_CONTAINER_MAPPING[self.runner]['influx_db'],
+                                "description": "", "type": "", "action": ""})
+        if "test_name" not in test_params_list:
+            self.params.append({"name": "test_name", "default": self.name, "description": "", "type": "",
+                                "action": ""})
+        if "comparison_db" not in test_params_list:
+            self.params.append({"name": "comparison_db", "default": "{{secret.comparison_db}}", "description": "",
+                                "type": "", "action": ""})
+        if "telegraf_db" not in test_params_list:
+            self.params.append({"name": "telegraf_db", "default": "{{secret.telegraf_db}}", "description": "",
+                                "type": "", "action": ""})
+        if "loki_host" not in test_params_list:
+            self.params.append({"name": "loki_host", "default": "{{secret.loki_host}}", "description": "",
+                                "type": "", "action": ""})
+        if "loki_port" not in test_params_list:
+            self.params.append({"name": "loki_port", "default": "{{secret.loki_port}}", "description": "",
+                                "type": "", "action": ""})
         self.job_type = JOB_CONTAINER_MAPPING[self.runner]['job_type']
-        if "test_type" not in self.params.keys():
-            self.params["test_type"] = 'default'
-        if "env_type" not in self.params.keys():
-            self.params["env_type"] = 'not_specified'
+        if "test_type" not in test_params_list:
+            self.params.append({"name": "test_type", "default": "default", "description": "", "type": "", "action": ""})
+        if "env_type" not in test_params_list:
+            self.params.append({"name": "env_type", "default": "not_specified", "description": "", "type": "",
+                                "action": ""})
         if self.region == "":
             self.region = "default"
         self.runner = JOB_CONTAINER_MAPPING[self.runner]['container']  # here because influx_db
@@ -99,9 +114,10 @@ class ApiTests(AbstractBaseMixin, Base):
                                  customization=None, cc_env_vars=None, parallel=None, region=None, execution=False,
                                  emails=None):
         from flask import current_app
+        # TODO merge script parameters
         pairs = {
             "customization": [customization, self.customization],
-            "params": [params, self.params],
+            # "params": [params, self.params],
             "env_vars": [env_vars, self.env_vars],
             "cc_env_vars": [cc_env_vars, self.cc_env_vars],
             "reporting": [reporting, self.reporting]
@@ -119,8 +135,8 @@ class ApiTests(AbstractBaseMixin, Base):
         if self.job_type == 'perfmeter':
             entrypoint = self.entrypoint if path.exists(self.entrypoint) else path.join('/mnt/jmeter', self.entrypoint)
             cmd = f"-n -t {entrypoint}"
-            for key, value in params.items():
-                cmd += f" -J{key}={value}"
+            for each in params:
+                cmd += f" -J{each['name']}={each['default']}"
 
         execution_json = {
             "container": self.runner,
@@ -217,9 +233,8 @@ class ApiTests(AbstractBaseMixin, Base):
 
     def to_json(self, exclude_fields: tuple = ()) -> dict:
         test_param = super().to_json()
+        test_param['params'] = [{k: v for k, v in d.items() if k not in exclude_fields} for d in test_param['params']]
         for key in exclude_fields:
-            if self.params.get(key):
-                del test_param['params'][key]
-            elif key in test_param.keys():
+            if key in test_param.keys():
                 del test_param[key]
         return test_param

@@ -18,7 +18,7 @@ class TestApiBackend(RestResource):
     _put_rules = (
         dict(name="parallel", type=int, required=False, location='json'),
         dict(name="region", type=str, required=False, location='json'),
-        dict(name="params", type=str, default="{}", required=False, location='json'),
+        dict(name="params", type=str, default="[]", required=False, location='json'),
         dict(name="env_vars", type=str, default="{}", required=False, location='json'),
         dict(name="customization", type=str, default="{}", required=False, location='json'),
         dict(name="cc_env_vars", type=str, default="{}", required=False, location='json'),

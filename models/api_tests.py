@@ -233,7 +233,7 @@ class ApiTests(AbstractBaseMixin, Base):
 
     def to_json(self, exclude_fields: tuple = ()) -> dict:
         test_param = super().to_json()
-        test_param['params'] = [{k: v for k, v in d.items() if k not in exclude_fields} for d in test_param['params']]
+        test_param['params'] = [d for d in test_param['params'] if d["name"] not in exclude_fields]
         for key in exclude_fields:
             if key in test_param.keys():
                 del test_param[key]

@@ -57,7 +57,9 @@ class TestsApi(RestResource):
         reports = []
         total, res = get(project_id, args, ApiTests)
         for each in res:
-            reports.append(each.to_json())
+            reports.append(each.to_json(["influx.port", "influx.host", "galloper_url",
+                                         "influx.db", "comparison_db", "telegraf_db",
+                                         "loki_host", "loki_port", "influx.username", "influx.password"]))
         return {"total": total, "rows": reports}
 
     def delete(self, project_id: int):

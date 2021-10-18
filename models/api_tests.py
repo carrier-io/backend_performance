@@ -114,7 +114,11 @@ class ApiTests(AbstractBaseMixin, Base):
                                  customization=None, cc_env_vars=None, parallel=None, region=None, execution=False,
                                  emails=None):
         from flask import current_app
-        # TODO merge script parameters
+
+        param_names = [param["name"] for param in params]
+        for param in self.params:
+            if param["name"] not in param_names:
+                params.append(param)
         pairs = {
             "customization": [customization, self.customization],
             # "params": [params, self.params],

@@ -23,6 +23,7 @@ from pylon.core.tools import log  # pylint: disable=E0611,E0401
 from pylon.core.tools import module  # pylint: disable=E0611,E0401
 
 from ..shared.utils.api_utils import add_resource_to_api
+from .rpc_worker import backend_results_or_404
 
 from .init_db import init_db
 
@@ -51,6 +52,8 @@ class Module(module.ModuleModel):
         add_resource_to_api(self.context.api, ReportAPI, "/reports/<int:project_id>")
         from .api.charts import ReportChartsAPI
         add_resource_to_api(self.context.api, ReportChartsAPI, "/chart/<string:source>/<string:target>")
+
+        self.context.rpc_manager.register_function(backend_results_or_404, name='backend_results_or_404')
 
     def deinit(self):  # pylint: disable=R0201
         """ De-init module """

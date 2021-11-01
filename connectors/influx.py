@@ -269,9 +269,12 @@ def get_build_data(build_id, test_name, lg_type, start_time, end_time, sampler, 
     project_id = get_project_id(build_id)
     if status != 'all':
         status_addon = f" and status='{status.upper()}'"
+    # requests_in_range = f"select time, request_name, max(pct95) from {lg_type}_{project_id}..{test_name}_5s " \
+    #                     f"where time>='{start_time}' " \
+    #                     f"and time<='{end_time}' and sampler_type='{sampler}'{status_addon} and " \
+    #                     f"build_id='{build_id}' group by request_name"
     requests_in_range = f"select time, request_name, max(pct95) from {lg_type}_{project_id}..{test_name}_5s " \
-                        f"where time>='{start_time}' " \
-                        f"and time<='{end_time}' and sampler_type='{sampler}'{status_addon} and " \
+                        f"where sampler_type='{sampler}'{status_addon} and " \
                         f"build_id='{build_id}' group by request_name"
     res = get_client(project_id).query(requests_in_range)[f"{test_name}_5s"]
     requests_names = [f"'{each['request_name']}'" for each in res]

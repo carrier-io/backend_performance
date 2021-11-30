@@ -5,7 +5,8 @@ from copy import deepcopy
 from ...shared.utils.restApi import RestResource
 from ...shared.utils.api_utils import str2bool, build_req_parser
 from ..models.api_tests import ApiTests
-from ..utils.utils import exec_test
+from ..models.api_reports import APIReport
+from ..utils.utils import exec_test, get_backend_test_data
 
 
 class TestApiBackend(RestResource):
@@ -126,6 +127,41 @@ class TestApiBackend(RestResource):
             return event[0]
         for each in event:
             each["test_id"] = task.test_uid
+
+        test_data = get_backend_test_data(event[0])
+        report = APIReport(name=test_data["test_name"],
+                           status=test_data["status"],
+                           project_id=project.id,
+                           environment=test_data["environment"],
+                           type=test_data["type"],
+                           end_time="",
+                           start_time=test_data["start_time"],
+                           failures=0,
+                           total=0,
+                           thresholds_missed=0,
+                           throughput=0,
+                           vusers=test_data["vusers"],
+                           pct50=0,
+                           pct75=0,
+                           pct90=0,
+                           pct95=0,
+                           pct99=0,
+                           _max=0,
+                           _min=0,
+                           mean=0,
+                           duration=test_data["duration"],
+                           build_id=test_data["build_id"],
+                           lg_type=test_data["lg_type"],
+                           onexx=0,
+                           twoxx=0,
+                           threexx=0,
+                           fourxx=0,
+                           fivexx=0,
+                           requests="",
+                           test_uid=task.test_uid)
+        report.insert()
+        event[0]["cc_env_vars"]["REPORT_ID"] = str(report.id)
+        event[0]["cc_env_vars"]["build_id"] = test_data["build_id"]
         response = exec_test(project.id, event)
         response["redirect"] = f'/task/{response["task_id"]}/results'
         return response

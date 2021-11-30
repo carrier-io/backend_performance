@@ -53,3 +53,12 @@ JOB_CONTAINER_MAPPING = {
         "influx_db": "{{secret.gatling_db}}"
     }
 }
+
+JOB_TYPE_MAPPING = {
+    "perfmeter": "jmeter",
+    "perfgun": "gatling",
+    "free_style": "other",
+    "observer": "observer",
+    "dast": "dast",
+    "sast": "sast",
+}

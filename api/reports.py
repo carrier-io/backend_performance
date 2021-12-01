@@ -29,7 +29,7 @@ class ReportAPI(RestResource):
         dict(name="test_name", type=str, location="json"),
         dict(name="lg_type", type=str, location="json"),
         dict(name="missed", type=int, location="json"),
-        dict(name="status", type=str, location="json"),
+        dict(name="test_status", type=dict, location="json"),
         dict(name="response_times", type=str, location="json"),
         dict(name="duration", type=float, location="json"),
         dict(name="vusers", type=int, location="json")
@@ -79,7 +79,7 @@ class ReportAPI(RestResource):
         # if not ProjectQuota.check_quota(project_id=project_id, quota='performance_test_runs'):
         #     return {"Forbidden": "The number of performance test runs allowed in the project has been exceeded"}
         report = APIReport(name=args["test_name"],
-                           status=args["status"],
+                           test_status=args["test_status"],
                            project_id=project.id,
                            environment=args["environment"],
                            type=args["type"],
@@ -144,7 +144,11 @@ class ReportAPI(RestResource):
         report.fourxx = test_data["4xx"]
         report.fivexx = test_data["5xx"]
         report.requests = ";".join(test_data["requests"])
-        report.status = args["status"]
+        print("***********************************")
+        print(args["test_status"])
+        print(type(args["test_status"]))
+        print("***********************************")
+        report.test_status = args["test_status"]
         report.vusers = args["vusers"]
         report.duration = args["duration"]
         report.commit()

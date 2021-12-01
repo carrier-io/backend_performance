@@ -130,7 +130,6 @@ class TestApiBackend(RestResource):
 
         test_data = get_backend_test_data(event[0])
         report = APIReport(name=test_data["test_name"],
-                           status=test_data["status"],
                            project_id=project.id,
                            environment=test_data["environment"],
                            type=test_data["type"],

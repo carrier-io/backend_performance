@@ -19,13 +19,12 @@ from ...shared.constants import LOKI_HOST
 def get_results(test, int_start_time, int_end_time):
     url = f"{LOKI_HOST}/loki/api/v1/query_range"
 
-    # TODO check timestamps
     data = {
         "direction": "BACKWARD",
         "limit": 5000,
         "query": '{filename="/tmp/' + test + '.log"}',
-        "start": int_start_time + 7200,
-        "end": int_end_time + 7200
+        "start": int_start_time,
+        "end": int_end_time
     }
     results = get(url, params=data, headers={"Content-Type": "application/json"}).json()
     issues = {}

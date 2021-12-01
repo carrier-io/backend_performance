@@ -12,7 +12,7 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-from sqlalchemy import String, Column, Integer, Float, Text
+from sqlalchemy import String, Column, Integer, Float, Text, ARRAY, JSON
 
 from ...shared.db_manager import Base
 from ...shared.models.abstract_base import AbstractBaseMixin
@@ -52,7 +52,15 @@ class APIReport(AbstractBaseMixin, Base):
     fourxx = Column(Integer, unique=False)
     fivexx = Column(Integer, unique=False)
     requests = Column(Text, unique=False)
-    release_id = Column(Integer, nullable=True)
+    tags = Column(ARRAY(String), default=[])
+    test_status = Column(
+        JSON,
+        default={
+            "status": "Pending...",
+            "percentage": 0,
+            "description": "Check if there are enough workers to perform the test"
+        }
+    )
 
     def to_json(self, exclude_fields: tuple = ()) -> dict:
         json_dict = super().to_json(exclude_fields=("requests",))

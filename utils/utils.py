@@ -76,7 +76,7 @@ def get_backend_test_data(event):
 
     data = {'build_id': f'build_{uuid4()}', 'test_name': test_name, 'lg_type': lg_type, 'type': test_type,
             'duration': duration, 'vusers': users_count, 'environment': environment, 'start_time': start_time,
-            'missed': 0, 'status': 'In progress'}
+            'missed': 0}
     return data
 
 

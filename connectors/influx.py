@@ -403,3 +403,9 @@ def calculate_auto_aggregation(build_id, test_name, lg_type, start_time, end_tim
                 aggregation = "30s"
                 break
     return aggregation
+
+
+def get_sampler_types(project_id, build_id, test_name, lg_type):
+    q_samplers = f"show tag values on {lg_type}_{project_id} with key=sampler_type where build_id='{build_id}'"
+    client = get_client(project_id)
+    return [each["value"] for each in list(client.query(q_samplers)[f"{test_name}_1s"])]

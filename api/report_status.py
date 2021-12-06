@@ -26,9 +26,6 @@ class ReportStatusAPI(RestResource):
         args = self._parser_put.parse_args(strict=False)
         project = self.rpc.project_get_or_404(project_id=project_id)
         report = APIReport.query.filter_by(project_id=project.id, id=report_id).first()
-        print("*****************************************")
-        print(args["test_status"])
-        print("*****************************************")
         test_status = args["test_status"]
         report.test_status = test_status
         report.commit()

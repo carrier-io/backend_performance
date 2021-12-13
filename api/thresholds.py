@@ -7,11 +7,10 @@ from ..models.api_thresholds import APIThresholds
 
 class BackendThresholdsAPI(RestResource):
     get_rules = (
-        dict(name="name", type=str, location="args"),
-        dict(name="environment", type=str, location="args")
+        dict(name="test", type=str, location="args"),
+        dict(name="env", type=str, location="args")
     )
     delete_rules = (
-        dict(name="name", type=str, location="args"),
         dict(name="test", type=str, location=("args", "json")),
         dict(name="scope", type=str, location=("args", "json")),
         dict(name="target", type=str, location=("args", "json")),
@@ -20,8 +19,7 @@ class BackendThresholdsAPI(RestResource):
         dict(name="env", type=str, location=("args", "json"))
     )
     post_rules = delete_rules + (
-        dict(name="yellow", type=float, location="json"),
-        dict(name="red", type=float, location="json")
+        dict(name="value", type=float, location="json"),
     )
 
     def __init__(self):
@@ -36,10 +34,13 @@ class BackendThresholdsAPI(RestResource):
     def get(self, project_id: int):
         project = self.rpc.project_get_or_404(project_id=project_id)
         args = self._parser_get.parse_args(strict=False)
-        res = APIThresholds.query.filter().filter(
-            and_(APIThresholds.project_id == project.id,
-                 APIThresholds.test == args.get("name"),
-                 APIThresholds.environment == args.get("environment"))).all()
+        if args.get("test") and args.get("env"):
+            res = APIThresholds.query.filter().filter(
+                and_(APIThresholds.project_id == project.id,
+                     APIThresholds.test == args.get("test"),
+                     APIThresholds.environment == args.get("env"))).all()
+        else:
+            res = APIThresholds.query.filter().filter(APIThresholds.project_id == project.id).all()
         return [th.to_json() for th in res]
 
     def post(self, project_id: int):
@@ -50,8 +51,7 @@ class BackendThresholdsAPI(RestResource):
                       scope=args["scope"],
                       environment=args["env"],
                       target=args["target"],
-                      yellow=args["yellow"],
-                      red=args["red"],
+                      value=args["value"],
                       aggregation=args["aggregation"],
                       comparison=args["comparison"]).insert()
         return {"message": "OK"}

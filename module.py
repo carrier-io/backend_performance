@@ -53,6 +53,10 @@ class Module(module.ModuleModel):
         add_resource_to_api(self.context.api, ReportChartsAPI, "/chart/<string:source>/<string:target>")
         from .api.report_status import ReportStatusAPI
         add_resource_to_api(self.context.api, ReportStatusAPI, "/reports/<int:project_id>/<int:report_id>/status")
+        from .api.environments import EnvironmentsAPI
+        add_resource_to_api(self.context.api, EnvironmentsAPI, "/environment/<int:project_id>")
+        from .api.requests import RequestsAPI
+        add_resource_to_api(self.context.api, RequestsAPI, "/requests/<int:project_id>")
 
         self.context.rpc_manager.register_function(backend_results_or_404, name='backend_results_or_404')
 

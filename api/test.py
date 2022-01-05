@@ -72,7 +72,21 @@ class TestApiBackend(RestResource):
             _filter = and_(ApiTests.project_id == project.id, ApiTests.test_uid == test_id)
         task = ApiTests.query.filter(_filter).first()
 
-        for each in ["params", "env_vars", "customization", "cc_env_vars"]:
+        params = deepcopy(getattr(task, "params"))
+        new_params = loads(args.get("params"))
+        param_names = [each["name"] for each in params]
+        for param in new_params:
+            if param["name"] not in param_names:
+                params.append(param)
+        new_param_names = [each["name"] for each in new_params]
+        params = [param for param in params if (param["name"] in new_param_names or param["name"] in default_params)]
+        for param in params:
+            for _param in new_params:
+                if param["name"] == _param["name"]:
+                    param["default"] = _param["default"]
+                    param["description"] = _param["description"]
+        setattr(task, "params", params)
+        for each in ["env_vars", "customization", "cc_env_vars"]:
             params = deepcopy(getattr(task, each))
             for key in list(params.keys()):
                 if key not in loads(args.get(each)).keys() and key not in default_params:

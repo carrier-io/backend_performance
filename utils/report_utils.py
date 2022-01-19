@@ -88,8 +88,9 @@ def chart_data(timeline, users, other, yAxis="response_time"):
     if users:
         _data['datasets'].append({"label": "Active Users", "fill": False,
                                   "data": list(users['users'].values()),
-                                  "yAxisID": "active_users",
-                                  "borderWidth": 2, "lineTension": 0, "spanGaps": True})
+                                  "yAxisID": "active_users", "pointRadius": 0,
+                                  "borderColor": "rgb(94,114,228)",
+                                  "borderWidth": 2, "lineTension": 0.1, "spanGaps": True})
     colors_array = colors(len(other.keys()))
     for each in other:
         color = colors_array.pop()

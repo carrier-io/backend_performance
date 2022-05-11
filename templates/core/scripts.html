@@ -1,0 +1,5 @@
+<script src="{{ url_for('design-system.static', filename='assets/vendor/nouislider/nouislider.js') }}"
+        type="text/javascript"></script>
+<script src="{{ url_for('backend_performance.static', filename='js/performanceBackend.js') }}"
+        type="text/javascript"></script>
+{{ template_slot('params_table_scripts') | safe }}

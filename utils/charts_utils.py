@@ -5,7 +5,7 @@ from ..connectors.influx import (get_backend_requests, get_hits_tps, average_res
                                  get_throughput_per_test, get_response_time_per_test)
 from ..connectors.loki import get_results
 from .report_utils import calculate_proper_timeframe, chart_data, create_dataset, comparison_data
-from ...shared.constants import str_to_timestamp
+from ...shared.tools.constants import str_to_timestamp
 
 
 def _timeframe(args, time_as_ts=False):

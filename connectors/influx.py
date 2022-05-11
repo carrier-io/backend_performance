@@ -14,8 +14,8 @@
 
 from datetime import datetime, timezone
 
-from ...projects.connectors.influx import get_client
-from ...shared.constants import str_to_timestamp, MAX_DOTS_ON_CHART
+from tools import influx_tools
+from ...shared.tools.constants import str_to_timestamp, MAX_DOTS_ON_CHART
 from ..models.api_reports import APIReport
 
 
@@ -26,17 +26,17 @@ def get_project_id(build_id):
 def get_aggregated_test_results(test, build_id):
     project_id = get_project_id(build_id)
     query = f"SELECT * from api_comparison where simulation='{test}' and build_id='{build_id}'"
-    return list(get_client(project_id, f'comparison_{project_id}').query(query))
+    return list(influx_tools.get_client(project_id, f'comparison_{project_id}').query(query))
 
 
 def delete_test_data(build_id, test_name, lg_type):
     project_id = get_project_id(build_id)
     query_one = f"DELETE from {test_name} where build_id='{build_id}'"
     query_two = f"DELETE from api_comparison where build_id='{build_id}'"
-    client = get_client(project_id, f"{lg_type}_{project_id}")
+    client = influx_tools.get_client(project_id, f"{lg_type}_{project_id}")
     client.query(query_one)
     client.close()
-    client = get_client(project_id, f'comparison_{project_id}')
+    client = influx_tools.get_client(project_id, f'comparison_{project_id}')
     client.query(query_two)
     client.close()
     return True
@@ -76,7 +76,7 @@ def get_test_details(project_id, build_id, test_name, lg_type):
     q_type = f"show tag values on comparison_{project_id} with key=\"test_type\" where build_id='{build_id}'"
     q_requests_name = f"show tag values on comparison_{project_id} with key=\"request_name\" " \
                       f"where build_id='{build_id}'"
-    client = get_client(project_id)
+    client = influx_tools.get_client(project_id)
     test["start_time"] = list(client.query(q_start_time)["users"])[0]["time"]
     test["end_time"] = list(client.query(q_end_time)["users"])[0]["time"]
     test["duration"] = round(str_to_timestamp(test["end_time"]) - str_to_timestamp(test["start_time"]), 1)
@@ -126,7 +126,7 @@ def get_backend_requests(build_id, test_name, lg_type, start_time, end_time, agg
     query = f"select time, {group_by}percentile(\"{aggr}\", 95) as rt from {lg_type}_{project_id}..{test_name}_{aggregation} " \
             f"where time>='{start_time}' and time<='{end_time}' {status_addon} and sampler_type='{sampler}' and " \
             f"build_id='{build_id}' {scope_addon} group by {group_by}time({aggregation})"
-    res = get_client(project_id).query(query)[f"{test_name}_{aggregation}"]
+    res = influx_tools.get_client(project_id).query(query)[f"{test_name}_{aggregation}"]
     results = {}
     if group_by:
         for _ in res:
@@ -151,7 +151,7 @@ def get_backend_users(build_id, lg_type, start_time, end_time, aggregation):
     query = f"select sum(\"max\") from (select max(\"active\") from {lg_type}_{project_id}..\"users_{aggregation}\" " \
             f"where build_id='{build_id}' group by lg_id) " \
             f"WHERE time>='{start_time}' and time<='{end_time}' GROUP BY time(1s)"
-    client = get_client(project_id)
+    client = influx_tools.get_client(project_id)
     res = client.query(query)[f'users_{aggregation}']
     timestamps = []
     results = {"users": {}}
@@ -197,7 +197,7 @@ def get_hits(build_id, test_name, lg_type, start_time, end_time, aggregation, sa
                  f"time>='{start_time}' and time<='{end_time}'{status_addon} and sampler_type='{sampler}' and" \
                  f" build_id='{build_id}' {scope_addon}"
     results = {"hits": {}}
-    res = get_client(project_id).query(hits_query)[test_name]
+    res = influx_tools.get_client(project_id).query(hits_query)[test_name]
     for _ in res:
         hit_time = datetime.fromtimestamp(float(_["hit"]), tz=timezone.utc)
         if hit_time.strftime("%Y-%m-%dT%H:%M:%SZ") in results['hits']:
@@ -236,7 +236,7 @@ def get_tps(build_id, test_name, lg_type, start_time, end_time, aggregation, sam
                       f" where time>='{start_time}' " \
                       f"and time<='{end_time}' and sampler_type='{sampler}' {status_addon} and build_id='{build_id}' " \
                       f"{scope_addon} group by time({aggregation})"
-    res = get_client(project_id).query(responses_query)[f"{test_name}_{aggregation}"]
+    res = influx_tools.get_client(project_id).query(responses_query)[f"{test_name}_{aggregation}"]
     results = {"responses": {}}
     for _ in timestamps:
         results['responses'][_] = None
@@ -255,7 +255,7 @@ def average_responses(build_id, test_name, lg_type, start_time, end_time, aggreg
                       f"where time>='{start_time}' " \
                       f"and time<='{end_time}' and sampler_type='{sampler}'{status_addon} and " \
                       f"build_id='{build_id}' group by time({aggregation})"
-    res = get_client(project_id).query(responses_query)[f"{test_name}_{aggregation}"]
+    res = influx_tools.get_client(project_id).query(responses_query)[f"{test_name}_{aggregation}"]
     results = {"responses": {}}
     for _ in timestamps:
         results['responses'][_] = None
@@ -276,7 +276,7 @@ def get_build_data(build_id, test_name, lg_type, start_time, end_time, sampler, 
     requests_in_range = f"select time, request_name, max(pct95) from {lg_type}_{project_id}..{test_name}_5s " \
                         f"where sampler_type='{sampler}'{status_addon} and " \
                         f"build_id='{build_id}' group by request_name"
-    res = get_client(project_id).query(requests_in_range)[f"{test_name}_5s"]
+    res = influx_tools.get_client(project_id).query(requests_in_range)[f"{test_name}_5s"]
     requests_names = [f"'{each['request_name']}'" for each in res]
     if len(requests_names) > 1:
         requests = f'[{"|".join(requests_names)}]'
@@ -285,7 +285,7 @@ def get_build_data(build_id, test_name, lg_type, start_time, end_time, sampler, 
     else:
         return []
     query = f"select * from comparison_{project_id}..api_comparison where build_id='{build_id}' and request_name=~/^{requests}/"
-    return list(get_client(project_id).query(query)['api_comparison'])
+    return list(influx_tools.get_client(project_id).query(query)['api_comparison'])
 
 
 def get_errors(build_id, test_name, lg_type, start_time, end_time, aggregation, sampler,
@@ -302,7 +302,7 @@ def get_errors(build_id, test_name, lg_type, start_time, end_time, aggregation, 
     results = {"errors": {}}
     for _ in timestamps:
         results['errors'][_] = None
-    res = get_client(project_id).query(error_query)[f"{test_name}_{aggregation}"]
+    res = influx_tools.get_client(project_id).query(error_query)[f"{test_name}_{aggregation}"]
     _tmp = []
     if 'm' in aggregation:
         aggregation = f"{str(int(aggregation.replace('m', ''))*60)}s"
@@ -329,7 +329,7 @@ def get_response_codes(build_id, test_name, lg_type, start_time, end_time, aggre
                   f" where build_id='{build_id}' " \
                   f"and sampler_type='{sampler}' and time>='{start_time}' and time<='{end_time}'{status_addon} " \
                   f"{scope_addon}group by time({aggregation})"
-    res = get_client(project_id).query(rcode_query)[f"{test_name}_{aggregation}"]
+    res = influx_tools.get_client(project_id).query(rcode_query)[f"{test_name}_{aggregation}"]
     results = {"rcodes": {}}
     for _ in timestamps:
         results['rcodes'][_] = None
@@ -357,7 +357,7 @@ def get_throughput_per_test(build_id, test_name, lg_type, sampler, scope, aggreg
             f"select sum(total) as rt from {lg_type}_{project_id}..{test_name}_{aggregator} " \
             f"where {sampler_piece} build_id='{build_id}'{status_addon} {scope_addon} {group_by} " \
             f")"
-    return round(list(get_client(project_id).query(query)[f"{test_name}_{aggregator}"])[0]["throughput"], 2)
+    return round(list(influx_tools.get_client(project_id).query(query)[f"{test_name}_{aggregator}"])[0]["throughput"], 2)
 
 
 def get_response_time_per_test(build_id, test_name, lg_type, sampler, scope, aggr, status='all', aggregator="30s"):
@@ -383,12 +383,12 @@ def get_response_time_per_test(build_id, test_name, lg_type, sampler, scope, agg
         sampler_piece = f"sampler_type='{sampler}' and "
     query = f"select {aggr_func} as rt from {lg_type}_{project_id}..{test_name}_{aggregator} where {sampler_piece}" \
             f"build_id='{build_id}'{status_addon} {scope_addon} {group_by}"
-    return round(list(get_client(project_id).query(query)[f"{test_name}_{aggregator}"])[0]["rt"], 2)
+    return round(list(influx_tools.get_client(project_id).query(query)[f"{test_name}_{aggregator}"])[0]["rt"], 2)
 
 
 def calculate_auto_aggregation(build_id, test_name, lg_type, start_time, end_time):
     project_id = get_project_id(build_id)
-    client = get_client(project_id)
+    client = influx_tools.get_client(project_id)
     aggregation = "1s"
     aggr_list = ["1s", "5s", "30s", "1m", "5m", "10m"]
     for i in range(len(aggr_list)):
@@ -407,5 +407,5 @@ def calculate_auto_aggregation(build_id, test_name, lg_type, start_time, end_tim
 
 def get_sampler_types(project_id, build_id, test_name, lg_type):
     q_samplers = f"show tag values on {lg_type}_{project_id} with key=sampler_type where build_id='{build_id}'"
-    client = get_client(project_id)
+    client = influx_tools.get_client(project_id)
     return [each["value"] for each in list(client.query(q_samplers)[f"{test_name}_1s"])]

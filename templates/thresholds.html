@@ -1,0 +1,235 @@
+<div class="modal modal-small fixed-left fade shadow-sm" tabindex="-1" role="dialog" id="createThresholdModal">
+    <div class="modal-dialog modal-dialog-aside" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="row w-100">
+                    <div class="col">
+                        <h3 class="ml-4 mt-3 mb-3" id="modal_title">Create threshold</h3>
+                    </div>
+                    <div class="col-xs">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal" aria-label="Close">
+                            Cancel
+                        </button>
+                        <button type="button" id="add_threshold" class="btn btn-basic" onclick="insertThreshold()">Save
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div class="section">
+                    <div class="row">
+                        <div class="col">
+                            <span> Test </span>
+                            <select id="testName" class="selectpicker" data-style="btn-gray"
+                                    onchange="updateEnvPicker()">
+                                {% for test in config['tests'] %}
+                                <option>{{ test }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <span> Test Environment </span>
+                            <select id="envName" class="selectpicker" data-style="btn-gray"
+                                    onchange="updateScopePicker()">
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col">
+                            <span> Scope </span>
+                            <p>
+                                <h13>Request(s) you want thresholds to be applied to.</h13>
+                            </p>
+                            <select id="scope" class="selectpicker" data-style="btn-gray">
+                                <option value="all">all</option>
+                                <option value="every">every</option>
+                                {% for request in requests %}
+                                <option value="{{request}}">{{request}}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col">
+                            <span> Target </span>
+                            <p>
+                                <h13>Metric you want to be measured against.</h13>
+                            </p>
+                            <select id="target" class="selectpicker" data-style="btn-gray">
+                                <option value="throughput">throughput</option>
+                                <option value="error_rate">error_rate</option>
+                                <option value="response_time">response_time</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col">
+                            <span> Aggregation </span>
+                            <p>
+                                <h13>Math aggregation of the metrics to be applied for threshold calculation.</h13>
+                            </p>
+                            <select id="aggregation" class="selectpicker" data-style="btn-gray">
+                                <option value="max">Maximum</option>
+                                <option value="min">Minimum</option>
+                                <option value="avg">Average</option>
+                                <option value="pct95">Percentile 95</option>
+                                <option value="pct50">Percentile 50</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col">
+                            <span> Comparison </span>
+                            <p>
+                                <h13>Rule to be used to compare results with thresholds.</h13>
+                            </p>
+                            <select id="comparison" class="selectpicker" data-style="btn-gray">
+                                <option value="gte"> >= </option>
+                                <option value="lte"> <= </option>
+                                <option value="lt"> < </option>
+                                <option value="gt"> > </option>
+                                <option value="eq"> == </option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col">
+                            <span> Threshold value </span>
+                            <input type="text" id="th_value" class="form-control form-control-alternative">
+                        </div>
+                    </div>
+
+                </div>
+                <div class="row p-4">
+                    <div class="col"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+        function updateEnvPicker(_callback) {
+            let selectedProjectId = getSelectedProjectId();
+            $.get(`/api/v1/environment/${selectedProjectId}`,
+            { name: $("#testName").val() },
+            function(data) {
+                $("#envName").empty();
+                data.forEach(item => {
+                    $("#envName").append(`<option value="${item}">${item}</option>`);
+                });
+                $("#envName").selectpicker('refresh').trigger('change');
+                if (_callback !== undefined) {
+                    _callback();
+                }
+            });
+        }
+
+
+        function updateScopePicker() {
+            let selectedProjectId = getSelectedProjectId();
+            $.get(`/api/v1/requests/${selectedProjectId}`,
+            {
+                name: $("#testName").val(),
+                env: $("#envName").val()
+            },
+            function(data) {
+                $("#scope").empty();
+                $("#scope").append(`<option value="all">all</option>`);
+                $("#scope").append(`<option value="every">every</option>`);
+                data.forEach(item => {
+                    $("#scope").append(`<option value="${item}">${item}</option>`);
+                });
+                $("#scope").selectpicker('refresh').trigger('change');
+            });
+        }
+
+        function insertThreshold(){
+            let selectedProjectId = getSelectedProjectId();
+            $.ajax({
+                url: `/api/v1/thresholds/${selectedProjectId}/backend`,
+                type: "POST",
+                data: JSON.stringify({
+                    test: $("#testName").val(),
+                    env: $("#envName").val(),
+                    scope: $("#scope").val(),
+                    target: $("#target").val(),
+                    aggregation: $("#aggregation").val(),
+                    comparison: $("#comparison").val(),
+                    value: parseInt($("#th_value").val())
+                }),
+                contentType: "application/json",
+                dataType: "json",
+                success: function(){
+                    $("#threshold-list").bootstrapTable('refresh');
+                    $("#createThresholdModal").modal('hide');
+                }
+            });
+        }
+
+        function showEditThreshold(index){
+            $("#createThresholdModal").modal('toggle');
+            $("#modal_title").html("Edit Threshold");
+            $("#add_threshold").html("Edit");
+            setTimeout(updateModalData, 500, index);
+        }
+
+        function updateModalData(index) {
+            var data = $("#threshold-list").bootstrapTable('getRowByUniqueId', index);
+            $("#testName").selectpicker('val', data['test']);
+            updateEnvPicker(()=>{
+               $("#envName").selectpicker('val', data['environment']);
+            });
+            $("#scope").selectpicker('val', data['scope']);
+            $("#target").selectpicker('val', data['target']);
+            $("#aggregation").selectpicker('val', data['aggregation']);
+            $("#comparison").selectpicker('val', data['comparison']);
+            $("#th_value").val(data['value']);
+            $("#add_threshold").attr('onclick', `editThreshold("${index}")`);
+        }
+
+        function deleteThreshold(index, callback) {
+            let selectedProjectId = getSelectedProjectId();
+            var data = $("#threshold-list").bootstrapTable('getRowByUniqueId', index);
+            var request_params = $.param({
+                test: data['test'],
+                env: data['environment'],
+                scope: data['scope'],
+                target: data['target'],
+                aggregation: data['aggregation'],
+                comparison: data['comparison']
+            });
+            $.ajax({
+                url: `/api/v1/thresholds/${selectedProjectId}/backend?`+request_params,
+                type: "DELETE",
+                success: function(){
+                    $("#threshold-list").bootstrapTable('refresh');
+                    if (callback !== undefined) {
+                        callback()
+                    }
+                }
+            })
+        }
+
+        function editThreshold(index) {
+            deleteThreshold(index, insertThreshold);
+        }
+
+        $('#createThresholdModal').on('hide.bs.modal', function(e) {
+            $("#modal_title").html("Create Threshold");
+            $("#add_threshold").html("Save");
+            $("#add_threshold").attr('onclick', `insertThreshold()`);
+            $("#th_value").val("");
+        });
+
+        $(document).ready(function() {
+            updateEnvPicker();
+    });
+</script>

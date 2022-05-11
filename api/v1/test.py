@@ -1,71 +1,47 @@
 from json import loads
 from sqlalchemy import and_
 from copy import deepcopy
+from typing import Union
 
-from ...shared.utils.restApi import RestResource
-from ...shared.utils.api_utils import str2bool, build_req_parser
-from ..models.api_tests import ApiTests
-from ..models.api_reports import APIReport
-from ..utils.utils import exec_test, get_backend_test_data
+from flask import request, make_response
+from flask_restful import Resource
+
+from tools import api_tools
+from ...models.api_tests import ApiTests
+from ...models.api_reports import APIReport
+from ...utils.utils import exec_test, get_backend_test_data
 
 
-class TestApiBackend(RestResource):
-    _get_rules = (
-        dict(name="raw", type=int, default=0, location="args"),
-        dict(name="type", type=str, default='cc', location="args"),
-        dict(name="exec", type=str2bool, default=False, location="args")
-    )
+class API(Resource):
+    url_params = [
+        '<int:project_id>/<int:test_id>',
+        '<int:project_id>/<string:test_id>',
+    ]
 
-    _put_rules = (
-        dict(name="parallel", type=int, required=False, location='json'),
-        dict(name="region", type=str, required=False, location='json'),
-        dict(name="params", type=str, default="[]", required=False, location='json'),
-        dict(name="env_vars", type=str, default="{}", required=False, location='json'),
-        dict(name="customization", type=str, default="{}", required=False, location='json'),
-        dict(name="cc_env_vars", type=str, default="{}", required=False, location='json'),
-        dict(name="reporter", type=list, required=False, location='json'),
-        dict(name="emails", type=str, required=False, location='json'),
-        dict(name="git", type=str, required=False, location='json'),
-    )
+    def __init__(self, module):
+        self.module = module
 
-    _post_rules = _put_rules + (
-        dict(name="test_type", type=str, required=False, location='json'),
-        dict(name="runner", type=str, required=False, location='json'),
-        dict(name="type", type=str, default=None, required=False, location='json')
-    )
-
-    def __init__(self):
-        super().__init__()
-        self.__init_req_parsers()
-
-    def __init_req_parsers(self):
-        self.get_parser = build_req_parser(rules=self._get_rules)
-        self.put_parser = build_req_parser(rules=self._put_rules)
-        self.post_parser = build_req_parser(rules=self._post_rules)
-
-    def get(self, project_id, test_id):
-        args = self.get_parser.parse_args(strict=False)
-        project = self.rpc.project_get_or_404(project_id=project_id)
+    def get(self, project_id: int, test_id: Union[int, str]):
+        project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
         if isinstance(test_id, int):
             _filter = and_(ApiTests.project_id == project.id, ApiTests.id == test_id)
         else:
             _filter = and_(ApiTests.project_id == project.id, ApiTests.test_uid == test_id)
         test = ApiTests.query.filter(_filter).first()
-        if args.raw:
+        if request.args["raw"]:
             return test.to_json(["influx.port", "influx.host", "galloper_url",
                                  "influx.db", "comparison_db", "telegraf_db",
                                  "loki_host", "loki_port", "influx.username", "influx.password"])
-        if args["type"] == "docker":
-            message = test.configure_execution_json(args.get("type"), execution=args.get("exec"))
+        if request.args["type"] == "docker":
+            message = test.configure_execution_json(request.args.get("type"), execution=request.args.get("exec"))
         else:
             message = [{"test_id": test.test_uid}]
         return {"config": message}  # this is cc format
 
-    def put(self, project_id, test_id):
+    def put(self, project_id: int, test_id: Union[int, str]):
         default_params = ["influx.port", "influx.host", "galloper_url", "influx.db", "comparison_db", "telegraf_db",
                           "loki_host", "loki_port", "test.type", "test_type", "influx.username", "influx.password"]
-        project = self.rpc.project_get_or_404(project_id=project_id)
-        args = self.put_parser.parse_args(strict=False)
+        project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
         if isinstance(test_id, int):
             _filter = and_(ApiTests.project_id == project.id, ApiTests.id == test_id)
         else:
@@ -73,7 +49,7 @@ class TestApiBackend(RestResource):
         task = ApiTests.query.filter(_filter).first()
 
         params = deepcopy(getattr(task, "params"))
-        new_params = loads(args.get("params"))
+        new_params = loads(request.json.get("params"))
         param_names = [each["name"] for each in params]
         for param in new_params:
             if param["name"] not in param_names:
@@ -89,55 +65,54 @@ class TestApiBackend(RestResource):
         for each in ["env_vars", "customization", "cc_env_vars"]:
             params = deepcopy(getattr(task, each))
             for key in list(params.keys()):
-                if key not in loads(args.get(each)).keys() and key not in default_params:
+                if key not in loads(request.json.get(each)).keys() and key not in default_params:
                     del params[key]
-            for key, value in loads(args.get(each)).items():
+            for key, value in loads(request.json.get(each)).items():
                 if key not in params or params[key] != value:
                     params[key] = value
             setattr(task, each, params)
 
-        if args.get("reporter"):
-            task.reporting = args["reporter"]
+        if request.json.get("reporter"):
+            task.reporting = request.json["reporter"]
         else:
             task.reporting = []
 
-        if args.get("emails"):
-            task.emails = args["emails"]
+        if request.json.get("emails"):
+            task.emails = request.json["emails"]
         else:
             task.emails = ""
 
-        if args.get("parallel"):
-            task.parallel = args.get("parallel")
-        if args.get("region"):
-            task.region = args.get("region")
-        if args.get("git"):
-            task.git = loads(args.get("git"))
+        if request.json.get("parallel"):
+            task.parallel = request.json.get("parallel")
+        if request.json.get("region"):
+            task.region = request.json.get("region")
+        if request.json.get("git"):
+            task.git = loads(request.json.get("git"))
         task.commit()
         return task.to_json(["influx.port", "influx.host", "galloper_url",
                              "influx.db", "comparison_db", "telegraf_db",
                              "loki_host", "loki_port", "influx.username", "influx.password"])
 
     def post(self, project_id, test_id):
-        project = self.rpc.project_get_or_404(project_id=project_id)
-        args = self.post_parser.parse_args(strict=False)
+        project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
         if isinstance(test_id, int):
             _filter = and_(ApiTests.project_id == project.id, ApiTests.id == test_id)
         else:
             _filter = and_(ApiTests.project_id == project.id, ApiTests.test_uid == test_id)
         task = ApiTests.query.filter(_filter).first()
         event = list()
-        execution = True if args['type'] and args["type"] == "config" else False
+        execution = True if request.json['type'] and request.json["type"] == "config" else False
         event.append(task.configure_execution_json(output='cc',
-                                                   test_type=args.get("test_type"),
-                                                   params=loads(args.get("params", None)),
-                                                   env_vars=loads(args.get("env_vars", None)),
-                                                   reporting=args.get("reporter", None),
-                                                   customization=loads(args.get("customization", None)),
-                                                   cc_env_vars=loads(args.get("cc_env_vars", None)),
-                                                   parallel=args.get("parallel", None),
-                                                   region=args.get("region", "default"),
-                                                   execution=execution, emails=args.get("emails", None)))
-        if args['type'] and args["type"] == "config":
+                                                   test_type=request.json.get("test_type"),
+                                                   params=loads(request.json.get("params", None)),
+                                                   env_vars=loads(request.json.get("env_vars", None)),
+                                                   reporting=request.json.get("reporter", None),
+                                                   customization=loads(request.json.get("customization", None)),
+                                                   cc_env_vars=loads(request.json.get("cc_env_vars", None)),
+                                                   parallel=request.json.get("parallel", None),
+                                                   region=request.json.get("region", "default"),
+                                                   execution=execution, emails=request.json.get("emails", None)))
+        if request.json['type'] and request.json["type"] == "config":
             return event[0]
         for each in event:
             each["test_id"] = task.test_uid

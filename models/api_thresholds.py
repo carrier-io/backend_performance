@@ -1,10 +1,9 @@
 from sqlalchemy import Column, Integer, String, Float
 
-from ...shared.db_manager import Base
-from ...shared.models.abstract_base import AbstractBaseMixin
+from tools import db_tools, db
 
 
-class APIThresholds(AbstractBaseMixin, Base):
+class APIThresholds(db_tools.AbstractBaseMixin, db.Base):
     __tablename__ = "api_thresholds"
     id = Column(Integer, primary_key=True)
     project_id = Column(Integer, unique=False, nullable=False)

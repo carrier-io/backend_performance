@@ -1,4 +1,4 @@
-from ..shared.db_manager import Base, engine
+from tools import db
 
 
 def init_db():
@@ -7,5 +7,5 @@ def init_db():
     from .models.api_baseline import APIBaseline
     from .models.api_tests import ApiTests
     from .models.api_thresholds import APIThresholds
-    Base.metadata.create_all(bind=engine)
+    db.Base.metadata.create_all(bind=db.engine)
 

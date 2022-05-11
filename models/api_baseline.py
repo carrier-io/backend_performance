@@ -1,10 +1,9 @@
 from sqlalchemy import Column, Integer, String, JSON, ARRAY
 
-from ...shared.db_manager import Base
-from ...shared.models.abstract_base import AbstractBaseMixin
+from tools import db_tools, db
 
 
-class APIBaseline(AbstractBaseMixin, Base):
+class APIBaseline(db_tools.AbstractBaseMixin, db.Base):
     __tablename__ = "api_baseline"
     id = Column(Integer, primary_key=True)
     project_id = Column(Integer, unique=False, nullable=False)

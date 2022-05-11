@@ -1,64 +1,31 @@
 from sqlalchemy import and_
 from json import loads
 
-from ...shared.utils.restApi import RestResource
-from ...shared.utils.api_utils import build_req_parser
-from ...projects.models.statistics import Statistic
-from ..models.api_baseline import APIBaseline
-from ..models.api_reports import APIReport
-from ..utils.utils import get
-from ..connectors.influx import get_test_details, delete_test_data
+from flask import request, make_response
+from flask_restful import Resource
+
+from ....projects.models.statistics import Statistic
+from ...models.api_baseline import APIBaseline
+from ...models.api_reports import APIReport
+from ...utils.utils import get
+from ...connectors.influx import get_test_details, delete_test_data
 
 
-class ReportAPI(RestResource):
-    get_rules = (
-        dict(name="offset", type=int, default=0, location="args"),
-        dict(name="limit", type=int, default=0, location="args"),
-        dict(name="search", type=str, default="", location="args"),
-        dict(name="sort", type=str, default="", location="args"),
-        dict(name="order", type=str, default="", location="args"),
-        dict(name="name", type=str, location="args"),
-        dict(name="filter", type=str, location="args"),
-        dict(name="report_id", type=int, default=None, location="args")
-    )
-    delete_rules = (
-        dict(name="id[]", type=int, action="append", location="args"),
-    )
-    put_rules = (
-        dict(name="build_id", type=str, location="json"),
-        dict(name="test_name", type=str, location="json"),
-        dict(name="lg_type", type=str, location="json"),
-        dict(name="missed", type=int, location="json"),
-        dict(name="test_status", type=dict, location="json"),
-        dict(name="response_times", type=str, location="json"),
-        dict(name="duration", type=float, location="json"),
-        dict(name="vusers", type=int, location="json")
-    )
-    post_rules = put_rules + (
-        dict(name="start_time", type=str, location="json"),
-        dict(name="environment", type=str, location="json"),
-        dict(name="type", type=str, location="json"),
-        dict(name="release_id", type=int, location="json"),
-        dict(name="test_id", type=str, default=None, location="json")
-    )
+class API(Resource):
+    url_params = [
+        '<int:project_id>',
+    ]
 
-    def __init__(self):
-        super().__init__()
-        self.__init_req_parsers()
-
-    def __init_req_parsers(self):
-        self._parser_get = build_req_parser(rules=self.get_rules)
-        self._parser_put = build_req_parser(rules=self.put_rules)
-        self._parser_post = build_req_parser(rules=self.post_rules)
-        self._parser_delete = build_req_parser(rules=self.delete_rules)
+    def __init__(self, module):
+        self.module = module
 
     def get(self, project_id: int):
-        args = self._parser_get.parse_args(strict=False)
+        args = request.args
         if args.get("report_id"):
             report = APIReport.query.filter_by(project_id=project_id, id=args.get("report_id")).first().to_json()
             return report
         reports = []
-        project = self.rpc.project_get_or_404(project_id=project_id)
+        project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
         total, res = get(project, args, APIReport)
         for each in res:
             each_json = each.to_json()
@@ -72,8 +39,8 @@ class ReportAPI(RestResource):
         return {"total": total, "rows": reports}
 
     def post(self, project_id: int):
-        args = self._parser_post.parse_args(strict=False)
-        project = self.rpc.project_get_or_404(project_id=project_id)
+        args = request.json
+        project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
 
         # TODO: we need to check api performance tests quota here
         # if not ProjectQuota.check_quota(project_id=project_id, quota='performance_test_runs'):
@@ -116,8 +83,8 @@ class ReportAPI(RestResource):
         return report.to_json()
 
     def put(self, project_id: int):
-        args = self._parser_put.parse_args(strict=False)
-        project = self.rpc.project_get_or_404(project_id=project_id)
+        args = request.json
+        project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
         test_data = get_test_details(project_id=project_id, build_id=args["build_id"], test_name=args["test_name"],
                                      lg_type=args["lg_type"])
         response_times = loads(args["response_times"])
@@ -155,8 +122,8 @@ class ReportAPI(RestResource):
         return {"message": "updated"}
 
     def delete(self, project_id: int):
-        args = self._parser_delete.parse_args(strict=False)
-        project = self.rpc.project_get_or_404(project_id=project_id)
+        args = request.args
+        project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
         query_result = APIReport.query.filter(
             and_(APIReport.project_id == project.id, APIReport.id.in_(args["id[]"]))
         ).all()

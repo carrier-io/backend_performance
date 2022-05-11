@@ -14,11 +14,10 @@
 
 from sqlalchemy import String, Column, Integer
 
-from ...shared.db_manager import Base
-from ...shared.models.abstract_base import AbstractBaseMixin
+from tools import db_tools, db
 
 
-class APITag(AbstractBaseMixin, Base):
+class APITag(db_tools.AbstractBaseMixin, db.Base):
     __tablename__ = "api_tag"
 
     id = Column(Integer, primary_key=True)

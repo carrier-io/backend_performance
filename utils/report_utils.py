@@ -1,6 +1,6 @@
 import random
 from datetime import datetime, timezone
-from ...shared.constants import str_to_timestamp
+from ...shared.tools.constants import str_to_timestamp
 from ..connectors.influx import calculate_auto_aggregation
 
 

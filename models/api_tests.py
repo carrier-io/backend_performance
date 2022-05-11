@@ -17,15 +17,14 @@ from uuid import uuid4
 from json import dumps
 from sqlalchemy import Column, Integer, String, JSON, ARRAY
 
-from ...shared.db_manager import Base
-from ...shared.models.abstract_base import AbstractBaseMixin
-from ...shared.constants import CURRENT_RELEASE
+from tools import db_tools, db
+from ...shared.tools.constants import CURRENT_RELEASE
 
 from ..constants import JOB_CONTAINER_MAPPING
 from ..models import unsecret
 
 
-class ApiTests(AbstractBaseMixin, Base):
+class ApiTests(db_tools.AbstractBaseMixin, db.Base):
     __tablename__ = "api_tests"
     id = Column(Integer, primary_key=True)
     project_id = Column(Integer, unique=False, nullable=False)

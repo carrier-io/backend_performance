@@ -1,3 +1,6 @@
+#!/usr/bin/python3
+# coding=utf-8
+
 #   Copyright 2021 getcarrier.io
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,18 +17,14 @@
 
 """ Module """
 
-import flask  # pylint: disable=E0401
-import jinja2  # pylint: disable=E0401
-
-from flask import request, render_template
-
 from pylon.core.tools import log  # pylint: disable=E0611,E0401
 from pylon.core.tools import module  # pylint: disable=E0611,E0401
 
-from ..shared.utils.api_utils import add_resource_to_api
-from .rpc_worker import backend_results_or_404
-
+# from .api.security_results_api import SecurityTestResultApi
+# from .api.tests import SecurityTestsRerun
 from .init_db import init_db
+# from .rpc import security_results_or_404, overview_data, parse_test_parameters, parse_common_test_parameters, run_scheduled_test
+from tools import theme
 
 
 class Module(module.ModuleModel):
@@ -34,32 +33,113 @@ class Module(module.ModuleModel):
     def __init__(self, context, descriptor):
         self.context = context
         self.descriptor = descriptor
+        #
+        # self.settings = self.descriptor.config
 
     def init(self):
         """ Init module """
-        log.info("Initializing module Backend_performance")
+        log.info(f'Initializing module {self.descriptor.name}')
         init_db()
-        from .api.tests import TestsApi
-        add_resource_to_api(self.context.api, TestsApi, "/backend/<int:project_id>")
-        from .api.test import TestApiBackend
-        add_resource_to_api(self.context.api, TestApiBackend, "/tests/<int:project_id>/backend/<string:test_id>")
-        from .api.thresholds import BackendThresholdsAPI
-        add_resource_to_api(self.context.api, BackendThresholdsAPI, "/thresholds/<int:project_id>/backend")
-        from .api.baseline import BaselineAPI
-        add_resource_to_api(self.context.api, BaselineAPI, "/baseline/<int:project_id>")
-        from .api.reports import ReportAPI
-        add_resource_to_api(self.context.api, ReportAPI, "/reports/<int:project_id>")
-        from .api.charts import ReportChartsAPI
-        add_resource_to_api(self.context.api, ReportChartsAPI, "/chart/<string:source>/<string:target>")
-        from .api.report_status import ReportStatusAPI
-        add_resource_to_api(self.context.api, ReportStatusAPI, "/reports/<int:project_id>/<int:report_id>/status")
-        from .api.environments import EnvironmentsAPI
-        add_resource_to_api(self.context.api, EnvironmentsAPI, "/environment/<int:project_id>")
-        from .api.requests import RequestsAPI
-        add_resource_to_api(self.context.api, RequestsAPI, "/requests/<int:project_id>")
 
-        self.context.rpc_manager.register_function(backend_results_or_404, name='backend_results_or_404')
+        self.descriptor.init_api()
+        # from .api.tests import SecurityTestsApi
+        # from .api.test import SecurityTestApi
+        # from .api.security_results_api import SecurityResultsApi
+        # from .api.security_dispatcher import SecuritySeedDispatcher
+        # from .api.security_findings_api import FindingsAPI
+        # from .api.update_test_status import TestStatusUpdater
+        # from .api.get_loki_url import GetLokiUrl
+        # from .api.security_report_api import SecurityReportAPI
+        # add_resource_to_api(
+        #     self.context.api, GetLokiUrl,
+        #     "/security/<int:project_id>/get_url",
+        #     resource_class_kwargs={"settings": self.settings}
+        # )
+        # add_resource_to_api(
+        #     self.context.api,
+        #     SecurityTestsApi,
+        #     "/security/<int:project_id>/dast"
+        # )
+        # add_resource_to_api(
+        #     self.context.api, SecurityTestApi,
+        #     "/security/<int:project_id>/dast/<int:test_id>",
+        #     "/security/<int:project_id>/dast/<string:test_id>"
+        # )
+        # add_resource_to_api(
+        #     self.context.api, SecurityResultsApi,
+        #     "/security/<int:project_id>/dast/results"
+        # )
+        # add_resource_to_api(
+        #     self.context.api, SecuritySeedDispatcher,
+        #     "/tests/<int:project_id>/security/<string:seed>"
+        # )
+        # add_resource_to_api(
+        #     self.context.api, FindingsAPI,
+        #     "/security/<int:project_id>/findings/<int:test_id>",
+        #     "/security/<int:project_id>/finding"
+        # )
+        # add_resource_to_api(
+        #     self.context.api, TestStatusUpdater,
+        #     "/security/<int:project_id>/update_status/<int:test_id>",
+        #     "/security/<int:project_id>/update_status/<string:test_id>"
+        # )
+        # add_resource_to_api(
+        #     self.context.api, SecurityReportAPI,
+        #     "/security/<int:project_id>"
+        # )
+        # add_resource_to_api(
+        #     self.context.api, SecurityTestsRerun,
+        #     "/security/rerun/<int:security_results_dast_id>"
+        # )
+        # add_resource_to_api(
+        #     self.context.api, SecurityTestResultApi,
+        #     "/security/<int:project_id>/dast/results/<int:result_id>"
+        # )
+        #
+
+        self.descriptor.init_rpcs()
+        # self.context.rpc_manager.register_function(
+        #     security_results_or_404, name='security_results_or_404')
+        # self.context.rpc_manager.register_function(
+        #     overview_data, name='security_overview_data')
+        # self.context.rpc_manager.register_function(
+        #     parse_test_parameters, name='security_test_create_test_parameters')
+        # self.context.rpc_manager.register_function(
+        #     parse_common_test_parameters, name='security_test_create_common_parameters')
+        # self.context.rpc_manager.register_function(
+        #     run_scheduled_test, name='security_run_scheduled_test')
+
+        self.descriptor.init_blueprint()
+
+        theme.register_section(
+            "performance",
+            "Performance",
+            kind="holder",
+            location="left",
+        )
+        theme.register_subsection(
+            "performance", "backend",
+            "Backend",
+            title="Backend performance",
+            kind="slot",
+            prefix="backend_performance_",
+            weight=5,
+        )
+
+        theme.register_page(
+            "performance", "results",
+            "Results",
+            title="Test Results",
+            kind="slot",
+            prefix="backend_performance_results_",
+        )
+
+        # security_app_styles
+        # security_app_scripts
+        # security_app_content
+
+        self.descriptor.init_slots()
 
     def deinit(self):  # pylint: disable=R0201
         """ De-init module """
-        log.info("De-initializing Backend_performance")
+        log.info(f'De-initializing module {self.descriptor.name}')

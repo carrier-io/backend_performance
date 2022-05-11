@@ -1,0 +1,148 @@
+<div class="d-flex">
+    <div class="card card-x card-table-sm">
+        <div class="card-header">
+            <div class="row">
+                <div class="col-4">
+                    <h3>Backend tests</h3>
+                </div>
+                <div class="col-8">
+                    <div class="d-flex justify-content-end">
+                        <button type="button" class="btn btn-32 btn-secondary" data-toggle="modal"
+                                data-target="#createTestModal"><i class="fas fa-plus"></i></button>
+                        <button type="button" class="btn btn-32 btn-secondary" onclick="refreshTable('tests-list')"><i
+                                class="fas fa-sync"></i></button>
+                        <button type="button" class="btn btn-32 btn-secondary"><i
+                                class="fas fa-filter"></i></button>
+                        <button type="button" class="btn btn-32 btn-secondary"><i class="fas fa-tag"></i></button>
+                        <button type="button" class="btn btn-32 btn-secondary" onclick="deleteTests()"><i
+                                class="fas fa-trash-alt"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <table class="table table-borderless"
+                   id="tests-list"
+                   data-toggle="table"
+                   data-side-pagination="server"
+                   data-url="/api/v1/backend/{{config.id}}"
+                   data-page-size=5
+                   data-unique-id="id"
+                   data-pagination="true"
+                   data-pagination-parts='["pageInfoShort", "pageList"]'>
+                <thead class="thead-light">
+                <tr>
+                    <th scope="col" data-checkbox="true"></th>
+                    <th data-visible="false" data-field="id">index</th>
+                    <th scope="col" data-sortable="true" data-cell-style="nameStyle" data-field="name">Name</th>
+                    <th scope="col" data-sortable="true" data-cell-style="nameStyle" data-field="test_uid">UUID
+                    </th>
+                    <th scope="col" data-sortable="true" data-cell-style="nameStyle" data-field="entrypoint">
+                        Entrypoint
+                    </th>
+                    <th scope="col" data-align="center" data-sortable="true" data-formatter=backendLgFormatter
+                        data-field="job_type">Tool
+                    </th>
+                    <th scope="col" data-align="right" data-cell-style="cellStyle"
+                        data-formatter=backendTestActionFormatter>Actions
+                    </th>
+                </tr>
+                </thead>
+            </table>
+        </div>
+    </div>
+    <div class="card card-x card-table-sm">
+        <div class="card-header">
+            <div class="row">
+                <div class="col-4">
+                    <h3>Thresholds</h3>
+                </div>
+                <div class="col-8">
+                    <div class="d-flex justify-content-end">
+                        <button type="button" class="btn btn-32 btn-secondary" data-toggle="modal"
+                                data-target="#createThresholdModal"><i class="fas fa-plus"></i></button>
+                        <button type="button" class="btn btn-32 btn-secondary"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <table class="table table-borderless"
+                   id="threshold-list"
+                   data-toggle="table"
+                   data-side-pagination="server"
+                   data-url="/api/v1/thresholds/{{config.id}}/backend"
+                   data-page-size=5
+                   data-unique-id="id"
+                   data-virtual-scroll="true"
+                   data-pagination-parts='["pageInfoShort", "pageList"]'
+            >
+                <thead class="thead-light">
+                <tr>
+                    <th scope="col" data-checkbox="true"></th>
+                    <th data-visible="false" data-field="id">index</th>
+                    <th scope="col" data-sortable="true" data-field="test">Test</th>
+                    <th scope="col" data-sortable="true" data-field="environment">Env</th>
+                    <th scope="col" data-sortable="true" data-field="scope">Scope</th>
+                    <th scope="col" data-sortable="true" data-formatter=ruleFormatter>Rule</th>
+                    <th scope="col" data-sortable="true" data-field="value">Value</th>
+                    <th scope="col" data-formatter=thresholdsActionFormatter>Actions</th>
+                </tr>
+                </thead>
+            </table>
+        </div>
+    </div>
+</div>
+<div class="card card-12 card-table-sm">
+    <div class="card-header">
+        <div class="row">
+            <div class="col-4">
+                <h3>Results</h3>
+            </div>
+            <div class="col-8">
+                <div class="d-flex justify-content-end">
+                    <button type="button" class="btn btn-32 btn-secondary" onclick="refreshTable('results-list')"><i
+                            class="fas fa-sync"></i></button>
+                    <button type="button" class="btn btn-32 btn-secondary"><i class="fas fa-filter"></i></button>
+                    <button type="button" class="btn btn-32 btn-secondary"><i class="fas fa-tag"></i></button>
+                    <button type="button" class="btn btn-32 btn-secondary" onclick="deleteReports()"><i
+                            class="fas fa-trash-alt"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <table class="table table-borderless"
+               id="results-list"
+               data-toggle="table"
+               data-side-pagination="server"
+               data-url="/api/v1/reports/{{config.id}}"
+               data-page-size=5
+               data-unique-id="id"
+               data-pagination="true"
+               data-pagination-parts='["pageInfoShort", "pageList"]'>
+            <thead class="thead-light">
+            <tr>
+                <th scope="col" data-checkbox="true"></th>
+                <th data-visible="false" data-field="id">index</th>
+                <th scope="col" data-sortable="true" data-field="name" data-formatter=createLinkToTest>Name</th>
+                <th scope="col" data-sortable="true" data-field="start_time">Date</th>
+                <th scope="col" data-sortable="true" data-field="duration">Duration</th>
+                <th scope="col" data-sortable="true" data-field="vusers">vUsers</th>
+                <th scope="col" data-sortable="true" data-field="environment">Env</th>
+                <th scope="col" data-sortable="true" data-field="type">Test Type</th>
+                <th scope="col" data-sortable="true" data-field="throughput">TPS</th>
+                <th scope="col" data-sortable="true" data-field="failure_rate">Fail Rate</th>
+                <th scope="col" data-sortable="true" data-field="tags">Tags</th>
+                <th scope="col" data-sortable="true" data-field="test_status.status"
+                    data-formatter="reportsStatusFormatter">Status
+                </th>
+            </tr>
+            </thead>
+        </table>
+    </div>
+</div>
+
+{% include 'backend_performance:create.html' %}
+{% include 'backend_performance:runtest.html' %}
+{% include 'backend_performance:thresholds.html' %}

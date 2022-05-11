@@ -8,7 +8,7 @@ from uuid import uuid4
 
 from ..constants import JOB_CONTAINER_MAPPING, JOB_TYPE_MAPPING
 from ...projects.models.statistics import Statistic
-from ...tasks.api.utils import run_task
+from tools import task_tools
 
 
 def compile_tests(project_id, file_name, runner):
@@ -22,7 +22,7 @@ def compile_tests(project_id, file_name, runner):
 
 
 def exec_test(project_id, event):
-    response = run_task(project_id, event)
+    response = task_tools.run_task(project_id, event)
     response["redirect"] = f"/task/{response['task_id']}/results"
 
     statistic = Statistic.query.filter_by(project_id=project_id).first()

@@ -1,4 +1,4 @@
-from ..shared.constants import CURRENT_RELEASE
+from ..shared.tools.constants import CURRENT_RELEASE
 
 
 JOB_CONTAINER_MAPPING = {

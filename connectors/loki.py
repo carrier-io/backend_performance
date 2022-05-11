@@ -13,7 +13,7 @@
 #   limitations under the License.
 
 from requests import get
-from ...shared.constants import LOKI_HOST
+from ...shared.tools.constants import LOKI_HOST
 
 
 def get_results(test, int_start_time, int_end_time):

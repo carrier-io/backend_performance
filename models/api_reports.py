@@ -14,11 +14,10 @@
 
 from sqlalchemy import String, Column, Integer, Float, Text, ARRAY, JSON
 
-from ...shared.db_manager import Base
-from ...shared.models.abstract_base import AbstractBaseMixin
+from tools import db_tools, db
 
 
-class APIReport(AbstractBaseMixin, Base):
+class APIReport(db_tools.AbstractBaseMixin, db.Base):
     __tablename__ = "api_report"
 
     id = Column(Integer, primary_key=True)

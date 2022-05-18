@@ -58,8 +58,7 @@ function createTest() {
       data.append('cc_env_vars', JSON.stringify(params[3]));
 
       $.ajax({
-          //url: `/api/v1/backend/${getSelectedProjectId()}`,
-          url: '/api/v1/backend_performance/tests/1',
+          url: `/api/v1/backend_performance/tests/${getSelectedProjectId()}`,
           data: data,
           cache: false,
           contentType: false,
@@ -310,7 +309,7 @@ function updateTest(test_id) {
       data['cc_env_vars'] = JSON.stringify(params[3]);
 
       $.ajax({
-          url: `/api/v1/tests/${getSelectedProjectId()}/backend/${test_id}`,
+          url: `/api/v1/backend_performance/test/${getSelectedProjectId()}/${test_id}`,
           data: JSON.stringify(data),
           cache: false,
           contentType: 'application/json',
@@ -323,7 +322,7 @@ function updateTest(test_id) {
 }
 
 function deleteTests(id) {
-        var tests = `/api/v1/backend/${getSelectedProjectId()}?`;
+        var tests = `/api/v1/backend_performance/tests/${getSelectedProjectId()}?`;
         if (id == undefined){
             $("#tests-list").bootstrapTable('getSelections').forEach(item => {
                 tests += "id[]=" + item["id"] + "&"
@@ -341,7 +340,7 @@ function deleteTests(id) {
 }
 
 function deleteReports() {
-        var reports = `/api/v1/reports/${getSelectedProjectId()}?`;
+        var reports = `/api/v1/backend_performance/reports/${getSelectedProjectId()}?`;
         $("#results-list").bootstrapTable('getSelections').forEach(item => {
             reports += "id[]=" + item["id"] + "&"
         });
@@ -388,7 +387,7 @@ function runTest(test_id) {
             'region': $('#runTest_region').val()
         }
         $.ajax({
-            url: `/api/v1/tests/${getSelectedProjectId()}/backend/${test_id}`,
+            url: `/api/v1/backend_performance/test/${getSelectedProjectId()}/${test_id}`,
             data: JSON.stringify(data),
             contentType: 'application/json',
             type: 'POST',
@@ -417,7 +416,7 @@ function setParams(){
 
 function fillSummaryTable(){
     $.get(
-    '/api/v1/chart/requests/table',
+    '/api/v1/backend_performance/charts/requests/table',
     {
         build_id: build_id,
         test_name: test_name,
@@ -610,7 +609,7 @@ function fillErrorTable() {
     var low_value = $("#input-slider-range-value-low").html()
     var high_value = $("#input-slider-range-value-high").html()
     test_name = document.querySelector("[property~=test_name][content]").content;
-    $('#errors').bootstrapTable('refreshOptions', {url: `/api/v1/chart/errors/table?test_name=${test_name}&start_time=${start_time}&end_time=${end_time}&low_value=${low_value}&high_value=${high_value}`})
+    $('#errors').bootstrapTable('refreshOptions', {url: `/api/v1/backend_performance/charts/errors/table?test_name=${test_name}&start_time=${start_time}&end_time=${end_time}&low_value=${low_value}&high_value=${high_value}`})
 }
 
 function resizeChart() {
@@ -658,7 +657,7 @@ function setBaseline() {
     };
 
     $.ajax({
-            url: `/api/v1/baseline/${getSelectedProjectId()}`,
+            url: `/api/v1/backend_performance/baseline/${getSelectedProjectId()}`,
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify(data)
@@ -668,7 +667,7 @@ function setBaseline() {
 function compareWithBaseline() {
     console.log("here")
     $.get(
-      `/api/v1/baseline/${getSelectedProjectId()}`,
+      `/api/v1/backend_performance/baseline/${getSelectedProjectId()}`,
       {
         test_name: test_name,
         env: environment
@@ -715,7 +714,7 @@ function shareTestReport() {
 function stopTest() {
     data = {"test_status": {"status": "Canceled", "percentage": 100, "description": "Test was canceled"}}
     $.ajax({
-       url: `/api/v1/reports/${getSelectedProjectId()}/${testId}/status`,
+       url: `/api/v1/backend_performance/report_status/${getSelectedProjectId()}/${testId}`,
        data: JSON.stringify(data),
        contentType: 'application/json',
        type: 'PUT',

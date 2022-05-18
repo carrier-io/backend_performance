@@ -118,7 +118,7 @@
 <script>
         function updateEnvPicker(_callback) {
             let selectedProjectId = getSelectedProjectId();
-            $.get(`/api/v1/environment/${selectedProjectId}`,
+            $.get(`/api/v1/backend_performance/environments/${selectedProjectId}`,
             { name: $("#testName").val() },
             function(data) {
                 $("#envName").empty();
@@ -135,7 +135,7 @@
 
         function updateScopePicker() {
             let selectedProjectId = getSelectedProjectId();
-            $.get(`/api/v1/requests/${selectedProjectId}`,
+            $.get(`/api/v1/backend_performance/requests/${selectedProjectId}`,
             {
                 name: $("#testName").val(),
                 env: $("#envName").val()
@@ -154,7 +154,7 @@
         function insertThreshold(){
             let selectedProjectId = getSelectedProjectId();
             $.ajax({
-                url: `/api/v1/thresholds/${selectedProjectId}/backend`,
+                url: `/api/v1/backend_performance/thresholds/${selectedProjectId}`,
                 type: "POST",
                 data: JSON.stringify({
                     test: $("#testName").val(),
@@ -207,7 +207,7 @@
                 comparison: data['comparison']
             });
             $.ajax({
-                url: `/api/v1/thresholds/${selectedProjectId}/backend?`+request_params,
+                url: `/api/v1/backend_performance/thresholds/${selectedProjectId}?`+request_params,
                 type: "DELETE",
                 success: function(){
                     $("#threshold-list").bootstrapTable('refresh');

@@ -25,7 +25,7 @@
                    id="tests-list"
                    data-toggle="table"
                    data-side-pagination="server"
-                   data-url="/api/v1/backend/{{config.id}}"
+                   data-url="/api/v1/backend_performance/tests/{{ tools.session_project.get() }}"
                    data-page-size=5
                    data-unique-id="id"
                    data-pagination="true"
@@ -71,7 +71,7 @@
                    id="threshold-list"
                    data-toggle="table"
                    data-side-pagination="server"
-                   data-url="/api/v1/thresholds/{{config.id}}/backend"
+                   data-url="/api/v1/backend_performance/thresholds/{{ tools.session_project.get() }}"
                    data-page-size=5
                    data-unique-id="id"
                    data-virtual-scroll="true"
@@ -116,7 +116,7 @@
                id="results-list"
                data-toggle="table"
                data-side-pagination="server"
-               data-url="/api/v1/reports/{{config.id}}"
+               data-url="/api/v1/backend_performance/reports/{{ tools.session_project.get() }}"
                data-page-size=5
                data-unique-id="id"
                data-pagination="true"

@@ -48,39 +48,39 @@ class API(Resource):
 
     def post(self, project_id: int):
         project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
+        from pylon.core.tools import log
+        args = request.form
+        log.info("******************************************")
+        log.info(args)
+        log.info("******************************************")
 
-        print("******************************************")
-        print(project)
-        print("******************************************")
-
-        if request.json.get("git"):
+        if args.get("git"):
             file_name = ""
             bucket = ""
-            git_settings = loads(request.json["git"])
+            git_settings = loads(args["git"])
         else:
             git_settings = {}
-            file_name = request.json["file"].filename
+            file_name = args["file"].filename
             bucket = "tests"
-            api_tools.upload_file(bucket, request.json["file"], project, create_if_not_exists=True)
-
-        if request.json["compile"] and request.json["runner"] in ["v3.1", "v2.3"]:
-            compile_tests(project.id, file_name, request.json["runner"])
+            api_tools.upload_file(bucket, args["file"], project, create_if_not_exists=True)
+        if args["compile"] and args["runner"] in ["v3.1", "v2.3"]:
+            compile_tests(project.id, file_name, args["runner"])
 
         test = ApiTests(project_id=project.id,
                         test_uid=str(uuid4()),
-                        name=request.json["name"],
-                        parallel=request.json["parallel"],
-                        region=request.json["region"],
+                        name=args["name"],
+                        parallel=args["parallel"],
+                        region=args["region"],
                         bucket=bucket,
                         file=file_name,
                         git=git_settings,
-                        local_path=request.json["local_path"],
-                        entrypoint=request.json["entrypoint"],
-                        runner=request.json["runner"],
-                        reporting=loads(request.json["reporting"]),
-                        params=loads(request.json["params"]),
-                        env_vars=loads(request.json["env_vars"]),
-                        customization=loads(request.json["customization"]),
-                        cc_env_vars=loads(request.json["cc_env_vars"]))
+                        local_path='',
+                        entrypoint=args["entrypoint"],
+                        runner=args["runner"],
+                        reporting=loads(args["reporting"]),
+                        params=loads(args["params"]),
+                        env_vars=loads(args["env_vars"]),
+                        customization=loads(args["customization"]),
+                        cc_env_vars=loads(args["cc_env_vars"]))
         test.insert()
         return test.to_json(exclude_fields=("id",))

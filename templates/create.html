@@ -84,7 +84,7 @@
                         </div>
                     </div>
                 </div>
-                {{ template_slot("locations_content", payload={"regions": config.regions, "modal_id": "backend"}) | safe }}
+                {{ template_slot("locations_content", payload={"modal_id": "backend"}) | safe }}
                 {{ template_slot("params_table_content", payload={"caption": "Test Parameters", "modal_id": "backend"}) | safe }}
                 {% include 'backend_performance:reporting-config.html' %}
                 <div class="section">
@@ -165,37 +165,3 @@
         </div>
     </div>
 </div>
-
-<script>
-        $('#createTestModal').on('hide.bs.modal', function(e) {
-            $('#test_name').val("");
-            $("#test_name").prop("disabled", false);
-            $('#test_type').val("");
-            $('#test_env').val("");
-            $("#testrunners").show();
-            $("#compileTests").show();
-            $("#fileUpload").show();
-            $("#submit").removeClass("disabled");
-            $("#save").removeClass("disabled");
-            $('#backend_test_params').bootstrapTable('removeAll')
-            $('#submit').removeAttr('onclick');
-            $('#submit').attr('onClick', `createTest()`);
-            $('#save').removeAttr('onclick');
-            $('#save').attr('onClick', `createTest()`);
-            $("#entrypoint").prop("disabled", false);
-            $("#entrypoint").val("");
-            $('#backend_parallel').val("1");
-            $("#nav-git-https-tab").prop("disabled", false);
-            $("#nav-file-tab").prop("disabled", false);
-            $("#nav-git-tab").prop("disabled", false);
-            $('a[href="#nav-git"]').click();
-            $("#repo").val("");
-            $("#repo_branch").val("");
-            $("#repo_key").val("");
-            $("#repo_https").val("");
-            $("#repo_branch_https").val("");
-            $("#repo_user").val("");
-            $("#repo_pass").val("");
-            $("#tests-list").bootstrapTable('refresh');
-        });
-</script>

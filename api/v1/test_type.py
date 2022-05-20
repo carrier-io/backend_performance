@@ -2,7 +2,7 @@ from sqlalchemy import and_
 
 from flask_restful import Resource
 
-from ....security.models.api_tests import SecurityTestsDAST
+from ....security.models.tests import SecurityTestsDAST
 from ...models.api_tests import ApiTests
 
 

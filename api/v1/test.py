@@ -103,20 +103,19 @@ class API(Resource):
         event = list()
         execution = True if request.json['type'] and request.json["type"] == "config" else False
         event.append(task.configure_execution_json(output='cc',
-                                                   test_type=request.json.get("test_type"),
-                                                   params=loads(request.json.get("params", None)),
-                                                   env_vars=loads(request.json.get("env_vars", None)),
-                                                   reporting=request.json.get("reporter", None),
-                                                   customization=loads(request.json.get("customization", None)),
-                                                   cc_env_vars=loads(request.json.get("cc_env_vars", None)),
-                                                   parallel=request.json.get("parallel", None),
+                                                   test_type=None,
+                                                   params=loads(request.json.get("params", '[]')),
+                                                   env_vars=loads(request.json.get("env_vars", '{}')),
+                                                   reporting=request.json.get("reporter", []),
+                                                   customization=loads(request.json.get("customization", '{}')),
+                                                   cc_env_vars=loads(request.json.get("cc_env_vars", '{}')),
+                                                   parallel=int(request.json.get("parallel", 1)),
                                                    region=request.json.get("region", "default"),
                                                    execution=execution, emails=request.json.get("emails", None)))
         if request.json['type'] and request.json["type"] == "config":
             return event[0]
         for each in event:
             each["test_id"] = task.test_uid
-
         test_data = get_backend_test_data(event[0])
         report = APIReport(name=test_data["test_name"],
                            project_id=project.id,

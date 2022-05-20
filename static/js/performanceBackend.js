@@ -66,6 +66,7 @@ function createTest() {
           method: 'POST',
           success: function(data){
               $("#createTestModal").modal('hide');
+              $("#tests-list").bootstrapTable('refresh')
           }
         }
       );
@@ -383,8 +384,9 @@ function runTest(test_id) {
             'params': JSON.stringify(params),
             'env_vars': JSON.stringify(env_vars),
             'cc_env_vars': JSON.stringify(cc_env_vars),
-            'parallel': $('#runTest_parallel').val(),
-            'region': $('#runTest_region').val()
+            'parallel': $('#runner_parallel').val(),
+            "type": '',
+            'region': $('#runner_region').val()
         }
         $.ajax({
             url: `/api/v1/backend_performance/test/${getSelectedProjectId()}/${test_id}`,

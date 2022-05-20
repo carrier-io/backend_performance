@@ -111,10 +111,6 @@ class API(Resource):
         report.fourxx = test_data["4xx"]
         report.fivexx = test_data["5xx"]
         report.requests = ";".join(test_data["requests"])
-        print("***********************************")
-        print(args["test_status"])
-        print(type(args["test_status"]))
-        print("***********************************")
         report.test_status = args["test_status"]
         report.vusers = args["vusers"]
         report.duration = args["duration"]
@@ -124,8 +120,12 @@ class API(Resource):
     def delete(self, project_id: int):
         args = request.args
         project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
+        try:
+            delete_ids = list(map(int, request.args["id[]"].split(',')))
+        except TypeError:
+            return make_response('IDs must be integers', 400)
         query_result = APIReport.query.filter(
-            and_(APIReport.project_id == project.id, APIReport.id.in_(args["id[]"]))
+            and_(APIReport.project_id == project.id, APIReport.id.in_(delete_ids))
         ).all()
         for each in query_result:
             delete_test_data(each.build_id, each.name, each.lg_type)

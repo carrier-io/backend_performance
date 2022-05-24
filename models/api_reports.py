@@ -16,6 +16,8 @@ from sqlalchemy import String, Column, Integer, Float, Text, ARRAY, JSON
 
 from tools import db_tools, db
 
+from pylon.plugins.backend_performance.models.api_tests import PerformanceApiTest
+
 
 class APIReport(db_tools.AbstractBaseMixin, db.Base):
     __tablename__ = "performance_report_api"
@@ -69,8 +71,5 @@ class APIReport(db_tools.AbstractBaseMixin, db.Base):
 
     def insert(self):
         if not self.test_config:
-            from .api_tests import PerformanceApiTest
-            self.test_config = PerformanceApiTest.query.filter(
-                PerformanceApiTest.test_uid == self.test_uid
-            ).first().to_json()
+            self.test_config = PerformanceApiTest.query.get(self.test_id).to_json()
         super().insert()

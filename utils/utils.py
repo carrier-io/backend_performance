@@ -7,8 +7,10 @@ from datetime import datetime
 from uuid import uuid4
 
 from ..constants import JOB_CONTAINER_MAPPING, JOB_TYPE_MAPPING
-from ...projects.models.statistics import Statistic
+# from ...projects.models.statistics import Statistic
 from tools import task_tools
+
+from ..models.api_tests import PerformanceApiTest
 
 
 def compile_tests(project_id, file_name, runner):
@@ -21,15 +23,15 @@ def compile_tests(project_id, file_name, runner):
     client.containers.run(container_name, stderr=True, remove=True, environment=env_vars, tty=True, user='0:0')
 
 
-def exec_test(project_id, event):
-    response = task_tools.run_task(project_id, event)
-    response["redirect"] = f"/task/{response['task_id']}/results"
-
-    statistic = Statistic.query.filter_by(project_id=project_id).first()
-    statistic.performance_test_runs += 1
-    statistic.commit()
-
-    return response
+# def exec_test(project_id, event):
+#     response = task_tools.run_task(project_id, event)
+#     response["redirect"] = f"/task/{response['task_id']}/results"
+#
+#     statistic = Statistic.query.filter_by(project_id=project_id).first()
+#     statistic.performance_test_runs += 1
+#     statistic.commit()
+#
+#     return response
 
 
 def get_backend_test_data(event):
@@ -84,23 +86,81 @@ def _calculate_limit(limit, total):
     return len(total) if limit == 'All' else limit
 
 
-def get(project, args, data_model, additional_filter=None):
-    limit_ = args.get("limit")
-    offset_ = args.get("offset")
-    if args.get("sort"):
-        sort_rule = getattr(getattr(data_model, args["sort"]), args["order"])()
-    else:
-        sort_rule = data_model.id.desc()
-    filter_ = list()
-    filter_.append(operator.eq(data_model.project_id, project.id))
-    if additional_filter:
-        for key, value in additional_filter.items():
-            filter_.append(operator.eq(getattr(data_model, key), value))
-    if args.get('filter'):
-        for key, value in loads(args.get("filter")).items():
-            filter_.append(operator.eq(getattr(data_model, key), value))
-    filter_ = and_(*tuple(filter_))
-    total = data_model.query.order_by(sort_rule).filter(filter_).count()
-    res = data_model.query.filter(filter_).order_by(sort_rule).limit(
-        _calculate_limit(limit_, total)).offset(offset_).all()
-    return total, res
+# def get(project, args, data_model, additional_filter=None):
+#     limit_ = args.get("limit")
+#     offset_ = args.get("offset")
+#     if args.get("sort"):
+#         sort_rule = getattr(getattr(data_model, args["sort"]), args["order"])()
+#     else:
+#         sort_rule = data_model.id.desc()
+#     filter_ = list()
+#     filter_.append(operator.eq(data_model.project_id, project.id))
+#     if additional_filter:
+#         for key, value in additional_filter.items():
+#             filter_.append(operator.eq(getattr(data_model, key), value))
+#     if args.get('filter'):
+#         for key, value in loads(args.get("filter")).items():
+#             filter_.append(operator.eq(getattr(data_model, key), value))
+#     filter_ = and_(*tuple(filter_))
+#     total = data_model.query.order_by(sort_rule).filter(filter_).count()
+#     res = data_model.query.filter(filter_).order_by(sort_rule).limit(
+#         _calculate_limit(limit_, total)).offset(offset_).all()
+#     return total, res
+
+
+def run_test(test: PerformanceApiTest, config_only=False) -> dict:
+
+    event = [test.configure_execution_json(
+        output='cc',
+        test_type=None,
+        params=loads(request.json.get("params", '[]')),
+        env_vars=loads(request.json.get("env_vars", '{}')),
+        reporting=request.json.get("reporter", []),
+        customization=loads(request.json.get("customization", '{}')),
+        cc_env_vars=loads(request.json.get("cc_env_vars", '{}')),
+        parallel=int(request.json.get("parallel", 1)),
+        region=request.json.get("region", "default"),
+        execution=execution,
+        emails=request.json.get("emails", None)
+    )]
+
+    if config_only:
+        return event[0]
+
+    ### diff from security ###
+    for e in event:
+        e["test_id"] = test.test_uid
+
+    test_data = get_backend_test_data(event[0])
+    report = APIReport(
+        name=test_data["test_name"],
+        project_id=test.project_id,
+        environment=test_data["environment"],
+        type=test_data["type"],
+        end_time="",
+        start_time=test_data["start_time"],
+        failures=0,
+        total=0,
+        thresholds_missed=0,
+        throughput=0,
+        vusers=test_data["vusers"],
+        pct50=0, pct75=0, pct90=0, pct95=0, pct99=0,
+        _max=0, _min=0, mean=0,
+        duration=test_data["duration"],
+        build_id=test_data["build_id"],
+        lg_type=test_data["lg_type"],
+        onexx=0, twoxx=0, threexx=0, fourxx=0, fivexx=0,
+        requests="",
+        test_uid=test.test_uid
+    )
+    report.insert()
+    event[0]["cc_env_vars"]["REPORT_ID"] = str(report.id)
+    event[0]["cc_env_vars"]["build_id"] = test_data["build_id"]
+
+    resp = task_tools.run_task(test.project_id, event)
+    resp['redirect'] = f'/task/{resp["task_id"]}/results'  # todo: where this should lead to?
+
+    test.rpc.call.increment_statistics(test.project_id, 'performance_test_runs')
+
+    # resp['result_id'] = security_results.id
+    return resp

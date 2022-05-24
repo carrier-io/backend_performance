@@ -1,1 +1,2 @@
 docker==5.0.0
+pydantic

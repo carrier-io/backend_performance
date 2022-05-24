@@ -5,9 +5,11 @@ from typing import Union
 
 from flask import request, make_response
 from flask_restful import Resource
-from ...models.api_tests import ApiTests
+
+from tools import api_tools
+from ...models.api_tests import PerformanceApiTest
 from ...models.api_reports import APIReport
-from ...utils.utils import exec_test, get_backend_test_data
+from ...utils.utils import exec_test, get_backend_test_data, run_test
 
 
 class API(Resource):
@@ -91,62 +93,23 @@ class API(Resource):
                              "influx.db", "comparison_db", "telegraf_db",
                              "loki_host", "loki_port", "influx.username", "influx.password"])
 
-    def post(self, project_id, test_id):
-        project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
-        if isinstance(test_id, int):
-            _filter = and_(ApiTests.project_id == project.id, ApiTests.id == test_id)
-        else:
-            _filter = and_(ApiTests.project_id == project.id, ApiTests.test_uid == test_id)
-        task = ApiTests.query.filter(_filter).first()
-        event = list()
-        execution = True if request.json['type'] and request.json["type"] == "config" else False
-        event.append(task.configure_execution_json(output='cc',
-                                                   test_type=None,
-                                                   params=loads(request.json.get("params", '[]')),
-                                                   env_vars=loads(request.json.get("env_vars", '{}')),
-                                                   reporting=request.json.get("reporter", []),
-                                                   customization=loads(request.json.get("customization", '{}')),
-                                                   cc_env_vars=loads(request.json.get("cc_env_vars", '{}')),
-                                                   parallel=int(request.json.get("parallel", 1)),
-                                                   region=request.json.get("region", "default"),
-                                                   execution=execution, emails=request.json.get("emails", None)))
-        if request.json['type'] and request.json["type"] == "config":
-            return event[0]
-        for each in event:
-            each["test_id"] = task.test_uid
-        test_data = get_backend_test_data(event[0])
-        report = APIReport(name=test_data["test_name"],
-                           project_id=project.id,
-                           environment=test_data["environment"],
-                           type=test_data["type"],
-                           end_time="",
-                           start_time=test_data["start_time"],
-                           failures=0,
-                           total=0,
-                           thresholds_missed=0,
-                           throughput=0,
-                           vusers=test_data["vusers"],
-                           pct50=0,
-                           pct75=0,
-                           pct90=0,
-                           pct95=0,
-                           pct99=0,
-                           _max=0,
-                           _min=0,
-                           mean=0,
-                           duration=test_data["duration"],
-                           build_id=test_data["build_id"],
-                           lg_type=test_data["lg_type"],
-                           onexx=0,
-                           twoxx=0,
-                           threexx=0,
-                           fourxx=0,
-                           fivexx=0,
-                           requests="",
-                           test_uid=task.test_uid)
-        report.insert()
-        event[0]["cc_env_vars"]["REPORT_ID"] = str(report.id)
-        event[0]["cc_env_vars"]["build_id"] = test_data["build_id"]
-        response = exec_test(project.id, event)
-        response["redirect"] = f'/task/{response["task_id"]}/results'
-        return response
+
+    def post(self, project_id: int, test_id: Union[int, str]):
+        """ Run test """
+        test = PerformanceApiTest.query.filter(
+            PerformanceApiTest.get_api_filter(project_id, test_id)
+        ).first()
+        resp = run_test(test, config_only=request.json.get('type', False))
+        return resp, resp.get('code', 200)
+
+    # def post(self, project_id, test_id):
+        # project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
+        # if isinstance(test_id, int):
+        #     _filter = and_(ApiTests.project_id == project.id, ApiTests.id == test_id)
+        # else:
+        #     _filter = and_(ApiTests.project_id == project.id, ApiTests.test_uid == test_id)
+        # task = ApiTests.query.filter(_filter).first()
+
+
+
+

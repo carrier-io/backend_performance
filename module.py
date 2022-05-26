@@ -127,11 +127,11 @@ class Module(module.ModuleModel):
         )
 
         theme.register_page(
-            "performance", "results",
-            "Results",
+            "performance", "backend",
+            "results",
             title="Test Results",
             kind="slot",
-            prefix="backend_performance_results_",
+            prefix="results_",
         )
 
         # security_app_styles

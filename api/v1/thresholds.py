@@ -1,5 +1,4 @@
 from sqlalchemy import and_
-
 from flask import request, make_response
 from flask_restful import Resource
 from ...models.api_thresholds import APIThresholds
@@ -40,7 +39,7 @@ class API(Resource):
 
     def delete(self, project_id: int):
         project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
-        args = request.json
+        args = request.args
         APIThresholds.query.filter().filter(
             and_(APIThresholds.project_id == project.id,
                  APIThresholds.test == args.get("test"),

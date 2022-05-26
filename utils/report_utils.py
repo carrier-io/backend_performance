@@ -155,6 +155,6 @@ def calculate_proper_timeframe(build_id, test_name, lg_type, low_value, high_val
     t_format = "%Y-%m-%dT%H:%M:%S.000Z"
     start_time = datetime.fromtimestamp(start_time).strftime(t_format)
     end_time = datetime.fromtimestamp(end_time).strftime(t_format)
-    if aggregation == 'auto':
+    if aggregation == 'auto' and build_id:
         aggregation = calculate_auto_aggregation(build_id, test_name, lg_type, start_time, end_time)
     return start_time, end_time, aggregation

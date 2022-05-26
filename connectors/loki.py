@@ -14,10 +14,17 @@
 
 from requests import get
 from ...shared.tools.constants import LOKI_HOST
+from pylon.core.tools import web, log
 
 
 def get_results(test, int_start_time, int_end_time):
     url = f"{LOKI_HOST}/loki/api/v1/query_range"
+    log.info("**********************************************************")
+    log.info("LOKI here")
+    log.info(test)
+    log.info(int_start_time)
+    log.info(int_end_time)
+
 
     data = {
         "direction": "BACKWARD",
@@ -26,7 +33,11 @@ def get_results(test, int_start_time, int_end_time):
         "start": int_start_time,
         "end": int_end_time
     }
+    log.info(data)
+    log.info(get(url, params=data, headers={"Content-Type": "application/json"}).text)
+    log.info("**********************************************************")
     results = get(url, params=data, headers={"Content-Type": "application/json"}).json()
+    log.info(f"RESULTS --> {results}")
     issues = {}
     for result in results["data"]["result"]:
         for value in result['values']:

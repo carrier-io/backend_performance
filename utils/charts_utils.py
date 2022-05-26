@@ -6,15 +6,18 @@ from ..connectors.influx import (get_backend_requests, get_hits_tps, average_res
 from ..connectors.loki import get_results
 from .report_utils import calculate_proper_timeframe, chart_data, create_dataset, comparison_data
 from ...shared.tools.constants import str_to_timestamp
+from pylon.core.tools import web, log
 
 
 def _timeframe(args, time_as_ts=False):
+    log.info(f"args {args}")
     end_time = args['end_time']
     high_value = args.get('high_value', 100)
     if not end_time:
         end_time = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
         high_value = 100
-    return calculate_proper_timeframe(args['build_id'], args['test_name'], args['lg_type'], args.get('low_value', 0),
+    return calculate_proper_timeframe(args.get('build_id', None), args['test_name'], args.get('lg_type', None),
+                                      args.get('low_value', 0),
                                       high_value, args['start_time'], end_time, args.get('aggregator', 'auto'),
                                       time_as_ts=time_as_ts)
 
@@ -64,7 +67,9 @@ def summary_table(args):
 
 
 def get_issues(args):
+    log.info("get_issues --------------------------------")
     start_time, end_time, aggregation = _timeframe(args, time_as_ts=True)
+    log.info(f"start_time, end_time, aggregation ---> {start_time}, {end_time}, {aggregation}")
     return list(get_results(args['test_name'], start_time, end_time).values())
 
 

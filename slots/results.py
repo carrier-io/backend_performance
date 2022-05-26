@@ -1,0 +1,50 @@
+from pylon.core.tools import web, log  # pylint: disable=E0611,E0401
+from tools import auth, theme  # pylint: disable=E0401
+from ..connectors.influx import get_sampler_types
+from ..models.api_reports import APIReport
+
+
+class Slot:  # pylint: disable=E1101,R0903
+    @web.slot('results_content')
+    def content(self, context, slot, payload):
+        log.info('slot: [%s] || payload: [%s]', slot, payload)
+        log.info('payload request args: [%s]', payload.request.args)
+        result_id = payload.request.args.get('result_id')
+        if result_id:
+            test_data = APIReport.query.get_or_404(result_id).to_json()
+            try:
+                test_data["failure_rate"] = round((test_data["failures"] / test_data["total"]) * 100, 2)
+            except:
+                test_data["failure_rate"] = 0
+
+            # TODO set tags in model
+            test_data["tags"] = []
+            test_data["samplers"] = get_sampler_types(test_data["project_id"], test_data["build_id"],
+                                                      test_data["name"], test_data["lg_type"])
+            log.info("*****************************")
+            log.info(test_data)
+            log.info("*****************************")
+            with context.app.app_context():
+                return self.descriptor.render_template(
+                    'results/content.html',
+                    test_data=test_data
+                )
+        return theme.empty_content
+
+    @web.slot('results_scripts')
+    def scripts(self, context, slot, payload):
+        from pylon.core.tools import log
+        log.info('slot: [%s], payload: %s', slot, payload)
+        with context.app.app_context():
+            return self.descriptor.render_template(
+                'results/scripts.html',
+            )
+
+    @web.slot('results_styles')
+    def styles(self, context, slot, payload):
+        from pylon.core.tools import log
+        log.info('slot: [%s], payload: %s', slot, payload)
+        with context.app.app_context():
+            return self.descriptor.render_template(
+                'results/styles.html',
+            )

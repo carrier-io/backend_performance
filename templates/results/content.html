@@ -1,0 +1,398 @@
+<meta property="build_id" content="{{ test_data['build_id'] }}"/>
+<meta property="test_id" content="{{ test_data['id'] }}"/>
+<meta property="lg_type" content="{{ test_data['lg_type'] }}"/>
+<meta property="test_name" content="{{ test_data['name'] }}"/>
+<meta property="environment" content="{{ test_data['environment'] }}"/>
+
+<!--<div class="container" id="test_results">-->
+<div class="card card-12">
+    <div class="card-header">
+        <div class="row">
+            <div class="col-4">
+                <h2><a id="back-button" href="?chapter=Performance&module=Backend&page=list"><i
+                        class="fas fa-arrow-left"></i></a>{{
+                    test_data["name"] }} (back)</h2>
+            </div>
+            <div class="col-8">
+                <div class="d-flex justify-content-end">
+                    <button type="button" class="btn btn-24 btn-secondary" onclick="rerunTest()"
+                            data-toggle="tooltip" data-placement="top" title="Rerun Test"><i class="fas fa-play"></i>
+                    </button>
+                    <button type="button" class="btn btn-24 btn-secondary" onclick="downloadReport()"
+                            data-toggle="tooltip" data-placement="top" title="Download report"><i
+                            class="fas fa-file-download"></i></button>
+                    <button type="button" class="btn btn-24 btn-secondary" onclick="shareTestReport()"
+                            data-toggle="tooltip" data-placement="top" title="Share report"><i
+                            class="fas fa-share-alt"></i></button>
+                    <button class="btn btn-sm btn-secondary" id="set_baseline" onclick="setBaseline()"
+                            data-toggle="tooltip" data-placement="top" title="Set current report as baseline">
+                        Set as baseline
+                    </button>
+                    <button class="btn btn-sm btn-secondary" id="compare_with_baseline" onclick="compareWithBaseline()"
+                            data-toggle="tooltip" data-placement="top" title="Compare current report with baseline">
+                        Compare with baseline
+                    </button>
+                    <button class="btn btn-sm btn-secondary" id="not_worse_than" onclick="setThresholds()"
+                            data-toggle="tooltip" data-placement="top" title="Set current report as thresholds">
+                        Not worse than
+                    </button>
+                    <button class="btn btn-sm btn-secondary" id="config-test" onclick="showConfig()"
+                            data-toggle="tooltip" data-placement="top" title="Show config for current test run">
+                        Show config
+                    </button>
+                    {% if test_data['test_status']['status'].lower() not in ['finished', 'error', 'failed',
+                    'success'] %}
+                    <button class="btn btn-sm btn-danger" id="stop-test" onclick="stopTest()">
+                        Stop test
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card-body" id="progressbar-body">
+        {% if test_data['test_status']['status'].lower() not in ['finished', 'error', 'failed', 'success'] %}
+        <div class="card-body p-4 m-4 space-progress">
+            <div class="row justify-content-center">
+                <div class="col-12 text-center">
+                    <h4 id="test_status_status">
+                        {{ test_data['test_status']['status'] }}
+                    </h4>
+                </div>
+                <div class="col-6">
+                    <div class="progress">
+                        <div
+                                class="progress-bar progress-bar-striped bg-success progress-bar-animated"
+                                role="progressbar"
+                                aria-valuenow="{{ test_data['test_status']['percentage'] }}"
+                                style="width: {{ test_data['test_status']['percentage'] }}%"
+                                aria-valuemin="0"
+                                aria-valuemax="100"
+                        >
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 text-center m-2 p-2">
+                    <h12 class="test_status_description">
+                        {{ test_data['test_status']['description'] }}
+                    </h12>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    <div class="card-body" id="backend-small-cards">
+        <div class="row">
+            <div class="col">
+                <div class="card card-sm card-green">
+                    <div class="card-header">{{ test_data["vusers"] }} VU</div>
+                    <div class="card-body">MAX VUSERS</div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card card-sm card-blue">
+                    <div class="card-header">{{ test_data["throughput"] }} req/sec</div>
+                    <div class="card-body">AVG.THROUGHPUT</div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card card-sm card-red">
+                    <div class="card-header">{{ test_data["failure_rate"] }} %</div>
+                    <div class="card-body">ERROR RATE</div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card card-sm card-azure">
+                    <div class="card-header">{{ test_data["pct95"] }} ms</div>
+                    <div class="card-body">95 PCT. RESP. TIME</div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="card card-sm card-magento">
+                    <div class="card-header">{{ test_data["pct50"] }} ms</div>
+                    <div class="card-body">MEDIAN RESP. TIME</div>
+                </div>
+            </div>
+        </div>
+        <div class="row" id="processing-table">
+            <div class="col">
+                <div class="card card-sm-table">
+                    <div class="card-body">
+                        <table>
+                            <tr>
+                                <td>Status</td>
+                                <td>{{ test_data["status"] }}</td>
+                                <td>STARTED</td>
+                                <td id="start_time">{{ test_data["start_time"] }}</td>
+                                <td>TEST TYPE</td>
+                                <td>{{ test_data["type"] }}</td>
+                                <td>RESPONSE CODES</td>
+                                <td>1xx: {{ test_data["onexx"] }} 2xx: {{ test_data["twoxx"] }} 3xx:
+                                    {{ test_data["threexx"] }} 4xx: {{ test_data["fourxx"] }} 5xx:
+                                    {{ test_data["fivexx"] }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>DURATION</td>
+                                <td>{{ test_data["duration"] }}</td>
+                                <td>ENDED</td>
+                                <td id="end_time">{{ test_data["end_time"] }}</td>
+                                <td>Environment</td>
+                                <td>{{ test_data["environment"] }}</td>
+                                <td>tags</td>
+                                <td>
+                                    {% for tag in test_data["tags"] %}
+                                    <span class="badge badge-primary">{{ tag }}</span>
+                                    {% endfor %}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card card-12">
+    <div class="card-header bg-transparent">
+        <div class="row align-items-center">
+
+            <div class="col-4">
+                <h3 class="text-gray mb-0">Requests summary</h3>
+            </div>
+
+            <div class="col-xl-8">
+                <ul id="chart-control" class="nav justify-content-end">
+                    <li class="nav-item mr-2 mr-md-0">
+                        <select class="selectpicker" data-style="btn"
+                                id="aggregator"
+                                onchange="switchAggregator()">
+                            <option>auto</option>
+                            <option>1s</option>
+                            <option>5s</option>
+                            <option>30s</option>
+                            <option>1m</option>
+                            <option>5m</option>
+                            <option>10m</option>
+                        </select>
+                    </li>
+                    <li class="nav-item mr-2 mr-md-0">
+                        <select class="selectpicker" data-style="btn" id="status"
+                                onchange="switchStatus()">
+                            <option>all</option>
+                            <option>ok</option>
+                            <option>ko</option>
+                        </select>
+                    </li>
+                    <li class="nav-item mr-2 mr-md-0">
+                        <select class="selectpicker" data-style="btn"
+                                id="sampler"
+                                onchange="switchSampler()">
+                            {% for sampler in test_data['samplers'] %}
+                            <option>{{ sampler }}</option>
+                            {% endfor %}
+                        </select>
+                    </li>
+
+                    <nav class="striped nav nav-tabs source-selector">
+                        <a id="RT"
+                           onclick="loadRequestData('/api/v1/backend_performance/charts/requests/summary', 'Response time, ms')"
+                           class="nav-item nav-link active" data-toggle="tab">Responses
+                        </a>
+                        <a id="AR"
+                           onclick="loadRequestData('/api/v1/backend_performance/charts/requests/average', 'Response time, ms')"
+                           class="nav-item nav-link" data-toggle="tab">Average Response
+                        </a>
+                        <a id="HT"
+                           onclick="loadRequestData('/api/v1/backend_performance/charts/requests/hits', 'Hits/Requests per second')"
+                           class="nav-item nav-link" data-toggle="tab">TPS
+                        </a>
+                        <a id="AN" onclick="displayAnalytics()" class="nav-item nav-link"
+                           data-toggle="tab">Analytics
+                        </a>
+                    </nav>
+                    <button type="button" id="DW" onclick="downloadPic()" class="btn btn-secondary btn-32"><i
+                            class="fas fa-download"></i></button>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="card-body" id="preset">
+        <!-- Chart -->
+        <div class="float-left" style="width:100%;">
+            <div class="chart float-left" style="width:75%;">
+                <div class="chartjs-size-monitor">
+                    <div class="chartjs-size-monitor-expand">
+                        <div class="">
+                        </div>
+                    </div>
+                    <div class="chartjs-size-monitor-shrink">
+                        <div class=""></div>
+                    </div>
+                </div>
+                <canvas id="chart-requests" class="chart-canvas chartjs-render-monitor"
+                        style="display: block; height: 450px; width: 100%;"></canvas>
+
+            </div>
+            <div class="float-left" style="width:25%;">
+                <div class="d-flex flex-column mx-2">
+                    <label
+                            class="mb-0 w-100 d-flex align-items-center custom-checkbox custom-checkbox__multicolor"
+                            for="all_checkbox">
+                        <input
+                                class="mx-2"
+                                checked="true" id="all_checkbox" onclick="selectOrUnselectRequests()"
+                                style="--cbx-color: var(--yellow);"
+                                type="checkbox">
+                        <span class="w-100 d-inline-block">Select/Unselect all</span>
+                    </label>
+                </div>
+                <br>
+                <div id="chartjs-custom-legend" class="custom-chart-legend d-flex flex-column mx-2"></div>
+            </div>
+        </div>
+<!--        <div class="col" style="width:75%;">-->
+<!--            <h6>Time Picker</h6>-->
+<!--            <div>-->
+<!--                <div class="row mt-4">-->
+<!--                    <div class="col tab-content">-->
+<!--                        <div class="w-100">-->
+<!--                            <div class="mt-3 slider-holder">-->
+<!--                                <div id="vuh-time-picker"></div>-->
+<!--                            </div>-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                </div>-->
+                <!--                <div id="input-slider-range" data-range-value-min="0" data-range-value-max="100"></div>-->
+                <!--                <div class="row d-none">-->
+                <!--                    <div class="col-6">-->
+                <!--                            <span class="range-slider-value value-low" data-range-value-low="0"-->
+                <!--                                  id="input-slider-range-value-low"></span>-->
+                <!--                    </div>-->
+                <!--                    <div class="col-6 text-right">-->
+                <!--                            <span class="range-slider-value value-high" data-range-value-high="100"-->
+                <!--                                  id="input-slider-range-value-high"></span>-->
+                <!--                    </div>-->
+                <!--                </div>-->
+<!--            </div>-->
+<!--        </div>-->
+
+    </div>
+    <!--    <div class="card-body" id="analytics">-->
+    <!--        &lt;!&ndash; Chart &ndash;&gt;-->
+    <!--        <div class="row">-->
+    <!--            <div class="col-md-9">-->
+    <!--                <div class="chart">-->
+    <!--                    <div class="chartjs-size-monitor">-->
+    <!--                        <div class="chartjs-size-monitor-expand">-->
+    <!--                            <div class="">-->
+    <!--                            </div>-->
+    <!--                        </div>-->
+    <!--                        <div class="chartjs-size-monitor-shrink">-->
+    <!--                            <div class=""></div>-->
+    <!--                        </div>-->
+    <!--                    </div>-->
+    <!--                    <canvas id="chart-analytics" class="chart-canvas chartjs-render-monitor"-->
+    <!--                            style="display: block; height: 450px; width: 100%;"></canvas>-->
+    <!--                </div>-->
+    <!--            </div>-->
+    <!--            <div class="col-md-3">-->
+    <!--                <h4> Metrics </h4>-->
+    <!--                <div class="pre-scrollable pr-3">-->
+    <!--                    {% for chapter in analytics_control %}-->
+    <!--                    <div class="card mb-3">-->
+    <!--                        <div class="card-body">-->
+    <!--                            <h5 class="card-title">{{ chapter }}</h5>-->
+    <!--                            <div class="row">-->
+    <!--                                {% for item in analytics_control[chapter] %}-->
+    <!--                                <div class="col-md-6">-->
+    <!--                                    <div class="custom-control custom-control-alternative custom-checkbox mb-3">-->
+    <!--                                        <input class="custom-control-input" id="{{chapter}}_{{item}}"-->
+    <!--                                               type="checkbox"-->
+    <!--                                               onchange="{{ analytics_control[chapter][item] }}">-->
+    <!--                                        <label class="custom-control-label"-->
+    <!--                                               for="{{chapter}}_{{item}}">{{item}}</label>-->
+    <!--                                    </div>-->
+    <!--                                </div>-->
+    <!--                                {% endfor %}-->
+    <!--                            </div>-->
+    <!--                        </div>-->
+    <!--                    </div>-->
+    <!--                    {% endfor %}-->
+    <!--                </div>-->
+    <!--            </div>-->
+    <!--        </div>-->
+    <!--    </div>-->
+</div>
+
+<div class="card card-12 card-table">
+    <div class="card-header">
+        <div class="row">
+            <div class="col-4">
+                <h3 class="text-gray mb-0">Summary</h3>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <table class="table table-border"
+               id="summary_table"
+               data-toggle="table"
+               data-page-size=10
+               data-pagination="true"
+               data-pagination-parts='["pageInfoShort", "pageList"]'>
+            <thead class="thead-light">
+            <tr>
+                <th scope="col" data-sortable="true" data-field="request_name">Name</th>
+                <th scope="col" data-sortable="true" data-field="total">Ttl req, count</th>
+                <th scope="col" data-sortable="true" data-field="throughput">Thrghpt, req/sec</th>
+                <th scope="col" data-sortable="true" data-field="ko">Errors, count</th>
+                <th scope="col" data-sortable="true" data-field="min">Min, ms</th>
+                <th scope="col" data-sortable="true" data-field="mean">Median, ms</th>
+                <th scope="col" data-sortable="true" data-field="pct95">Pct95, ms</th>
+                <th scope="col" data-sortable="true" data-field="max">Max, ms</th>
+            </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+</div>
+</div>
+
+
+<div class="card card-12 card-table">
+    <div class="card-header">
+        <div class="row">
+            <div class="col-4">
+                <h3 class="text-gray mb-0">Errors</h3>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <table class="table table-border"
+               id="errors"
+               data-toggle="table"
+               data-url=""
+               data-page-size=10
+               data-pagination="true"
+               data-pagination-parts='["pageInfoShort", "pageList"]'
+               data-detail-view="true"
+               data-detail-view-icon="false"
+               data-detail-view-by-click="true"
+               data-detail-formatter="detailFormatter">
+            <thead class="thead-light">
+            <tr>
+                <th data-sortable="true" data-field="Request name">Request name</th>
+                <th data-sortable="true" data-field="URL">URL</th>
+                <th data-sortable="true" data-field="Response code">Response Code</th>
+                <th data-sortable="true" data-field="Error message">Error Message</th>
+                <th data-sortable="true" data-field="count">Count</th>
+            </tr>
+            </thead>
+        </table>
+    </div>
+</div>
+
+
+<!--</div>-->

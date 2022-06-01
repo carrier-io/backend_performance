@@ -9,40 +9,33 @@
     <div class="card-header">
         <div class="row">
             <div class="col-4">
-                <h2><a id="back-button" href="?chapter=Performance&module=Backend&page=list"><i
+                <h2><a id="back-button" href="/-/performance/backend"><i
                         class="fas fa-arrow-left"></i></a>{{
                     test_data["name"] }} (back)</h2>
             </div>
             <div class="col-8">
                 <div class="d-flex justify-content-end">
-                    <button type="button" class="btn btn-24 btn-secondary" onclick="rerunTest()"
+                    <button type="button" class="btn btn-secondary" onclick="rerunTest()"
                             data-toggle="tooltip" data-placement="top" title="Rerun Test"><i class="fas fa-play"></i>
                     </button>
-                    <button type="button" class="btn btn-24 btn-secondary" onclick="downloadReport()"
+                    <button type="button" class="btn btn-secondary mx-2" onclick="downloadReport()"
                             data-toggle="tooltip" data-placement="top" title="Download report"><i
                             class="fas fa-file-download"></i></button>
-                    <button type="button" class="btn btn-24 btn-secondary" onclick="shareTestReport()"
-                            data-toggle="tooltip" data-placement="top" title="Share report"><i
-                            class="fas fa-share-alt"></i></button>
-                    <button class="btn btn-sm btn-secondary" id="set_baseline" onclick="setBaseline()"
+                    <button class="btn btn-secondary" id="set_baseline" onclick="setBaseline()"
                             data-toggle="tooltip" data-placement="top" title="Set current report as baseline">
                         Set as baseline
                     </button>
-                    <button class="btn btn-sm btn-secondary" id="compare_with_baseline" onclick="compareWithBaseline()"
-                            data-toggle="tooltip" data-placement="top" title="Compare current report with baseline">
-                        Compare with baseline
-                    </button>
-                    <button class="btn btn-sm btn-secondary" id="not_worse_than" onclick="setThresholds()"
+                    <button class="btn btn-secondary mx-2" id="not_worse_than" onclick="setThresholds()"
                             data-toggle="tooltip" data-placement="top" title="Set current report as thresholds">
-                        Not worse than
+                        Set as threshold
                     </button>
-                    <button class="btn btn-sm btn-secondary" id="config-test" onclick="showConfig()"
+                    <button class="btn btn-secondary" id="config-test" onclick="showConfig()"
                             data-toggle="tooltip" data-placement="top" title="Show config for current test run">
                         Show config
                     </button>
                     {% if test_data['test_status']['status'].lower() not in ['finished', 'error', 'failed',
                     'success'] %}
-                    <button class="btn btn-sm btn-danger" id="stop-test" onclick="stopTest()">
+                    <button class="btn btn-danger mx-2" id="stop-test" onclick="stopTest()">
                         Stop test
                     </button>
                     {% endif %}
@@ -120,26 +113,26 @@
                     <div class="card-body">
                         <table>
                             <tr>
-                                <td>Status</td>
-                                <td>{{ test_data["status"] }}</td>
-                                <td>STARTED</td>
+                                <td class="text-gray-500">Status</td>
+                                <td>{{ test_data['test_status']['status'] }}</td>
+                                <td class="text-gray-500">STARTED</td>
                                 <td id="start_time">{{ test_data["start_time"] }}</td>
-                                <td>TEST TYPE</td>
+                                <td class="text-gray-500">TEST TYPE</td>
                                 <td>{{ test_data["type"] }}</td>
-                                <td>RESPONSE CODES</td>
+                                <td class="text-gray-500">RESPONSE CODES</td>
                                 <td>1xx: {{ test_data["onexx"] }} 2xx: {{ test_data["twoxx"] }} 3xx:
                                     {{ test_data["threexx"] }} 4xx: {{ test_data["fourxx"] }} 5xx:
                                     {{ test_data["fivexx"] }}
                                 </td>
                             </tr>
                             <tr>
-                                <td>DURATION</td>
+                                <td class="text-gray-500">DURATION</td>
                                 <td>{{ test_data["duration"] }}</td>
-                                <td>ENDED</td>
+                                <td class="text-gray-500">ENDED</td>
                                 <td id="end_time">{{ test_data["end_time"] }}</td>
-                                <td>Environment</td>
+                                <td class="text-gray-500">Environment</td>
                                 <td>{{ test_data["environment"] }}</td>
-                                <td>tags</td>
+                                <td class="text-gray-500">tags</td>
                                 <td>
                                     {% for tag in test_data["tags"] %}
                                     <span class="badge badge-primary">{{ tag }}</span>
@@ -151,12 +144,21 @@
                 </div>
             </div>
         </div>
+        <div class="row">
+            <div class="col-12 d-flex align-items-center mt-4" id="dropdowns">
+                <p class="mb-0 font-h6 text-gray-500 font-semibold">LOAD CONFIG</p>
+                <multiselect-filter :title="'Carrier default'">
+                </multiselect-filter>
+                <multiselect-filter :title="'Custom location'">
+                </multiselect-filter>
+            </div>
+        </div>
     </div>
 </div>
 
 <div class="card card-12">
-    <div class="card-header bg-transparent">
-        <div class="row align-items-center">
+    <div class="card-header">
+        <div class="row">
 
             <div class="col-4">
                 <h3 class="text-gray mb-0">Requests summary</h3>
@@ -235,48 +237,48 @@
                         style="display: block; height: 450px; width: 100%;"></canvas>
 
             </div>
-            <div class="float-left" style="width:25%;">
-                <div class="d-flex flex-column mx-2">
+            <div class="card" style="width:25%;">
+                <div class="d-flex flex-column p-3">
                     <label
                             class="mb-0 w-100 d-flex align-items-center custom-checkbox custom-checkbox__multicolor"
                             for="all_checkbox">
                         <input
-                                class="mx-2"
+                                class="mx-2 custom__checkbox"
                                 checked="true" id="all_checkbox" onclick="selectOrUnselectRequests()"
-                                style="--cbx-color: var(--yellow);"
+                                style="--cbx-color: var(--basic);"
                                 type="checkbox">
                         <span class="w-100 d-inline-block">Select/Unselect all</span>
                     </label>
                 </div>
-                <br>
-                <div id="chartjs-custom-legend" class="custom-chart-legend d-flex flex-column mx-2"></div>
+                <hr class="my-0">
+                <div id="chartjs-custom-legend" class="custom-chart-legend d-flex flex-column px-3 py-3"></div>
             </div>
         </div>
-<!--        <div class="col" style="width:75%;">-->
-<!--            <h6>Time Picker</h6>-->
-<!--            <div>-->
-<!--                <div class="row mt-4">-->
-<!--                    <div class="col tab-content">-->
-<!--                        <div class="w-100">-->
-<!--                            <div class="mt-3 slider-holder">-->
-<!--                                <div id="vuh-time-picker"></div>-->
-<!--                            </div>-->
-<!--                        </div>-->
-<!--                    </div>-->
-<!--                </div>-->
-                <!--                <div id="input-slider-range" data-range-value-min="0" data-range-value-max="100"></div>-->
-                <!--                <div class="row d-none">-->
-                <!--                    <div class="col-6">-->
-                <!--                            <span class="range-slider-value value-low" data-range-value-low="0"-->
-                <!--                                  id="input-slider-range-value-low"></span>-->
-                <!--                    </div>-->
-                <!--                    <div class="col-6 text-right">-->
-                <!--                            <span class="range-slider-value value-high" data-range-value-high="100"-->
-                <!--                                  id="input-slider-range-value-high"></span>-->
-                <!--                    </div>-->
-                <!--                </div>-->
-<!--            </div>-->
-<!--        </div>-->
+        <div class="col" style="width:75%;">
+            <h6>Time Picker</h6>
+            <div>
+                <div class="row mt-4">
+                    <div class="col tab-content">
+                        <div class="w-100">
+                            <div class="mt-3 slider-holder">
+                                <div id="vuh-time-picker"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="input-slider-range" data-range-value-min="0" data-range-value-max="100"></div>
+                <div class="row d-none">
+                    <div class="col-6">
+                                    <span class="range-slider-value value-low" data-range-value-low="0"
+                                          id="input-slider-range-value-low"></span>
+                    </div>
+                    <div class="col-6 text-right">
+                                    <span class="range-slider-value value-high" data-range-value-high="100"
+                                          id="input-slider-range-value-high"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
 
     </div>
     <!--    <div class="card-body" id="analytics">-->

@@ -489,11 +489,9 @@ function loadRequestData(url, y_label) {
             analyticsLine.destroy();
         }
     }
-    if ($("#end_time").html() != "") {
-        $("#PP").hide();
-    }
-    console.log(low_value,
-        high_value)
+    // if ($("#end_time").html() != "") {
+    //     $("#PP").hide();
+    // }
     $.get(
         url, {
             build_id: build_id,
@@ -535,14 +533,14 @@ function switchAggregator() {
 
 function selectOrUnselectRequests() {
     if ($('#all_checkbox').is(":checked")) {
-        $('.custom-checkbox_multicolor').each(function(i, ch) {
+        $('.custom__checkbox').each(function(i, ch) {
             if (ch.id != "all_checkbox") {
                 $('#' + ch.id).prop('checked', true);
                 updateHiddenProperty(false);
             }
         });
     } else {
-        $('.custom-checkbox_multicolor').each(function(i, ch) {
+        $('.custom__checkbox').each(function(i, ch) {
             if (ch.id != "all_checkbox") {
                 $('#' + ch.id).prop('checked', false);
                 updateHiddenProperty(true);
@@ -580,13 +578,13 @@ function drawCanvas(y_label, chartData) {
             responsive: true,
             hoverMode: 'index',
             stacked: false,
-            legendCallback: function(chart) {
+             legendCallback: function (chart) {
                 var legendHtml = [];
-                for (var i = 0; i < chart.data.datasets.length; i++) {
+                for (var i=0; i<chart.data.datasets.length; i++) {
                     if (chart.data.datasets[i].label != "Active Users") {
-                        var cb = '<div class="d-flex my-2">';
+                        var cb = '<div class="d-flex mb-3">';
                         cb += '<label class="mb-0 w-100 d-flex align-items-center custom-checkbox custom-checkbox__multicolor">'
-                        cb += '<input class="mx-2" type="checkbox" checked="true" style="--cbx-color: ' + chart.data.datasets[i].backgroundColor + ';" '
+                        cb += '<input class="mx-2 custom__checkbox" id="'+ chart.legend.legendItems[i].datasetIndex +'" type="checkbox" checked="true" style="--cbx-color: ' + chart.data.datasets[i].backgroundColor + ';" '
                         cb += 'onclick="updateChart(event, ' + '\'' + chart.legend.legendItems[i].datasetIndex + '\'' + ')"/>';
                         cb += '<span class="custom-chart-legend-span"></span>'
                         cb += chart.data.datasets[i].label;

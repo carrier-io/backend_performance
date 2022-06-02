@@ -1,7 +1,3 @@
-
-//var analyticsContext=document.getElementById("chart-analytics").getContext("2d");
-
-
 function createTest() {
     $("#submit").addClass("disabled");
     $("#save").addClass("disabled");
@@ -475,11 +471,8 @@ function fillSummaryTable() {
             status: statusType,
             start_time: $("#start_time").html(),
             end_time: $("#end_time").html(),
-            // TODO set correct low_value and high_value
-            //low_value: $("#input-slider-range-value-low").html(),
-            //high_value: $("#input-slider-range-value-high").html()
-            low_value: 0,
-            high_value: 100
+            low_value,
+            high_value,
         },
         function(data) {
             data.forEach((item) => {
@@ -496,9 +489,11 @@ function loadRequestData(url, y_label) {
             analyticsLine.destroy();
         }
     }
-    //    if ($("#end_time").html() != "") {
-    //        $("#PP").hide();
-    //    }
+    if ($("#end_time").html() != "") {
+        $("#PP").hide();
+    }
+    console.log(low_value,
+        high_value)
     $.get(
         url, {
             build_id: build_id,
@@ -509,18 +504,15 @@ function loadRequestData(url, y_label) {
             status: statusType,
             start_time: $("#start_time").html(),
             end_time: $("#end_time").html(),
-            // low_value: $("#input-slider-range-value-low").html(),
-            // high_value: $("#input-slider-range-value-high").html()
-            low_value: 0,
-            high_value: 100
-
+            low_value,
+            high_value,
         },
         function(data) {
-            lineChartData = data;
+            const lineChartData = data;
             if (window.presetLine != null) {
                 window.presetLine.destroy();
             }
-            drawCanvas(y_label);
+            drawCanvas(y_label, lineChartData);
             document.getElementById('chartjs-custom-legend').innerHTML = window.presetLine.generateLegend();
         }
     );
@@ -543,14 +535,14 @@ function switchAggregator() {
 
 function selectOrUnselectRequests() {
     if ($('#all_checkbox').is(":checked")) {
-        $('.custom__checkbox').each(function(i, ch) {
+        $('.custom-checkbox_multicolor').each(function(i, ch) {
             if (ch.id != "all_checkbox") {
                 $('#' + ch.id).prop('checked', true);
                 updateHiddenProperty(false);
             }
         });
     } else {
-        $('.custom__checkbox').each(function(i, ch) {
+        $('.custom-checkbox_multicolor').each(function(i, ch) {
             if (ch.id != "all_checkbox") {
                 $('#' + ch.id).prop('checked', false);
                 updateHiddenProperty(true);
@@ -580,21 +572,21 @@ updateChart = function(e, datasetIndex) {
 };
 
 
-function drawCanvas(y_label) {
-    var presetsContext = document.getElementById("chart-requests").getContext("2d");
+function drawCanvas(y_label, chartData) {
+    const presetsContext = document.getElementById("chart-requests").getContext("2d");
     window.presetLine = Chart.Line(presetsContext, {
-        data: lineChartData,
+        data: chartData,
         options: {
             responsive: true,
             hoverMode: 'index',
             stacked: false,
-             legendCallback: function (chart) {
+            legendCallback: function(chart) {
                 var legendHtml = [];
-                for (var i=0; i<chart.data.datasets.length; i++) {
+                for (var i = 0; i < chart.data.datasets.length; i++) {
                     if (chart.data.datasets[i].label != "Active Users") {
-                        var cb = '<div class="d-flex mb-3">';
+                        var cb = '<div class="d-flex my-2">';
                         cb += '<label class="mb-0 w-100 d-flex align-items-center custom-checkbox custom-checkbox__multicolor">'
-                        cb += '<input class="mx-2 custom__checkbox" id="'+ chart.legend.legendItems[i].datasetIndex +'" type="checkbox" checked="true" style="--cbx-color: ' + chart.data.datasets[i].backgroundColor + ';" '
+                        cb += '<input class="mx-2" type="checkbox" checked="true" style="--cbx-color: ' + chart.data.datasets[i].backgroundColor + ';" '
                         cb += 'onclick="updateChart(event, ' + '\'' + chart.legend.legendItems[i].datasetIndex + '\'' + ')"/>';
                         cb += '<span class="custom-chart-legend-span"></span>'
                         cb += chart.data.datasets[i].label;
@@ -659,10 +651,6 @@ function drawCanvas(y_label) {
 function fillErrorTable() {
     var start_time = $("#start_time").html()
     var end_time = $("#end_time").html()
-    //var low_value = $("#input-slider-range-value-low").html()
-    //var high_value = $("#input-slider-range-value-high").html()
-    var low_value = 0
-    var high_value = 100
     test_name = document.querySelector("[property~=test_name][content]").content;
     $('#errors').bootstrapTable('refreshOptions', {
         url: `/api/v1/backend_performance/charts/errors/table?test_name=${test_name}&start_time=${start_time}&end_time=${end_time}&low_value=${low_value}&high_value=${high_value}`

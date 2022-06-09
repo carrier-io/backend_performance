@@ -67,9 +67,7 @@ def summary_table(args):
 
 
 def get_issues(args):
-    log.info("get_issues --------------------------------")
     start_time, end_time, aggregation = _timeframe(args, time_as_ts=True)
-    log.info(f"start_time, end_time, aggregation ---> {start_time}, {end_time}, {aggregation}")
     return list(get_results(args['test_name'], start_time, end_time).values())
 
 

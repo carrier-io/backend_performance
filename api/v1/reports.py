@@ -1,14 +1,19 @@
 from sqlalchemy import and_
 from json import loads
 
-from flask import request, make_response
 from flask_restful import Resource
-
+from datetime import datetime
+from io import BytesIO
+from urllib.parse import urlunparse, urlparse
+import requests
+from pylon.core.tools import log
+from flask import current_app, request, make_response
 from ....projects.models.statistics import Statistic
 from ...models.api_baseline import APIBaseline
 from ...models.api_reports import APIReport
 from ...utils.utils import get
 from ...connectors.influx import get_test_details, delete_test_data
+from tools import MinioClient
 
 
 class API(Resource):
@@ -83,6 +88,7 @@ class API(Resource):
         return report.to_json()
 
     def put(self, project_id: int):
+        log.info("Update report *************************")
         args = request.json
         project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
         test_data = get_test_details(project_id=project_id, build_id=args["build_id"], test_name=args["test_name"],
@@ -115,6 +121,10 @@ class API(Resource):
         report.vusers = args["vusers"]
         report.duration = args["duration"]
         report.commit()
+        log.info("Here *******************************")
+        if report.test_status['status'].lower() in ['finished', 'error', 'failed', 'success']:
+            log.info("Create log file *******************************")
+            write_test_run_logs_to_minio_bucket(report, project)
         return {"message": "updated"}
 
     def delete(self, project_id: int):
@@ -134,3 +144,51 @@ class API(Resource):
                 baseline.delete()
             each.delete()
         return {"message": "deleted"}
+
+
+def write_test_run_logs_to_minio_bucket(test: APIReport, project):
+    log.info("###################################")
+    loki_settings_url = urlparse(current_app.config["CONTEXT"].settings.get('loki', {}).get('url'))
+    if loki_settings_url:
+        #
+        build_id = test.build_id
+        report_id = test.id
+        project_id = test.project_id
+        #
+        logs_query = "{" + f'build_id="{build_id}",report_id="{report_id}",project="{project_id}"' + "}"
+        #
+        loki_url = urlunparse((
+            loki_settings_url.scheme,
+            loki_settings_url.netloc,
+            '/loki/api/v1/query_range',
+            None,
+            'query=' + logs_query,
+            None
+        ))
+        response = requests.get(loki_url)
+
+        if response.ok:
+            results = response.json()
+            log.info(results)
+            enc = 'utf-8'
+            file_output = BytesIO()
+
+            file_output.write(f'Test {test.name} (id={test.id}) run log:\n'.encode(enc))
+
+            unpacked_values = []
+            for i in results['data']['result']:
+                for ii in i['values']:
+                    unpacked_values.append(ii)
+            for unix_ns, log_line in sorted(unpacked_values, key=lambda x: int(x[0])):
+                timestamp = datetime.fromtimestamp(int(unix_ns) / 1e9).strftime("%Y-%m-%d %H:%M:%S")
+                file_output.write(
+                    f'{timestamp}\t{log_line}\n'.encode(enc)
+                )
+            minio_client = MinioClient(project)
+            file_output.seek(0)
+            bucket_name = str(test.name).replace("_", "").replace(" ", "").lower()
+            file_name = f"{test.build_id}.log"
+            minio_client.upload_file(bucket_name, file_output, file_name)
+            log.info("################################################")
+        else:
+            log.warning('Request to loki failed with status %s', response.status_code)

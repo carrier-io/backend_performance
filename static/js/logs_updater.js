@@ -8,7 +8,8 @@ const PerformanceLogsApp = {
             websocket: undefined,
             connection_retries: 5,
             connection_retry_timeout: 2000,
-            logs: []
+            logs: [],
+            tags_mapper: []
         }
 
     },
@@ -34,9 +35,10 @@ const PerformanceLogsApp = {
                 </div>
             </div>
             <div class="card-body card-table">
-              <div id="logs-body" class="card-body overflow-auto pt-0 pl-3">
-                <textarea class="form-control" id="TerminalTextArea" style="height: 500px;"></textarea>
-              </div>
+              <div class="container-logs">
+                    <table id="tableLogs" class="table-logs">
+                    </table>
+                </div>
             </div>
         </div>
     `,
@@ -69,19 +71,50 @@ const PerformanceLogsApp = {
             }
 
             const data = JSON.parse(message.data)
+            const logsTag = data.streams.map(logTag => {
+                return logTag.stream.hostname;
+            })
+
+            const uniqTags = [...new Set(logsTag)].filter(tag => !!(tag))
+            uniqTags.forEach(tag => {
+                if(!this.tags_mapper.includes(tag)) {
+                    this.tags_mapper.push(tag)
+                }
+            })
+            const tagColors = [
+                '#f89033',
+                '#e127ff',
+                '#2BD48D',
+                '#2196C9',
+                '#6eaecb',
+                '#385eb0',
+                '#7345fc',
+                '#94E5B0',
+            ]
 
             data.streams.forEach(stream_item => {
                 stream_item.values.forEach(message_item => {
+                    const d = new Date(Number(message_item[0])/1000000)
+                    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                    const timestamp = d.toLocaleString("en-GB", {timeZone: tz})
+                    const indexColor = this.tags_mapper.indexOf(stream_item.stream.hostname);
+                    const coloredTag = `<td><span style="color: ${tagColors[indexColor]}" class="ml-4">[${stream_item.stream.hostname}]</span></td>`
+
                     if (stream_item.stream.filename == "/tmp/jmeter_logs.log") {
-                        d = new Date(Number(message_item[0])/1000000)
-                        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-                        var timestamp = d.toLocaleString("en-GB", {timeZone: tz})
-                        var message = message_item[1].split(" ")
-                        message = message.slice(2).join(" ")
-                        $('#TerminalTextArea').append(`${timestamp} [${stream_item.stream.hostname}]  ${message}\n`)
-                        $('#TerminalTextArea').scrollTop($('#TerminalTextArea')[0].scrollHeight);
-                        //this.logs.push(`Source: ${stream_item.stream.hostname} | ${timestamp} ${message}`)
+                        const messages = message_item[1].split(" ")
+                        const coloredText = `${coloredTag}<td><span class="colored-log colored-log__${messages[2]}">${messages[2]}</span></td>`
+                        const message = message_item[1].split(" ").slice(3)
+                        const row = `<tr><td>${timestamp}</td>${coloredText}<td>${message}</td><br>`
+                        $('#tableLogs').append(row)
+                    } else if (stream_item.stream.filename == null) {
+                        const message = message_item[1]
+                        const log_level = stream_item.stream.level
+                        const coloredText = `${coloredTag}<td><span class="colored-log colored-log__${log_level}">${log_level}</span></td>`
+                        const row = `<tr><td>${timestamp}</td>${coloredText}<td>${message}</td><br>`
+                        $('#tableLogs').append(row)
                     }
+                    const elem = document.querySelector('.container-logs');
+                    elem.scrollTop = elem.scrollHeight;
 
                 })
             })

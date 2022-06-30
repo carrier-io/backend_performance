@@ -45,11 +45,11 @@
     </div>
     <div class="card-body" id="progressbar-body">
         {% if test_data['test_status']['status'].lower() not in ['finished', 'error', 'failed', 'success'] %}
-                <performancetestprogress
-            :test_status='{{ test_data.test_status | tojson }}'
-            :project_id="{{ test_data.project_id }}"
-            :test_id="{{ test_data.id }}"
-                ></performancetestprogress>
+        <performancetestprogress
+                :test_status='{{ test_data.test_status | tojson }}'
+                :project_id="{{ test_data.project_id }}"
+                :test_id="{{ test_data.id }}"
+        ></performancetestprogress>
         {% endif %}
     </div>
     <div class="card-body" id="backend-small-cards">
@@ -245,51 +245,56 @@
         </div>
 
     </div>
-    <!--    <div class="card-body" id="analytics">-->
-    <!--        &lt;!&ndash; Chart &ndash;&gt;-->
-    <!--        <div class="row">-->
-    <!--            <div class="col-md-9">-->
-    <!--                <div class="chart">-->
-    <!--                    <div class="chartjs-size-monitor">-->
-    <!--                        <div class="chartjs-size-monitor-expand">-->
-    <!--                            <div class="">-->
-    <!--                            </div>-->
-    <!--                        </div>-->
-    <!--                        <div class="chartjs-size-monitor-shrink">-->
-    <!--                            <div class=""></div>-->
-    <!--                        </div>-->
-    <!--                    </div>-->
-    <!--                    <canvas id="chart-analytics" class="chart-canvas chartjs-render-monitor"-->
-    <!--                            style="display: block; height: 450px; width: 100%;"></canvas>-->
-    <!--                </div>-->
-    <!--            </div>-->
-    <!--            <div class="col-md-3">-->
-    <!--                <h4> Metrics </h4>-->
-    <!--                <div class="pre-scrollable pr-3">-->
-    <!--                    {% for chapter in analytics_control %}-->
-    <!--                    <div class="card mb-3">-->
-    <!--                        <div class="card-body">-->
-    <!--                            <h5 class="card-title">{{ chapter }}</h5>-->
-    <!--                            <div class="row">-->
-    <!--                                {% for item in analytics_control[chapter] %}-->
-    <!--                                <div class="col-md-6">-->
-    <!--                                    <div class="custom-control custom-control-alternative custom-checkbox mb-3">-->
-    <!--                                        <input class="custom-control-input" id="{{chapter}}_{{item}}"-->
-    <!--                                               type="checkbox"-->
-    <!--                                               onchange="{{ analytics_control[chapter][item] }}">-->
-    <!--                                        <label class="custom-control-label"-->
-    <!--                                               for="{{chapter}}_{{item}}">{{item}}</label>-->
-    <!--                                    </div>-->
-    <!--                                </div>-->
-    <!--                                {% endfor %}-->
-    <!--                            </div>-->
-    <!--                        </div>-->
-    <!--                    </div>-->
-    <!--                    {% endfor %}-->
-    <!--                </div>-->
-    <!--            </div>-->
-    <!--        </div>-->
-    <!--    </div>-->
+
+
+    <div class="card-body" id="analytics">
+        <!-- Chart -->
+        <div class="float-left" style="width:100%;">
+            <div class="chart float-left" style="width:75%;">
+                <div class="chartjs-size-monitor">
+                    <div class="chartjs-size-monitor-expand">
+                        <div class="">
+                        </div>
+                    </div>
+                    <div class="chartjs-size-monitor-shrink">
+                        <div class=""></div>
+                    </div>
+                </div>
+                <canvas id="chart-analytics" class="chart-canvas chartjs-render-monitor"
+                        style="display: block; height: 450px; width: 100%;"></canvas>
+            </div>
+
+
+            <div class="card" style="width:25%;">
+                <h4> Metrics </h4>
+                <div class="pre-scrollable pr-3">
+                    {% for chapter in analytics_control %}
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ chapter }}</h5>
+                            <div class="row">
+                                {% for item in analytics_control[chapter] %}
+                                <div class="col-md-6">
+                                    <div class="custom-control custom-control-alternative custom-checkbox mb-3">
+                                        <input class="custom-control-input" id="{{chapter}}_{{item}}"
+                                               type="checkbox"
+                                               onchange="{{ analytics_control[chapter][item] }}">
+                                        <label class="custom-control-label"
+                                               for="{{chapter}}_{{item}}">{{item}}</label>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
 </div>
 
 <div class="card card-12 pb-4 card-table">
@@ -357,21 +362,21 @@
         </table>
     </div>
 </div>
-    {% if test_data['test_status']['status'].lower() in ['finished', 'error', 'failed', 'success'] %}
-        {% with result_id=test_data.id %}
-            {% include 'backend_performance:results/artifacts_table.html' %}
-        {% endwith %}
+{% if test_data['test_status']['status'].lower() in ['finished', 'error', 'failed', 'success'] %}
+{% with result_id=test_data.id %}
+{% include 'backend_performance:results/artifacts_table.html' %}
+{% endwith %}
 
-    {% else %}
+{% else %}
 
-        <performancelogsapp
-            :project_id="{{ test_data.project_id }}"
-            :report_id="{{ test_data.id }}"
-            instance_name="perf_logs"
-            @register="register"
-        ></performancelogsapp>
+<performancelogsapp
+        :project_id="{{ test_data.project_id }}"
+        :report_id="{{ test_data.id }}"
+        instance_name="perf_logs"
+        @register="register"
+></performancelogsapp>
 
-    {% endif %}
+{% endif %}
 
 
 <!--</div>-->

@@ -1,3 +1,5 @@
+var analyticsData;
+
 function createTest() {
     $("#submit").addClass("disabled");
     $("#save").addClass("disabled");
@@ -513,6 +515,37 @@ function loadRequestData(url, y_label) {
     );
 }
 
+function displayAnalytics() {
+    console.log("displayAnalytics ***************")
+    $("#preset").hide();
+    analyticsCanvas();
+    $("#analytics").show();
+    if(window.presetLine!=null){
+        window.presetLine.destroy();
+    }
+    if ( ! $("#analytics").is(":visible") ) {
+        console.log("Here")
+    }
+}
+
+function getData(scope, request_name) {
+    if (! $(`#${request_name}_${scope}`).is(":checked")) {
+        findAndRemoveDataSet(`${request_name}_${scope}`);
+    } else {
+        getDataForAnalysis(scope, request_name)
+    }
+}
+
+function findAndRemoveDataSet(dataset_name){
+    for (var i=0; i<analyticsLine.data.datasets.length; i++) {
+        if (analyticsLine.data.datasets[i].label === dataset_name) {
+            analyticsLine.data.datasets.splice(i, 1);
+            analyticsLine.update();
+            break;
+        }
+    }
+}
+
 function switchSampler() {
     samplerType = $("#sampler").val().toUpperCase();
     resizeChart();
@@ -566,6 +599,53 @@ updateChart = function(e, datasetIndex) {
     ci.update();
 };
 
+function analyticsCanvas() {
+    console.log("analyticsCanvas ******************")
+    var analyticsContext=document.getElementById("chart-analytics").getContext("2d");
+    analyticsLine = Chart.Line(analyticsContext, {
+        data: analyticsData,
+        options: {
+            responsive: true,
+            hoverMode: 'index',
+            stacked: false,
+            legend: {
+                display: true,
+                position: 'bottom',
+                labels: {
+                    fontSize: 10,
+                    usePointStyle: false
+                }
+            },
+            title:{
+                display: false,
+            },
+            scales: {
+                yAxes: [{
+                    type: "linear", // only linear but allow scale type registration. This allows extensions to exist solely for log scale for instance
+                    display: true,
+                    position: "left",
+                    scaleLabel: {
+                        display: true,
+                        labelString: "Response Time, ms"
+                    },
+                    id: "time",
+                }, {
+                    type: "linear", // only linear but allow scale type registration. This allows extensions to exist solely for log scale for instance
+                    display: true,
+                    position: "right",
+                    scaleLabel: {
+                        display: true,
+                        labelString: "Count"
+                    },
+                    id: "count",
+                    gridLines: {
+                        drawOnChartArea: false, // only want the grid lines for one axis to show up
+                    },
+                }],
+            }
+        }
+    });
+}
 
 function drawCanvas(y_label, chartData) {
     const presetsContext = document.getElementById("chart-requests").getContext("2d");
@@ -652,6 +732,36 @@ function fillErrorTable() {
     })
 }
 
+function getDataForAnalysis(metric, request_name) {
+$.get(
+  '/api/v1/backend_performance/charts/requests/data',
+  {
+    scope: request_name,
+    metric: metric,
+    build_id: build_id,
+    test_name: test_name,
+    lg_type: lg_type,
+    sampler: samplerType,
+    aggregator: aggregator,
+    status: statusType,
+    start_time: $("#start_time").html(),
+    end_time: $("#end_time").html(),
+    low_value: $("#input-slider-range-value-low").html(),
+    high_value: $("#input-slider-range-value-high").html()
+  },
+  function( data ) {
+    if (analyticsLine.data.labels.length == 0 || analyticsLine.data.labels.length != data.labels.length)
+    {
+        analyticsData = data;
+        analyticsCanvas();
+    } else {
+        analyticsLine.data.datasets.push(data.datasets[0]);
+        analyticsLine.update();
+    }
+  }
+ );
+}
+
 function resizeChart() {
     if ($("#analytics").is(":visible")) {
         analyticsData = null;
@@ -667,6 +777,18 @@ function resizeChart() {
     fillErrorTable();
 }
 
+function recalculateAnalytics() {
+    var iterator = document.evaluate("//div[@id='analytics']//input[@type='checkbox']", document, null, XPathResult.UNORDERED_NODE_ITERATOR_TYPE, null );
+    var el = iterator.iterateNext();
+    var arr = []
+    while (el) {
+        if (el.checked) {
+            arr.push(el)
+        }
+        el = iterator.iterateNext();
+    }
+    arr.forEach(el => el.onchange());
+}
 
 
 function detailFormatter(index, row) {

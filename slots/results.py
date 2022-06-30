@@ -2,6 +2,7 @@ from pylon.core.tools import web, log  # pylint: disable=E0611,E0401
 from tools import auth, theme  # pylint: disable=E0401
 from ..connectors.influx import get_sampler_types
 from ..models.api_reports import APIReport
+from ..utils.report_utils import render_analytics_control
 
 
 class Slot:  # pylint: disable=E1101,R0903
@@ -21,13 +22,18 @@ class Slot:  # pylint: disable=E1101,R0903
             test_data["tags"] = []
             test_data["samplers"] = get_sampler_types(test_data["project_id"], test_data["build_id"],
                                                       test_data["name"], test_data["lg_type"])
+            analytics_control = render_analytics_control(test_data["requests"])
             log.info("*****************************")
             log.info(test_data)
             log.info("*****************************")
+            log.info(analytics_control)
+            log.info("*****************************")
+
             with context.app.app_context():
                 return self.descriptor.render_template(
                     'results/content.html',
-                    test_data=test_data
+                    test_data=test_data,
+                    analytics_control=analytics_control
                 )
         return theme.empty_content
 

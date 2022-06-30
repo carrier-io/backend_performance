@@ -18,7 +18,7 @@
         fillErrorTable();
         fillSummaryTable();
        // $('#RT').trigger( "click" )
-       // $("#analytics").hide();
+        $("#analytics").hide();
         const perfomanceTimePicker = noUiSlider.create($("#vuh-perfomance-time-picker")[0], {
             range: {
                 'min': 0,
@@ -52,7 +52,7 @@
         function(data) {
             var status = data["message"]
             if (!['finished', 'error', 'failed', 'success'].includes(status.toLowerCase())) {
-                const sections = ['#RT', '#AR', '#HT'];
+                const sections = ['#RT', '#AR', '#HT', "#AN"];
                 sections.forEach(element => {
                     if ($(element).hasClass("active")) {
                         $(element).trigger( "click" )

@@ -10,12 +10,15 @@
     let low_value = 0;
     let high_value = 100;
     $(document).ready(function() {
+        var timerId = setInterval(function(){
+            updateChartAndErrorsTable(timerId);
+        },60000);
         setParams();
         loadRequestData('/api/v1/backend_performance/charts/requests/summary', "Response time, ms");
-        fillSummaryTable();
         fillErrorTable();
-        $('#RT').trigger( "click" )
-        $("#analytics").hide();
+        fillSummaryTable();
+       // $('#RT').trigger( "click" )
+       // $("#analytics").hide();
         const perfomanceTimePicker = noUiSlider.create($("#vuh-perfomance-time-picker")[0], {
             range: {
                 'min': 0,
@@ -33,4 +36,33 @@
             resizeChart();
         });
     });
+
+    function updateChartAndErrorsTable(timerId) {
+        if ($("#sampler").val() == null) {
+            samplerType = "Request"
+        } else {
+            samplerType = $("#sampler").val().toUpperCase();
+        }
+
+        statusType = $("#status").val().toLowerCase();
+        aggregator = $("#aggregator").val().toLowerCase();
+
+        $.get(
+        `/api/v1/backend_performance/report_status/${getSelectedProjectId()}/${testId}`,
+        function(data) {
+            var status = data["message"]
+            if (!['finished', 'error', 'failed', 'success'].includes(status.toLowerCase())) {
+                const sections = ['#RT', '#AR', '#HT'];
+                sections.forEach(element => {
+                    if ($(element).hasClass("active")) {
+                        $(element).trigger( "click" )
+                    }
+                });
+                fillErrorTable();
+            } else {
+                clearInterval(timerId);
+            }
+        });
+
+    }
 </script>

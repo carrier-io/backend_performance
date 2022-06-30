@@ -452,12 +452,9 @@ function setParams() {
     lg_type = document.querySelector("[property~=lg_type][content]").content;
     test_name = document.querySelector("[property~=test_name][content]").content;
     environment = document.querySelector("[property~=environment][content]").content;
-    //    samplerType = $("#sampler").val().toUpperCase();
-    // TODO set correct samplerType and statusType
-    samplerType = "REQUEST"
-    // statusType = $("#status").val().toLowerCase();
-    statusType = "ok"
-    aggregator = "auto";
+    samplerType = $("#sampler").val().toUpperCase();
+    statusType = $("#status").val().toLowerCase();
+    aggregator = $("#aggregator").val().toLowerCase();
 }
 
 

@@ -1,15 +1,12 @@
 from json import loads
-from sqlalchemy import and_
 from copy import deepcopy
 from typing import Union
 
-from flask import request, make_response
+from flask import request
 from flask_restful import Resource
 
-from tools import api_tools
 from ...models.api_tests import PerformanceApiTest
-from ...models.api_reports import APIReport
-from ...utils.utils import exec_test, get_backend_test_data, run_test
+from ...utils.utils import run_test
 
 
 class API(Resource):
@@ -23,11 +20,9 @@ class API(Resource):
 
     def get(self, project_id: int, test_id: Union[int, str]):
         project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
-        if isinstance(test_id, int):
-            _filter = and_(ApiTests.project_id == project.id, ApiTests.id == test_id)
-        else:
-            _filter = and_(ApiTests.project_id == project.id, ApiTests.test_uid == test_id)
-        test = ApiTests.query.filter(_filter).first()
+        test = PerformanceApiTest.query.filter(
+            PerformanceApiTest.get_api_filter(project_id, test_id)
+        ).first()
         if request.args["raw"]:
             return test.to_json(["influx.port", "influx.host", "galloper_url",
                                  "influx.db", "comparison_db", "telegraf_db",
@@ -42,11 +37,9 @@ class API(Resource):
         default_params = ["influx.port", "influx.host", "galloper_url", "influx.db", "comparison_db", "telegraf_db",
                           "loki_host", "loki_port", "test.type", "test_type", "influx.username", "influx.password"]
         project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
-        if isinstance(test_id, int):
-            _filter = and_(ApiTests.project_id == project.id, ApiTests.id == test_id)
-        else:
-            _filter = and_(ApiTests.project_id == project.id, ApiTests.test_uid == test_id)
-        task = ApiTests.query.filter(_filter).first()
+        task = PerformanceApiTest.query.filter(
+            PerformanceApiTest.get_api_filter(project_id, test_id)
+        ).first()
 
         params = deepcopy(getattr(task, "params"))
         new_params = loads(request.json.get("params"))

@@ -1,15 +1,15 @@
+from typing import Optional
+
 import docker
-import operator
-from sqlalchemy import and_
 from json import loads
 import re
 from datetime import datetime
 from uuid import uuid4
 
 from ..constants import JOB_CONTAINER_MAPPING, JOB_TYPE_MAPPING
-# from ...projects.models.statistics import Statistic
 from tools import task_tools
 
+from ..models.api_reports import APIReport
 from ..models.api_tests import PerformanceApiTest
 
 
@@ -21,17 +21,6 @@ def compile_tests(project_id, file_name, runner):
     env_vars = {"artifact": file_name, "bucket": "tests", "galloper_url": secrets["galloper_url"],
                 "token": secrets["auth_token"], "project_id": project_id, "compile": "true"}
     client.containers.run(container_name, stderr=True, remove=True, environment=env_vars, tty=True, user='0:0')
-
-
-# def exec_test(project_id, event):
-#     response = task_tools.run_task(project_id, event)
-#     response["redirect"] = f"/task/{response['task_id']}/results"
-#
-#     statistic = Statistic.query.filter_by(project_id=project_id).first()
-#     statistic.performance_test_runs += 1
-#     statistic.commit()
-#
-#     return response
 
 
 def get_backend_test_data(event):
@@ -108,20 +97,20 @@ def _calculate_limit(limit, total):
 #     return total, res
 
 
-def run_test(test: PerformanceApiTest, config_only=False) -> dict:
-
+def run_test(test: PerformanceApiTest, config_only: bool = False, cc_kwargs: Optional[dict] = None) -> dict:
+    cc_kwargs = cc_kwargs or dict()
     event = [test.configure_execution_json(
         output='cc',
         test_type=None,
-        params=loads(request.json.get("params", '[]')),
-        env_vars=loads(request.json.get("env_vars", '{}')),
-        reporting=request.json.get("reporter", []),
-        customization=loads(request.json.get("customization", '{}')),
-        cc_env_vars=loads(request.json.get("cc_env_vars", '{}')),
-        parallel=int(request.json.get("parallel", 1)),
-        region=request.json.get("region", "default"),
-        execution=execution,
-        emails=request.json.get("emails", None)
+        # params=loads(request.json.get("params", '[]')),
+        # env_vars=loads(request.json.get("env_vars", '{}')),
+        # reporting=request.json.get("reporter", []),
+        # customization=loads(request.json.get("customization", '{}')),
+        # cc_env_vars=loads(request.json.get("cc_env_vars", '{}')),
+        # parallel=int(request.json.get("parallel", 1)),
+        # region=request.json.get("region", "default"),
+        # execution=execution,
+        # emails=request.json.get("emails", None)
     )]
 
     if config_only:

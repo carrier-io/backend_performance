@@ -16,7 +16,7 @@ from sqlalchemy import String, Column, Integer, Float, Text, ARRAY, JSON
 
 from tools import db_tools, db
 
-from pylon.plugins.backend_performance.models.api_tests import PerformanceApiTest
+from .api_tests import PerformanceApiTest
 
 
 class APIReport(db_tools.AbstractBaseMixin, db.Base):

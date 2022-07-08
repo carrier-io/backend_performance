@@ -208,14 +208,20 @@ def parse_test_data(project_id: int, request_data: dict,
 
     errors = list()
 
-    test_name = request_data.pop('name', None)
-    test_description = request_data.pop('description', None)
+    common_params = request_data.pop('common_params', {})
+    # common_params = dict()
+    # for p in ['name', 'parallel_runners', 'location',
+    #           'bucket', 'file', 'entrypoint', 'runner',
+    #           'env_vars', 'customization', 'cc_env_vars',
+    #           'sources', 'last_run', 'job_type']:
+    #     val = request_data.pop(p, None)
+    #     if val:
+    #         common_params[p] = val
 
     try:
         test_data = rpc.call.backend_test_create_common_parameters(
             project_id=project_id,
-            name=test_name,
-            description=test_description,
+            test_params=common_params,
             **common_kwargs
         )
     except ValidationError as e:

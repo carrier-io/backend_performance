@@ -37,27 +37,56 @@ class API(Resource):
 
     def put(self, project_id: int, test_id: Union[int, str]):
         """ Update test data and run on demand """
+        project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
+        run_test_ = request.json.pop('run_test', False)
+        test_data, errors = parse_test_data(
+            project_id=project_id,
+            request_data=request.json,
+            rpc=self.module.context.rpc_manager,
+            common_kwargs={'exclude': {'test_uid', }}
+        )
+
+        if errors:
+            return errors, 400
+
+        test_query = PerformanceApiTest.query.filter(PerformanceApiTest.get_api_filter(project_id, test_id))
+
+        schedules = test_data.pop('scheduling', [])
+
+        test_query.update(test_data)
+        PerformanceApiTest.commit()
+        test = test_query.one()
+
+        test.handle_change_schedules(schedules)
+
+        if run_test_:
+            resp = run_test(test)
+            return resp, resp.get('code', 200)
+
+        return test.to_json(), 200
+
         default_params = ["influx.port", "influx.host", "galloper_url", "influx.db", "comparison_db", "telegraf_db",
                           "loki_host", "loki_port", "test.type", "test_type", "influx.username", "influx.password"]
-        project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
-        test = PerformanceApiTest.query.filter(
-            PerformanceApiTest.get_api_filter(project_id, test_id)
-        ).first()
+        # test = PerformanceApiTest.query.filter(
+        #     PerformanceApiTest.get_api_filter(project_id, test_id)
+        # ).first()
 
-        params = deepcopy(getattr(test, "params"))
-        new_params = loads(request.json.get("params"))
-        param_names = [each["name"] for each in params]
-        for param in new_params:
-            if param["name"] not in param_names:
-                params.append(param)
-        new_param_names = [each["name"] for each in new_params]
-        params = [param for param in params if (param["name"] in new_param_names or param["name"] in default_params)]
-        for param in params:
-            for _param in new_params:
-                if param["name"] == _param["name"]:
-                    param["default"] = _param["default"]
-                    param["description"] = _param["description"]
-        setattr(test, "params", params)
+        # update params:
+        # params = deepcopy(getattr(test, "params"))
+        # new_params = loads(request.json.get("params"))
+        # param_names = [each["name"] for each in params]
+        # for param in new_params:
+        #     if param["name"] not in param_names:
+        #         params.append(param)
+        # new_param_names = [each["name"] for each in new_params]
+        # params = [param for param in params if (param["name"] in new_param_names or param["name"] in default_params)]
+        # for param in params:
+        #     for _param in new_params:
+        #         if param["name"] == _param["name"]:
+        #             param["default"] = _param["default"]
+        #             param["description"] = _param["description"]
+        # setattr(test, "params", params)
+
         for each in ["env_vars", "customization", "cc_env_vars"]:
             params = deepcopy(getattr(test, each))
             for key in list(params.keys()):

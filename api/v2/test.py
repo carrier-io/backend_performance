@@ -23,25 +23,28 @@ class API(Resource):
         test = PerformanceApiTest.query.filter(
             PerformanceApiTest.get_api_filter(project_id, test_id)
         ).first()
-        if request.args["raw"]:
-            return test.to_json(["influx.port", "influx.host", "galloper_url",
-                                 "influx.db", "comparison_db", "telegraf_db",
-                                 "loki_host", "loki_port", "influx.username", "influx.password"])
-        if request.args["type"] == "docker":
-            message = test.configure_execution_json(request.args.get("type"), execution=request.args.get("exec"))
+        if request.args.get("raw"):
+            return test.to_json([
+                "influx.port", "influx.host", "galloper_url",
+                "influx.db", "comparison_db", "telegraf_db",
+                "loki_host", "loki_port", "influx.username", "influx.password"
+            ])
+        if request.args.get("type") == "docker":
+            message = test.configure_execution_json('docker', execution=request.args.get("exec", False))
         else:
             message = [{"test_id": test.test_uid}]
         return {"config": message}  # this is cc format
 
     def put(self, project_id: int, test_id: Union[int, str]):
+        """ Update test data and run on demand """
         default_params = ["influx.port", "influx.host", "galloper_url", "influx.db", "comparison_db", "telegraf_db",
                           "loki_host", "loki_port", "test.type", "test_type", "influx.username", "influx.password"]
         project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
-        task = PerformanceApiTest.query.filter(
+        test = PerformanceApiTest.query.filter(
             PerformanceApiTest.get_api_filter(project_id, test_id)
         ).first()
 
-        params = deepcopy(getattr(task, "params"))
+        params = deepcopy(getattr(test, "params"))
         new_params = loads(request.json.get("params"))
         param_names = [each["name"] for each in params]
         for param in new_params:
@@ -54,38 +57,37 @@ class API(Resource):
                 if param["name"] == _param["name"]:
                     param["default"] = _param["default"]
                     param["description"] = _param["description"]
-        setattr(task, "params", params)
+        setattr(test, "params", params)
         for each in ["env_vars", "customization", "cc_env_vars"]:
-            params = deepcopy(getattr(task, each))
+            params = deepcopy(getattr(test, each))
             for key in list(params.keys()):
                 if key not in loads(request.json.get(each)).keys() and key not in default_params:
                     del params[key]
             for key, value in loads(request.json.get(each)).items():
                 if key not in params or params[key] != value:
                     params[key] = value
-            setattr(task, each, params)
+            setattr(test, each, params)
 
         if request.json.get("reporter"):
-            task.reporting = request.json["reporter"]
+            test.reporting = request.json["reporter"]
         else:
-            task.reporting = []
+            test.reporting = []
 
         if request.json.get("emails"):
-            task.emails = request.json["emails"]
+            test.emails = request.json["emails"]
         else:
-            task.emails = ""
+            test.emails = ""
 
         if request.json.get("parallel"):
-            task.parallel = request.json.get("parallel")
+            test.parallel = request.json.get("parallel")
         if request.json.get("region"):
-            task.region = request.json.get("region")
+            test.region = request.json.get("region")
         if request.json.get("git"):
-            task.git = loads(request.json.get("git"))
-        task.commit()
-        return task.to_json(["influx.port", "influx.host", "galloper_url",
+            test.git = loads(request.json.get("git"))
+        test.commit()
+        return test.to_json(["influx.port", "influx.host", "galloper_url",
                              "influx.db", "comparison_db", "telegraf_db",
                              "loki_host", "loki_port", "influx.username", "influx.password"])
-
 
     def post(self, project_id: int, test_id: Union[int, str]):
         """ Run test """
@@ -96,13 +98,9 @@ class API(Resource):
         return resp, resp.get('code', 200)
 
     # def post(self, project_id, test_id):
-        # project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
-        # if isinstance(test_id, int):
-        #     _filter = and_(ApiTests.project_id == project.id, ApiTests.id == test_id)
-        # else:
-        #     _filter = and_(ApiTests.project_id == project.id, ApiTests.test_uid == test_id)
-        # task = ApiTests.query.filter(_filter).first()
-
-
-
-
+    # project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
+    # if isinstance(test_id, int):
+    #     _filter = and_(ApiTests.project_id == project.id, ApiTests.id == test_id)
+    # else:
+    #     _filter = and_(ApiTests.project_id == project.id, ApiTests.test_uid == test_id)
+    # task = ApiTests.query.filter(_filter).first()

@@ -57,7 +57,7 @@ class PerformanceApiTest(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin
 
     # git = Column(JSON)   #-? source?
     # local_path = Column(String(128))  # - source local
-    sources = Column(ARRAY)
+    sources = Column(ARRAY(String), nullable=True, default=[])
 
     last_run = Column(Integer)  #-? why not date?
     job_type = Column(String(20))

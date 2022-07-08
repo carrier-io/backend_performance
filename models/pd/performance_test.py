@@ -1,44 +1,21 @@
-from typing import Optional, List, ForwardRef
+from typing import Optional, List
 from uuid import uuid4
-from pydantic import BaseModel, validator, AnyUrl, parse_obj_as, root_validator
+from pydantic import BaseModel, validator, AnyUrl, parse_obj_as, root_validator, constr
 
 from ..api_tests import PerformanceApiTest
-from ....shared.models.pd.test_parameters import TestParameter  # todo: workaround for this import
+from ....shared.models.pd.test_parameters import TestParamsBase, TestParameter  # todo: workaround for this import
 
 
-class TestParamsBase(BaseModel):
-    """
-    Base case class for performance test.
-    Used as a parent class for actual security tet model
-    """
-    _test_params_mapping = {}
-    _required_params = set()
-
-    # the following fields are optional as they are set in test_parameters validator using _test_params_mapping
-
-    test_parameters: List[TestParameter]
-
-    @classmethod
-    def from_orm(cls, db_obj: PerformanceApiTest):
-        raise NotImplementedError
-        instance = cls(
-            test_parameters=db_obj.test_parameters,
-            urls_to_scan=db_obj.urls_to_scan,
-            urls_exclusions=[] if db_obj.urls_exclusions == [''] else db_obj.urls_exclusions,
-            scan_location=db_obj.scan_location
-        )
-        return instance
-
-    def update(self, other: ForwardRef('TestParamsBase')):
-        test_params_names = set(map(lambda tp: tp.name, other.test_parameters))
-        modified_params = other.test_parameters
-        for tp in self.test_parameters:
-            if tp.name not in test_params_names:
-                modified_params.append(tp)
-        self.test_parameters = modified_params
+class PerformanceTestParam(TestParameter):
+    ...
 
 
-TestParamsBase.update_forward_refs()
+class PerformanceTestParams(TestParamsBase):
+    test_parameters: List[PerformanceTestParam]
+
+    @validator('test_parameters')
+    def validate_default_params(cls, value, values, field):
+        return value
 
 
 class TestCommon(BaseModel):
@@ -46,10 +23,20 @@ class TestCommon(BaseModel):
     Model of test itself without test_params or other plugin module's data
     """
     project_id: int
-    project_name: str
     test_uid: Optional[str]
     name: str
-    description: Optional[str] = ''
+    parallel_runners: int
+    location: str
+    bucket: str
+    file: str
+    entrypoint: str
+    runner: str
+    env_vars: dict = {}
+    customization: dict = {}
+    cc_env_vars: dict = {}
+    sources: list = []
+    last_run: int
+    job_type: constr(max_length=20)
 
     @root_validator
     def set_uuid(cls, values):
@@ -65,3 +52,5 @@ class TestCommon(BaseModel):
                 removed.append(k)
                 del values[k]
         return values
+
+

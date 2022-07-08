@@ -1,20 +1,18 @@
 import json
+from queue import Empty
 
 from pylon.core.tools import log
 from sqlalchemy import and_
-from uuid import uuid4
-from json import loads
 
 from flask_restful import Resource
 from flask import request, make_response
 
 from tools import api_tools
 from ...models.api_tests import PerformanceApiTest
-from ...utils.utils import compile_tests, run_test
+from ...utils.utils import run_test, parse_test_data
 
 
 class API(Resource):
-
     url_params = [
         '<int:project_id>',
     ]
@@ -23,16 +21,32 @@ class API(Resource):
         self.module = module
 
     def get(self, project_id: int):
-        reports = []
         total, res = api_tools.get(project_id, request.args, PerformanceApiTest)
-        for each in res:
-            reports.append(each.to_json(["influx.port", "influx.host", "galloper_url",
-                                         "influx.db", "comparison_db", "telegraf_db",
-                                         "loki_host", "loki_port", "influx.username", "influx.password"]))
-        return make_response(
-            {"total": total, "rows": reports},
-            200
-        )
+        rows = []
+        for i in res:
+            test = i.to_json([
+                "influx.port", "influx.host", "galloper_url",
+                 "influx.db", "comparison_db", "telegraf_db",
+                 "loki_host", "loki_port", "influx.username", "influx.password"
+            ])
+            schedules = test.pop('schedules', [])
+            if schedules:
+                try:
+                    test['scheduling'] = self.module.context.rpc_manager.timeout(
+                        2).scheduling_performance_load_from_db_by_ids(schedules)
+                except Empty:
+                    ...
+            rows.append(test)
+        return {"total": total, "rows": rows}, 200
+
+    # def get(self, project_id: int):
+    #     reports = []
+    #     total, res = api_tools.get(project_id, request.args, PerformanceApiTest)
+    #     for each in res:
+    #         reports.append(each.to_json(["influx.port", "influx.host", "galloper_url",
+    #                                      "influx.db", "comparison_db", "telegraf_db",
+    #                                      "loki_host", "loki_port", "influx.username", "influx.password"]))
+    #     return {"total": total, "rows": reports}, 200
 
     def delete(self, project_id: int):
         project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
@@ -40,7 +54,7 @@ class API(Resource):
         try:
             delete_ids = list(map(int, request.args["id[]"].split(',')))
         except TypeError:
-            return make_response('IDs must be integers', 400)
+            return 'IDs must be integers', 400
 
         query_result = PerformanceApiTest.query.filter(
             and_(PerformanceApiTest.project_id == project.id, PerformanceApiTest.id.in_(delete_ids))
@@ -103,6 +117,11 @@ class API(Resource):
     #         return resp, resp.get('code', 200)
     #     return test.to_json()
     def post(self, project_id: int):
+        '''
+        Create test and run if indicated
+        :param project_id:
+        :return:
+        '''
         run_test_ = request.json.pop('run_test', False)
         test_data, errors = parse_test_data(
             project_id=project_id,
@@ -111,6 +130,7 @@ class API(Resource):
         )
 
         if errors:
+            return errors, 400
             return json.dumps(errors, default=lambda o: o.dict()), 400
 
         log.warning('TEST DATA %s', test_data)
@@ -128,14 +148,12 @@ class API(Resource):
             return resp, resp.get('code', 200)
         return test.to_json()
 
-
         # project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
         # from pylon.core.tools import log
         # args = request.form
         # log.info("******************************************")
         # log.info(args)
         # log.info("******************************************")
-
 
         ### SOURCES ###
         # if args.get("git"):
@@ -147,7 +165,6 @@ class API(Resource):
         #     file_name = args["file"].filename
         #     bucket = "tests"
         #     api_tools.upload_file(bucket, args["file"], project, create_if_not_exists=True)
-
 
         ### COMPILE TESTS ###
         # if args["compile"] and args["runner"] in ["v3.1", "v2.3"]:

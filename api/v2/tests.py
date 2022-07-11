@@ -24,11 +24,11 @@ class API(Resource):
         total, res = api_tools.get(project_id, request.args, PerformanceApiTest)
         rows = []
         for i in res:
-            test = i.to_json([
+            test = i.to_json((
                 "influx.port", "influx.host", "galloper_url",
                  "influx.db", "comparison_db", "telegraf_db",
                  "loki_host", "loki_port", "influx.username", "influx.password"
-            ])
+            ))
             schedules = test.pop('schedules', [])
             if schedules:
                 try:
@@ -101,4 +101,4 @@ class API(Resource):
         if run_test_:
             resp = run_test(test)
             return resp, resp.get('code', 200)
-        return test.to_json()
+        return test.to_json(), 200

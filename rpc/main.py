@@ -16,7 +16,7 @@ class RPC:
     def backend_results_or_404(self, run_id):
         return APIReport.query.get_or_404(run_id)
 
-    @web.rpc('backend_test_create_common_parameters', 'parse_common_test_parameters')
+    @web.rpc('backend_performance_test_create_common_parameters', 'parse_common_test_parameters')
     # @rpc_tools.wrap_exceptions(RuntimeError)
     @rpc_tools.wrap_exceptions(ValidationError)
     def parse_common_test_parameters(self, project_id: int, test_params: dict, **kwargs) -> dict:
@@ -27,13 +27,13 @@ class RPC:
         )
         return pd_object.dict(**kwargs)
 
-    @web.rpc('backend_test_create_test_parameters', 'parse_test_parameters')
+    @web.rpc('backend_performance_test_create_test_parameters', 'parse_test_parameters')
     @rpc_tools.wrap_exceptions(ValidationError)
     def parse_test_parameters(self, data: list, **kwargs) -> dict:
         pd_object = PerformanceTestParams(test_parameters=data)
         return pd_object.dict(**kwargs)
 
-    @web.rpc('backend_run_scheduled_test', 'run_scheduled_test')
+    @web.rpc('backend_performance_run_scheduled_test', 'run_scheduled_test')
     @rpc_tools.wrap_exceptions(RuntimeError)
     def run_scheduled_test(self, test_id: int, test_params: list) -> dict:
         test = PerformanceApiTest.query.filter(PerformanceApiTest.id == test_id).one()

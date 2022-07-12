@@ -73,7 +73,6 @@ class TestCommon(BaseModel):
     customization: dict = {}
     cc_env_vars: dict = {}
     sources: list = []
-    last_run: int
     job_type: Optional[constr(max_length=20)]
 
     @root_validator

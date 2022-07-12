@@ -37,9 +37,11 @@ class PerformanceApiTest(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin
 
     parallel_runners = Column(Integer, nullable=False)  #- runners
     location = Column(String(128), nullable=False)  #- engine location
+    # region = Column(String(128), nullable=False)
 
-    bucket = Column(String(128), nullable=False)
-    file = Column(String(128), nullable=False)
+    # bucket = Column(String(128), nullable=False) # migrated to sources
+    # file = Column(String(128), nullable=False) # migrated to sources
+
     entrypoint = Column(String(128), nullable=False)
     runner = Column(String(128), nullable=False)
 
@@ -57,10 +59,17 @@ class PerformanceApiTest(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin
 
     # git = Column(JSON)   #-? source?
     # local_path = Column(String(128))  # - source local
-    sources = Column(ARRAY(String), nullable=True, default=[])
+    sources = Column(JSON, nullable=False)
 
-    last_run = Column(Integer)  #-? why not date?
-    job_type = Column(String(20))
+    # job_type = Column(String(20))
+
+    @property
+    def job_type(self):
+        return JOB_CONTAINER_MAPPING.get(self.runner, {}).get('job_type')
+
+    @property
+    def job_type(self):
+        return JOB_CONTAINER_MAPPING.get(self.runner, {}).get('job_type')
 
     def add_schedule(self, schedule_data: dict, commit_immediately: bool = True):
         schedule_data['test_id'] = self.id
@@ -108,11 +117,6 @@ class PerformanceApiTest(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin
 
 
 
-
-
-    def set_last_run(self, ts):
-        self.last_run = ts
-        self.commit()
 
     # @staticmethod
     # def sanitize(val):

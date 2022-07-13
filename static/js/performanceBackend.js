@@ -63,7 +63,7 @@ function createTest() {
 
 
     data.append('name', $('#test_name').val());
-    data.append('parallel', $('#backend_parallel').val());
+    data.append('parallel', $('#backend_parallel').text());
     data.append('region', $('#backend_region option:selected').text());
     data.append('entrypoint', $('#entrypoint').val());
     data.append('runner', $('#runner').val());
@@ -242,7 +242,7 @@ function runTestModal(test_id) {
     $('#run_test').removeAttr('onclick');
     $('#run_test').attr('onClick', `runTest("${test_data.test_uid}")`);
     $('#runner_region').val(test_data.region)
-    $('#runner_parallel').val(test_data.parallel)
+    $('#runner_parallel').text(test_data.parallel)
 }
 
 function editTest(test_id) {
@@ -431,7 +431,7 @@ function runTest(test_id) {
         'params': JSON.stringify(params),
         'env_vars': JSON.stringify(env_vars),
         'cc_env_vars': JSON.stringify(cc_env_vars),
-        'parallel': $('#runner_parallel').val(),
+        'parallel': $('#runner_parallel').text(),
         "type": '',
         'region': $('#runner_region').val()
     }

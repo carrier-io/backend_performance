@@ -3,7 +3,6 @@ from queue import Empty
 from typing import Union, Tuple
 
 import docker
-from json import loads
 import re
 from datetime import datetime
 from uuid import uuid4
@@ -33,7 +32,7 @@ def get_backend_test_data(event):
     tests_count = 1
     if lg_type == 'jmeter':
         for i in range(tests_count):
-            exec_params = loads(event["execution_params"])["cmd"] + " "
+            exec_params = event["execution_params"]["cmd"] + " "
             test_type = re.findall('-Jtest_type=(.+?) ', exec_params)
             test_type = test_type[0] if len(test_type) else 'demo'
             environment = re.findall("-Jenv_type=(.+?) ", exec_params)
@@ -50,7 +49,7 @@ def get_backend_test_data(event):
                     break
     elif lg_type == 'gatling':
         for i in range(tests_count):
-            exec_params = loads(event["execution_params"])
+            exec_params = event["execution_params"]
             test_type = exec_params['test_type'] if exec_params.get('test_type') else 'demo'
             test_name = exec_params['test'].split(".")[1].lower() if exec_params.get('test') else 'test'
             environment = exec_params['env'] if exec_params.get('env') else 'demo'
@@ -77,48 +76,12 @@ def _calculate_limit(limit, total):
     return len(total) if limit == 'All' else limit
 
 
-# def get(project, args, data_model, additional_filter=None):
-#     limit_ = args.get("limit")
-#     offset_ = args.get("offset")
-#     if args.get("sort"):
-#         sort_rule = getattr(getattr(data_model, args["sort"]), args["order"])()
-#     else:
-#         sort_rule = data_model.id.desc()
-#     filter_ = list()
-#     filter_.append(operator.eq(data_model.project_id, project.id))
-#     if additional_filter:
-#         for key, value in additional_filter.items():
-#             filter_.append(operator.eq(getattr(data_model, key), value))
-#     if args.get('filter'):
-#         for key, value in loads(args.get("filter")).items():
-#             filter_.append(operator.eq(getattr(data_model, key), value))
-#     filter_ = and_(*tuple(filter_))
-#     total = data_model.query.order_by(sort_rule).filter(filter_).count()
-#     res = data_model.query.filter(filter_).order_by(sort_rule).limit(
-#         _calculate_limit(limit_, total)).offset(offset_).all()
-#     return total, res
-
 
 def run_test(test: 'PerformanceApiTest', config_only: bool = False, execution: bool = False) -> dict:
-    # cc_kwargs = cc_kwargs or dict()
     event = test.configure_execution_json(
         output='cc',
         execution=execution
-        # **cc_kwargs
-        # test_type=None,
-        # params=loads(request.json.get("params", '[]')),
-        # env_vars=loads(request.json.get("env_vars", '{}')),
-        # reporting=request.json.get("reporter", []),
-        # customization=loads(request.json.get("customization", '{}')),
-        # cc_env_vars=loads(request.json.get("cc_env_vars", '{}')),
-        # parallel=int(request.json.get("parallel", 1)),
-        # region=request.json.get("region", "default"),
-        # execution=execution,
-        # emails=request.json.get("emails", None)
     )
-
-    ### diff from security ###
-    # event["test_id"] = test.test_uid
 
     if config_only:
         return event
@@ -144,7 +107,8 @@ def run_test(test: 'PerformanceApiTest', config_only: bool = False, execution: b
         lg_type=test_data["lg_type"],
         onexx=0, twoxx=0, threexx=0, fourxx=0, fivexx=0,
         requests="",
-        test_uid=test.test_uid
+        test_uid=test.test_uid,
+        test_config=test.to_json()
     )
     report.insert()
     event["cc_env_vars"]["REPORT_ID"] = str(report.id)
@@ -196,18 +160,9 @@ def parse_test_data(project_id: int, request_data: dict,
 
     common_kwargs = common_kwargs or dict()
     test_create_rpc_kwargs = test_create_rpc_kwargs or dict()
-
     errors = list()
 
     common_params = request_data.pop('common_params', {})
-    # common_params = dict()
-    # for p in ['name', 'parallel_runners', 'location',
-    #           'bucket', 'file', 'entrypoint', 'runner',
-    #           'env_vars', 'customization', 'cc_env_vars',
-    #           'sources', 'last_run', 'job_type']:
-    #     val = request_data.pop(p, None)
-    #     if val:
-    #         common_params[p] = val
 
     try:
         test_data = rpc.call.backend_performance_test_create_common_parameters(

@@ -10,10 +10,10 @@ class ExecutionParams(PerformanceTestParams):
 
     cmd: str = ''
 
+    influxdb_database: str = "{{secret.gatling_db}}"
     influxdb_host: str = "{{secret.influx_ip}}"
     influxdb_user: str = "{{secret.influx_user}}"
     influxdb_password: str = "{{secret.influx_password}}"
-    influxdb_database: str = "{{secret.gatling_db}}"
     influxdb_comparison: str = "{{secret.comparison_db}}"
     influxdb_telegraf: str = "{{secret.telegraf_db}}"
     loki_host: str = "{{secret.loki_host}}"
@@ -85,10 +85,10 @@ class ExecutionParams(PerformanceTestParams):
         return cls(**dict(
             job_type=db_object.job_type,
             entrypoint=db_object.entrypoint,
-            # test_parameters=super().from_orm(db_object),
             test_parameters=db_object.test_parameters,
             customization=db_object.customization,
-            env_vars=db_object.env_vars
+            env_vars=db_object.env_vars,
+            influxdb_database=db_object.influx_db
         ))
         # return cls(
         #     job_type=db_object.job_type,

@@ -20,7 +20,8 @@ class SourceGitSSH(SourceABC):
         return {
             'git': {
                 'repo': self.repo,
-                'repo_branch': self.branch
+                'repo_branch': self.branch,
+                'repo_key': self.private_key
             }
         }
 

@@ -6,7 +6,7 @@ from pylon.core.tools import web
 from pydantic import ValidationError
 
 from ..models.api_tests import PerformanceApiTest
-from ..models.pd.performance_test import TestCommon, PerformanceTestParams
+from ..models.pd.performance_test import TestCommon, PerformanceTestParams, TestOverrideable
 from ..utils.utils import run_test
 
 
@@ -20,11 +20,17 @@ class RPC:
     # @rpc_tools.wrap_exceptions(RuntimeError)
     @rpc_tools.wrap_exceptions(ValidationError)
     def parse_common_test_parameters(self, project_id: int, test_params: dict, **kwargs) -> dict:
+        overrideable_only = kwargs.pop('overrideable_only', False)
         project = self.context.rpc_manager.call.project_get_or_404(project_id=project_id)
-        pd_object = TestCommon(
-            project_id=project.id,
-            **test_params
-        )
+        if overrideable_only:
+            pd_object = TestOverrideable(
+                **test_params
+            )
+        else:
+            pd_object = TestCommon(
+                project_id=project.id,
+                **test_params
+            )
         return pd_object.dict(**kwargs)
 
     @web.rpc('backend_performance_test_create_test_parameters', 'parse_test_parameters')

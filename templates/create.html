@@ -19,6 +19,13 @@
                     </div>
                 </div>
             </div>
+
+            {{ template_slot("alert_bar", payload={
+                "alert_container_id": "alertCreateTest",
+                "max_alerts": 2,
+                "overlay_max_width": "1100px"
+            }) | safe }}
+
             <div class="modal-body">
                 <div class="section">
                      <div class="row">
@@ -87,7 +94,13 @@
                 </div>
                 {{ template_slot("locations_content", payload={"modal_id": "backend"}) | safe }}
                 {{ template_slot("params_table_content", payload={"caption": "Test Parameters", "modal_id": "backend"}) | safe }}
-                {% include 'backend_performance:reporting-config.html' %}
+
+                {{ template_slot("integrations_backend_performance_content") | safe }}
+
+                {{ template_slot("backend_performance_scheduling_test_create_content") | safe }}
+
+
+{#                {% include 'backend_performance:reporting-config.html' %}#}
                 <div class="section">
                     <div class="row">
                         <div class="col">

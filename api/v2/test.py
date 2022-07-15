@@ -6,7 +6,8 @@ from flask import request
 from flask_restful import Resource
 
 from ...models.api_tests import PerformanceApiTest
-from ...utils.utils import run_test
+from ...models.pd.performance_test import PerformanceTestParams
+from ...utils.utils import run_test, parse_test_data
 
 
 class API(Resource):
@@ -24,11 +25,11 @@ class API(Resource):
             PerformanceApiTest.get_api_filter(project_id, test_id)
         ).first()
         if request.args.get("raw"):
-            return test.to_json([
+            return test.to_json((
                 "influx.port", "influx.host", "galloper_url",
                 "influx.db", "comparison_db", "telegraf_db",
                 "loki_host", "loki_port", "influx.username", "influx.password"
-            ])
+            ))
         if request.args.get("type") == "docker":
             message = test.configure_execution_json('docker', execution=request.args.get("exec", False))
         else:
@@ -63,7 +64,9 @@ class API(Resource):
             resp = run_test(test)
             return resp, resp.get('code', 200)
 
-        return test.to_json(), 200
+        return test.to_json(("influx.port", "influx.host", "galloper_url",
+                             "influx.db", "comparison_db", "telegraf_db",
+                             "loki_host", "loki_port", "influx.username", "influx.password")), 200
 
         default_params = ["influx.port", "influx.host", "galloper_url", "influx.db", "comparison_db", "telegraf_db",
                           "loki_host", "loki_port", "test.type", "test_type", "influx.username", "influx.password"]
@@ -97,33 +100,68 @@ class API(Resource):
                     params[key] = value
             setattr(test, each, params)
 
-        if request.json.get("reporter"):
-            test.reporting = request.json["reporter"]
-        else:
-            test.reporting = []
+        # if request.json.get("reporter"):
+        #     test.reporting = request.json["reporter"]
+        # else:
+        #     test.reporting = []
 
-        if request.json.get("emails"):
-            test.emails = request.json["emails"]
-        else:
-            test.emails = ""
+        # if request.json.get("emails"):
+        #     test.emails = request.json["emails"]
+        # else:
+        #     test.emails = ""
 
         if request.json.get("parallel"):
             test.parallel = request.json.get("parallel")
         if request.json.get("region"):
             test.region = request.json.get("region")
-        if request.json.get("git"):
-            test.git = loads(request.json.get("git"))
+        # if request.json.get("git"):
+        #     test.git = loads(request.json.get("git"))
         test.commit()
         return test.to_json(["influx.port", "influx.host", "galloper_url",
                              "influx.db", "comparison_db", "telegraf_db",
                              "loki_host", "loki_port", "influx.username", "influx.password"])
 
     def post(self, project_id: int, test_id: Union[int, str]):
-        """ Run test """
+        """ Run test with possible overridden params
+            {
+        """
+
+        config_only_flag = request.json.pop('type', False)
+        execution_flag = request.json.pop('execution', False)
+        test_data, errors = parse_test_data(
+            project_id=project_id,
+            request_data=request.json,
+            rpc=self.module.context.rpc_manager,
+            common_kwargs={
+                'overrideable_only': True,
+                'exclude_defaults': True,
+                'exclude_unset': True,
+            },
+        )
+
+        if errors:
+            return errors, 400
+
+        # from pylon.core.tools import log
+        # log.info('Test_data %s', test_data)
+
         test = PerformanceApiTest.query.filter(
             PerformanceApiTest.get_api_filter(project_id, test_id)
         ).first()
-        resp = run_test(test, config_only=request.json.get('type', False))
+        test_params_overridden = PerformanceTestParams(test_parameters=test_data.pop('test_parameters', []))
+        # log.info('test_params_overridden %s', test_params_overridden.dict())
+        test_params_existing = PerformanceTestParams.from_orm(test)
+        # log.info('test_params_existing %s', test_params_existing.dict())
+        test_params_existing.update(test_params_overridden)
+        # log.info('test_params_ updated %s', test_params_existing.dict())
+        test_data.update(test_params_existing.dict())
+        # log.info('test_data updated %s', test_data)
+        test.__dict__.update(test_data)
+        return {
+                   'test': test.to_json(),
+                   'config': run_test(test, config_only=True, execution=execution_flag)
+               }, 200
+        resp = run_test(test, config_only=config_only_flag, execution=execution_flag)
         return resp, resp.get('code', 200)
 
     # def post(self, project_id, test_id):

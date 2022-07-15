@@ -8,13 +8,13 @@ from ...utils.utils import parse_source
 from ....shared.models.pd.test_parameters import TestParamsBase, TestParameter  # todo: workaround for this import
 
 _default_params = {
+        # "influx.db":
+        # "test_name":
         "influx.port": "{{secret.influx_port}}",
         "influx.host": "{{secret.influx_ip}}",
         "influx.username": "{{secret.influx_user}}",
         "influx.password": "{{secret.influx_password}}",
         "galloper_url": "{{secret.galloper_url}}",
-        # "influx.db":
-        # "test_name":
         "comparison_db": "{{secret.comparison_db}}",
         "telegraf_db": "{{secret.telegraf_db}}",
         "loki_host": "{{secret.loki_host}}",
@@ -37,7 +37,6 @@ class PerformanceTestParams(TestParamsBase):
 
     @validator('test_parameters', pre=True)
     def validate_default_params(cls, value: list):
-        # log.warning('Validating default params %s', value)
         missing_params = set(
             _default_params.keys()
         ).difference(
@@ -53,7 +52,6 @@ class PerformanceTestParams(TestParamsBase):
             p for p in self.test_parameters
             if p.name not in exclude or p.default != _default_params.get(p.name)
         ]
-        # self.test_parameters = [p for p in self.test_parameters if p.name not in exclude]
         return self
 
 
@@ -73,13 +71,9 @@ class TestCommon(TestOverrideable):
     test_uid: Optional[str]
     name: str
     parallel_runners: int
-    # location: str = 'default'
     entrypoint: str
     runner: str
-    # env_vars: dict = {}
-    # customization: dict = {}
-    # cc_env_vars: dict = {}
-    sources: dict
+    source: dict
 
     @root_validator
     def set_uuid(cls, values):
@@ -110,7 +104,7 @@ class TestCommon(TestOverrideable):
             )
         return value
 
-    @validator('sources')
+    @validator('source')
     def validate_sources(cls, value: dict, values):
         validated = parse_source(value)
         return {

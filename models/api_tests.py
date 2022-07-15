@@ -13,14 +13,12 @@
 #     limitations under the License.
 from queue import Empty
 from typing import List, Union
-from json import dumps
 
 from pylon.core.tools import log
 from sqlalchemy import Column, Integer, String, JSON, ARRAY, and_
 
 from tools import db_tools, db, rpc_tools, secrets_tools
 from tools import constants as c
-# from ...shared.tools.constants import CURRENT_RELEASE
 from .pd.execution_json import ExecutionParams, CcEnvVars
 from ..constants import JOB_CONTAINER_MAPPING
 from ..utils.utils import parse_source
@@ -57,7 +55,7 @@ class PerformanceApiTest(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin
 
     # git = Column(JSON)   #-? source?
     # local_path = Column(String(128))  # - source local
-    sources = Column(JSON, nullable=False)
+    source = Column(JSON, nullable=False)
 
     # job_type = Column(String(20))
 
@@ -116,44 +114,11 @@ class PerformanceApiTest(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin
             cls.test_uid == test_id
         )
 
-
-
-
-
-
-    # @staticmethod
-    # def sanitize(val):
-    #     valid_chars = "_%s%s" % (string.ascii_letters, string.digits)
-    #     return ''.join(c for c in val if c in valid_chars)
-
     def insert(self):
-        # if self.runner not in JOB_CONTAINER_MAPPING.keys():
-        #     return False
-        # self.name = self.sanitize(self.name)
-        # if not self.test_uid:
-        #     self.test_uid = str(uuid4())
-        test_params_list = []
-        for each in self.test_parameters:
-            test_params_list.append(each["name"])
-        # if "influx.port" not in test_params_list:
-        #     self.test_parameters.append({"name": "influx.port", "default": "{{secret.influx_port}}", "description": "",
-        #                         "type": "", "action": ""})
-        # if "influx.host" not in test_params_list:
-        #     self.test_parameters.append({"name": "influx.host", "default": "{{secret.influx_ip}}", "description": "",
-        #                         "type": "", "action": ""})
-        # if "influx_user" not in test_params_list:
-        #     self.test_parameters.append({"name": "influx.username", "default": "{{secret.influx_user}}", "description": "",
-        #                         "type": "", "action": ""})
-        # if "influx_password" not in test_params_list:
-        #     self.test_parameters.append({"name": "influx.password", "default": "{{secret.influx_password}}", "description": "",
-        #                         "type": "", "action": ""})
-        # if "galloper_url" not in test_params_list:
-        #     self.test_parameters.append({"name": "galloper_url", "default": "{{secret.galloper_url}}", "description": "",
-        #                         "type": "", "action": ""})
+        test_params_list = [i.get('name') for i in self.test_parameters]
+
         from .pd.performance_test import PerformanceTestParam
         if "influx.db" not in test_params_list:
-            # self.test_parameters.append({"name": "influx.db", "default": JOB_CONTAINER_MAPPING[self.runner]['influx_db'],
-            #                     "description": "", "type": "", "action": ""})
             self.test_parameters.append(
                 PerformanceTestParam(
                     name="influx.db",
@@ -161,91 +126,25 @@ class PerformanceApiTest(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin
                 ).dict()
             )
         if "test_name" not in test_params_list:
-            # self.test_parameters.append({"name": "test_name", "default": self.name, "description": "", "type": "",
-            #                     "action": ""})
             self.test_parameters.append(
                 PerformanceTestParam(
                     name="test_name",
                     default=self.name
                 ).dict()
             )
-        # if "comparison_db" not in test_params_list:
-        #     self.test_parameters.append({"name": "comparison_db", "default": "{{secret.comparison_db}}", "description": "",
-        #                         "type": "", "action": ""})
-        # if "telegraf_db" not in test_params_list:
-        #     self.test_parameters.append({"name": "telegraf_db", "default": "{{secret.telegraf_db}}", "description": "",
-        #                         "type": "", "action": ""})
-        # if "loki_host" not in test_params_list:
-        #     self.test_parameters.append({"name": "loki_host", "default": "{{secret.loki_host}}", "description": "",
-        #                         "type": "", "action": ""})
-        # if "loki_port" not in test_params_list:
-        #     self.test_parameters.append({"name": "loki_port", "default": "{{secret.loki_port}}", "description": "",
-        #                         "type": "", "action": ""})
-        # self.job_type = JOB_CONTAINER_MAPPING[self.runner]['job_type']
-        # if "test_type" not in test_params_list:
-        #     self.test_parameters.append({"name": "test_type", "default": "default", "description": "", "type": "", "action": ""})
-        # if "env_type" not in test_params_list:
-        #     self.test_parameters.append({"name": "env_type", "default": "not_specified", "description": "", "type": "",
-        #                         "action": ""})
-        # if self.location == "":
-        #     self.location = "default"
-
-
-        # self.runner = JOB_CONTAINER_MAPPING[self.runner]['container']  # here because influx_db todo: why??
-
         super().insert()
 
-    # def configure_execution_json(self, output: str = 'cc', test_type=None, params: Optional[list] = None,
-    #                              env_vars=None, reporting=None, customization=None, cc_env_vars=None,
-    #                              parallel=None, location=None, execution: bool = False,
-    #                              emails=None):
     def configure_execution_json(self, output: str = 'cc', execution: bool = False):
-        # params = params or []
-        # param_names = [param["name"] for param in params]
-        # for param in self.test_parameters:
-        #     if param["name"] not in param_names:
-        #         params.append(param)
-        # pairs = {
-        #     "customization": [customization, self.customization],
-        #     # "params": [params, self.test_parameters],
-        #     "env_vars": [env_vars, self.env_vars],
-        #     "cc_env_vars": [cc_env_vars, self.cc_env_vars],
-        #     # "reporting": [reporting, self.reporting]
-        # }
-        # for pair in pairs.keys():
-        #     if not pairs[pair][0]:
-        #         pairs[pair][0] = pairs[pair][1]
-        #     else:
-        #         for each in list(pairs[pair][0].keys()) + list(set(pairs[pair][1].keys()) - set(pairs[pair][0].keys())):
-        #             pairs[pair][0][each] = pairs[pair][0][each] if each in list(pairs[pair][0].keys()) \
-        #                 else pairs[pair][1][each]
-        # cmd = ''
-        # if not params:
-        #     params = self.test_parameters
-        # if self.job_type == 'perfmeter':
-        #     entrypoint = self.entrypoint if path.exists(self.entrypoint) else path.join('/mnt/jmeter', self.entrypoint)
-        #     cmd = f"-n -t {entrypoint}"
-        #     for each in self.test_parameters:
-        #         cmd += f" -J{each['name']}={each['default']}"
-
         execution_json = {
             'test_id': self.test_uid,
             "container": self.container,
-            # "execution_params": {
-                # "cmd": cmd
-            # },
             "execution_params": ExecutionParams.from_orm(self).dict(exclude_none=True),
-            # "cc_env_vars": {},  # todo: why not used here?
             "cc_env_vars": CcEnvVars.from_orm(self).dict(exclude_none=True),
-            # "bucket": self.bucket,
             "job_name": self.name,
-            # "artifact": self.file,
             "job_type": self.job_type,
-            # "concurrency": self.parallel_runners if not parallel else parallel,
             "concurrency": self.parallel_runners,
-            # "channel": location if location else self.location
             "channel": self.location,
-            **parse_source(self.sources).execution_json
+            **parse_source(self.source).execution_json
         }
 
 
@@ -276,71 +175,6 @@ class PerformanceApiTest(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin
         #     execution_json["email_recipients"] = self.emails
 
 
-        # todo: do we use ONLY overridden params???
-        # if pairs["env_vars"][0]:
-        #     for key, value in pairs["env_vars"][0].items():
-        #         execution_json["execution_params"][key] = value
-        # if "influxdb_host" not in execution_json["execution_params"].keys():
-        #     execution_json["execution_params"]["influxdb_host"] = "{{secret.influx_ip}}"
-        # if "influxdb_user" not in execution_json["execution_params"].keys():
-        #     execution_json["execution_params"]["influxdb_user"] = "{{secret.influx_user}}"
-        # if "influxdb_password" not in execution_json["execution_params"].keys():
-        #     execution_json["execution_params"]["influxdb_password"] = "{{secret.influx_password}}"
-        # if "influxdb_database" not in execution_json["execution_params"].keys():
-        #     execution_json["execution_params"]["influxdb_database"] = "{{secret.gatling_db}}"
-        # if "influxdb_comparison" not in execution_json["execution_params"].keys():
-        #     execution_json["execution_params"]["influxdb_comparison"] = "{{secret.comparison_db}}"
-        # if "influxdb_telegraf" not in execution_json["execution_params"].keys():
-        #     execution_json["execution_params"]["influxdb_telegraf"] = "{{secret.telegraf_db}}"
-        # if "loki_host" not in execution_json["execution_params"].keys():
-        #     execution_json["execution_params"]["loki_host"] = "{{secret.loki_host}}"
-        # if "loki_port" not in execution_json["execution_params"].keys():
-        #     execution_json["execution_params"]["loki_port"] = "3100"
-
-        # if pairs["cc_env_vars"][0]:
-        #     for key, value in pairs["cc_env_vars"][0].items():
-        #         execution_json["cc_env_vars"][key] = value
-        # if "RABBIT_HOST" not in execution_json["cc_env_vars"].keys():
-        #     execution_json["cc_env_vars"]["RABBIT_HOST"] = "{{secret.rabbit_host}}"
-        # if "RABBIT_USER" not in execution_json["cc_env_vars"].keys():
-        #     execution_json["cc_env_vars"]["RABBIT_USER"] = "{{secret.rabbit_user}}"
-        # if "RABBIT_PASSWORD" not in execution_json["cc_env_vars"].keys():
-        #     execution_json["cc_env_vars"]["RABBIT_PASSWORD"] = "{{secret.rabbit_password}}"
-        # if "GALLOPER_WEB_HOOK" not in execution_json["cc_env_vars"].keys():
-        #     execution_json["cc_env_vars"]["GALLOPER_WEB_HOOK"] = "{{secret.post_processor}}"
-
-        # todo: customization === additional_files ???
-        # if pairs["customization"][0]:
-        #     for key, value in pairs["customization"][0].items():
-        #         if "additional_files" not in execution_json["execution_params"]:
-        #             execution_json["execution_params"]["additional_files"] = dict()
-        #         execution_json["execution_params"]["additional_files"][key] = value
-
-
-
-        # if self.git:
-        #     execution_json["git"] = self.git
-        # if self.local_path:
-        #     execution_json["local_path"] = self.local_path
-        # execution_json.update(self.sources)
-
-        # todo: format every source
-        # if self.sources.get('name') == 'git_https':
-        #     execution_json['git'] = {
-        #         'repo': self.sources.get('repo'),
-        #         'repo_branch': self.sources.get('branch')
-        #     }
-        # if self.sources.get('bucket'):
-        #     execution_json['bucket'] = self.sources['bucket']
-        # if self.sources.get('file'):
-        #     execution_json['artifact'] = self.sources['file']
-
-        # if self.job_type == "perfgun":
-        #     execution_json["execution_params"]['test'] = self.entrypoint
-        #     execution_json["execution_params"]["GATLING_TEST_PARAMS"] = ""
-        #     # todo: how is that possible? params is a list!
-        #     for key, value in params.items():
-        #         execution_json["execution_params"]["GATLING_TEST_PARAMS"] += f"-D{key}={value} "
 
         # todo: leave this? to json?
         # execution_json["execution_params"] = dumps(execution_json["execution_params"])
@@ -362,16 +196,8 @@ class PerformanceApiTest(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin
         if 'job_type' not in exclude_fields:
             test['job_type'] = self.job_type
         if test.get('test_parameters'):
-            # log.info('TEST P %s', test.get('test_parameters'))
-            # test['test_parameters'] = [
-            #     d for d in test['test_parameters']
-            #     if d["name"] not in exclude_fields
-            # ]
             from .pd.performance_test import PerformanceTestParams
             test['test_parameters'] = PerformanceTestParams.from_orm(self).exclude_params(
                 exclude_fields
             ).dict()['test_parameters']
-        # for key in exclude_fields:
-        #     if key in test.keys():
-        #         del test[key]
         return test

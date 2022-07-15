@@ -1,17 +1,15 @@
 import json
 from queue import Empty
-from typing import Optional, Union, Tuple
+from typing import Union, Tuple
 
 import docker
 from json import loads
 import re
 from datetime import datetime
 from uuid import uuid4
-from pydantic import ValidationError
+from pydantic import ValidationError, parse_obj_as
 from pylon.core.tools import log
 
-from ..models.api_reports import APIReport
-from ..models.api_tests import PerformanceApiTest
 from ..constants import JOB_CONTAINER_MAPPING, JOB_TYPE_MAPPING
 
 from tools import task_tools, rpc_tools
@@ -101,11 +99,12 @@ def _calculate_limit(limit, total):
 #     return total, res
 
 
-def run_test(test: PerformanceApiTest, config_only: bool = False, cc_kwargs: Optional[dict] = None) -> dict:
-    cc_kwargs = cc_kwargs or dict()
-    event = [test.configure_execution_json(
+def run_test(test: 'PerformanceApiTest', config_only: bool = False, execution: bool = False) -> dict:
+    # cc_kwargs = cc_kwargs or dict()
+    event = test.configure_execution_json(
         output='cc',
-        **cc_kwargs
+        execution=execution
+        # **cc_kwargs
         # test_type=None,
         # params=loads(request.json.get("params", '[]')),
         # env_vars=loads(request.json.get("env_vars", '{}')),
@@ -116,16 +115,16 @@ def run_test(test: PerformanceApiTest, config_only: bool = False, cc_kwargs: Opt
         # region=request.json.get("region", "default"),
         # execution=execution,
         # emails=request.json.get("emails", None)
-    )]
-
-    if config_only:
-        return event[0]
+    )
 
     ### diff from security ###
-    for e in event:
-        e["test_id"] = test.test_uid
+    # event["test_id"] = test.test_uid
 
-    test_data = get_backend_test_data(event[0])
+    if config_only:
+        return event
+
+    test_data = get_backend_test_data(event)
+    from ..models.api_reports import APIReport
     report = APIReport(
         name=test_data["test_name"],
         project_id=test.project_id,
@@ -148,22 +147,14 @@ def run_test(test: PerformanceApiTest, config_only: bool = False, cc_kwargs: Opt
         test_uid=test.test_uid
     )
     report.insert()
-    event[0]["cc_env_vars"]["REPORT_ID"] = str(report.id)
-    event[0]["cc_env_vars"]["build_id"] = test_data["build_id"]
+    event["cc_env_vars"]["REPORT_ID"] = str(report.id)
+    event["cc_env_vars"]["build_id"] = test_data["build_id"]
 
-    resp = task_tools.run_task(test.project_id, event)
+    resp = task_tools.run_task(test.project_id, [event])
     resp['redirect'] = f'/task/{resp["task_id"]}/results'  # todo: where this should lead to?
 
     test.rpc.call.increment_statistics(test.project_id, 'performance_test_runs')
-
-    # resp['result_id'] = security_results.id
     return resp
-
-
-
-
-
-
 
 
 class ValidationErrorPD(Exception):
@@ -258,3 +249,18 @@ def parse_test_data(project_id: int, request_data: dict,
                 return test_data, errors
 
     return test_data, errors
+
+
+def parse_source(value: dict):
+    from ..models.pd.sources import SourceGitHTTPS, SourceGitSSH, SourceArtifact, SourceLocal
+    _validation_map = {
+        'git_ssh': SourceGitSSH,
+        'git_https': SourceGitHTTPS,
+        'artifact': SourceArtifact,
+        'local': SourceLocal
+    }
+    try:
+        model = _validation_map[value['name']]
+    except KeyError:
+        raise ValueError(f'Unsupported source: {value.get("name")}')
+    return parse_obj_as(model, value)

@@ -1,11 +1,10 @@
-import string
 from typing import Optional, List, Iterable
 from uuid import uuid4
 from pydantic import BaseModel, validator, AnyUrl, parse_obj_as, root_validator, constr
 from pylon.core.tools import log
 
-from ..api_tests import PerformanceApiTest
 from ...constants import JOB_CONTAINER_MAPPING
+from ...utils.utils import parse_source
 from ....shared.models.pd.test_parameters import TestParamsBase, TestParameter  # todo: workaround for this import
 
 _default_params = {
@@ -37,8 +36,8 @@ class PerformanceTestParams(TestParamsBase):
     test_parameters: List[PerformanceTestParam]
 
     @validator('test_parameters', pre=True)
-    def validate_default_params(cls, value: list, field):
-        log.warning('Validating default params %s', value)
+    def validate_default_params(cls, value: list):
+        # log.warning('Validating default params %s', value)
         missing_params = set(
             _default_params.keys()
         ).difference(
@@ -49,14 +48,24 @@ class PerformanceTestParams(TestParamsBase):
 
         return value
 
-    def exclude_params(self, exclude: Iterable):
-        self.test_parameters = [p for p in self.test_parameters if p.name not in exclude]
+    def exclude_params(self, exclude: Iterable, leave_manually_set=True):
+        self.test_parameters = [
+            p for p in self.test_parameters
+            if p.name not in exclude or p.default != _default_params.get(p.name)
+        ]
+        # self.test_parameters = [p for p in self.test_parameters if p.name not in exclude]
         return self
 
 
+class TestOverrideable(BaseModel):
+    parallel_runners: Optional[int]
+    location: str = 'default'
+    env_vars: dict = {}
+    customization: dict = {}
+    cc_env_vars: dict = {}
 
 
-class TestCommon(BaseModel):
+class TestCommon(TestOverrideable):
     """
     Model of test itself without test_params or other plugin module's data
     """
@@ -64,16 +73,13 @@ class TestCommon(BaseModel):
     test_uid: Optional[str]
     name: str
     parallel_runners: int
-    location: str = 'default'
-    bucket: str
-    file: str
+    # location: str = 'default'
     entrypoint: str
     runner: str
-    env_vars: dict = {}
-    customization: dict = {}
-    cc_env_vars: dict = {}
-    sources: list = []
-    job_type: Optional[constr(max_length=20)]
+    # env_vars: dict = {}
+    # customization: dict = {}
+    # cc_env_vars: dict = {}
+    sources: dict
 
     @root_validator
     def set_uuid(cls, values):
@@ -104,9 +110,10 @@ class TestCommon(BaseModel):
             )
         return value
 
-    @validator('job_type')
-    def validate_job_type(cls, value, values):
-        if not value:
-            # return JOB_CONTAINER_MAPPING[values['runner']]['job_type']
-            return JOB_CONTAINER_MAPPING[values['runner']]['job_type']
-        return value
+    @validator('sources')
+    def validate_sources(cls, value: dict, values):
+        validated = parse_source(value)
+        return {
+            'name': value['name'],
+            **validated.dict()
+        }

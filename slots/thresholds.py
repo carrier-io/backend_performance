@@ -6,14 +6,9 @@ from tools import session_project
 class Slot:  # pylint: disable=E1101,R0903
     @web.slot('thresholds_content')
     def content(self, context, slot, payload):
-        log.info("*****************************")
-        log.info("Thresholds !!!!!!!!!!!!!!!!!!!!!!!!")
         tests = APIReport.query.filter(APIReport.project_id == session_project.get()).with_entities(
             APIReport.name).distinct()
         tests = [each[0] for each in tests]
-
-        log.info(tests)
-        log.info("*****************************")
         with context.app.app_context():
             return self.descriptor.render_template(
                 'thresholds/content.html',

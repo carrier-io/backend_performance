@@ -31,6 +31,9 @@ function createTest() {
         params[0].push(param)
     })
 
+    params[1]["cpu_quota"] = $('#backend_cpu').text()
+    params[1]["memory_quota"] = $('#backend_memory').val()
+
     $("#extCard .row").slice(1, ).each(function(_, item) {
         var inp = $(item).find('input[type=text]')
         params[3][inp[0].value] = inp[1].value
@@ -243,6 +246,8 @@ function runTestModal(test_id) {
     $('#run_test').attr('onClick', `runTest("${test_data.test_uid}")`);
     $('#runner_region').val(test_data.region)
     $('#runner_parallel').text(test_data.parallel)
+    $('#runner_cpu').text(test_data.env_vars["cpu_quota"])
+    $('#runner_memory').val(test_data.env_vars["memory_quota"])
 }
 
 function editTest(test_id) {
@@ -274,7 +279,9 @@ function editTest(test_id) {
     console.log(test_data)
     console.log("*******************")
     $('#backend_region').val(test_data.region);
-    $('#backend_parallel').val(test_data.parallel);
+    $('#backend_parallel').text(test_data.parallel);
+    $('#backend_cpu').text(test_data.env_vars["cpu_quota"])
+    $('#backend_memory').val(test_data.env_vars["memory_quota"])
     if (test_data.git != null && test_data.git.hasOwnProperty("repo")) {
         $("#nav-file-tab").prop("disabled", true);
         if (test_data.git.protocol == "https") {
@@ -329,6 +336,9 @@ function updateTest(test_id) {
         params[0].push(param)
     })
 
+    params[1]["cpu_quota"] = $('#backend_cpu').text()
+    params[1]["memory_quota"] = $('#backend_memory').val()
+
     $("#extCard .row").slice(1, ).each(function(_, item) {
         var inp = $(item).find('input[type=text]')
         params[3][inp[0].value] = inp[1].value
@@ -347,7 +357,7 @@ function updateTest(test_id) {
     }
 
     data['name'] = $('#test_name').val();
-    data['parallel'] = $('#backend_parallel').val();
+    data['parallel'] = $('#backend_parallel').text();
     data['region'] = $('#backend_region option:selected').text();
     data['entrypoint'] = $('#entrypoint').val();
     data['reporting'] = JSON.stringify({});
@@ -416,11 +426,8 @@ function runTest(test_id) {
         }
     });
     var env_vars = {}
-    $("#nav-runner-env-vars .env_vars").each(function() {
-        if ($(this).children()[0].innerText !== "" && $(this).children()[1].value !== "") {
-            env_vars[$(this).children()[0].innerText] = $(this).children()[1].value;
-        }
-    });
+    env_vars["cpu_quota"] = $('#runner_cpu').text()
+    env_vars["memory_quota"] = $('#runner_memory').val()
     var cc_env_vars = {}
     $("#nav-cc-env-vars .cc_env_vars").each(function() {
         if ($(this).children()[0].innerText !== "" && $(this).children()[1].value !== "") {

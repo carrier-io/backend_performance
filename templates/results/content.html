@@ -21,11 +21,11 @@
                     <button type="button" class="btn btn-secondary mx-2" onclick="downloadReport()"
                             data-toggle="tooltip" data-placement="top" title="Download report"><i
                             class="fas fa-file-download"></i></button>
-                    <button class="btn btn-secondary" id="set_baseline" onclick="setBaseline()"
+                    <button class="btn btn-secondary mx-2" id="set_baseline" onclick="setBaseline()"
                             data-toggle="tooltip" data-placement="top" title="Set current report as baseline">
                         Set as baseline
                     </button>
-                    <button class="btn btn-secondary mx-2" id="not_worse_than" onclick="setThresholds()"
+                    <button hidden class="btn btn-secondary mx-2" id="not_worse_than" onclick="setThresholds()"
                             data-toggle="tooltip" data-placement="top" title="Set current report as thresholds">
                         Set as threshold
                     </button>
@@ -122,7 +122,7 @@
                 </div>
             </div>
         </div>
-        <div class="row">
+        <div hidden class="row">
             <div class="col-12 d-flex align-items-center mt-4" id="dropdowns">
                 <p class="mb-0 font-h6 text-gray-500 font-semibold">LOAD CONFIG</p>
                 <multiselect-filter :title="'Carrier default'">
@@ -144,6 +144,18 @@
 
             <div class="col-xl-8">
                 <ul id="chart-control" class="nav justify-content-end">
+                    <li class="nav-item mr-2 mr-md-0">
+                        <select class="selectpicker" data-style="btn"
+                                id="auto_update"
+                                onchange="auto_update()">
+                            <option>1 min</option>
+                            <option>3 min</option>
+                            <option>5 min</option>
+                            <option>10 min</option>
+                            <option>30 min</option>
+                            <option>off</option>
+                        </select>
+                    </li>
                     <li class="nav-item mr-2 mr-md-0">
                         <select class="selectpicker" data-style="btn"
                                 id="aggregator"
@@ -292,7 +304,6 @@
             </div>
         </div>
     </div>
-
 
 
 </div>

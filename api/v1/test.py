@@ -5,8 +5,6 @@ from typing import Union
 
 from flask import request, make_response
 from flask_restful import Resource
-
-from tools import api_tools
 from ...models.api_tests import ApiTests
 from ...models.api_reports import APIReport
 from ...utils.utils import exec_test, get_backend_test_data

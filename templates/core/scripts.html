@@ -9,6 +9,7 @@
 {{ template_slot('params_table_scripts') | safe }}
 
 <script>
+$(document).on('vue_init', () => {
         $('#createTestModal').on('hide.bs.modal', function(e) {
             $('#test_name').val("");
             $("#test_name").prop("disabled", false);
@@ -26,7 +27,9 @@
             $('#save').attr('onClick', `createTest()`);
             $("#entrypoint").prop("disabled", false);
             $("#entrypoint").val("");
-            $('#backend_parallel').val("1");
+            $('#backend_parallel').text("1");
+            $('#backend_cpu').text("1");
+            $('#backend_memory').val("4");
             $("#nav-git-https-tab").prop("disabled", false);
             $("#nav-file-tab").prop("disabled", false);
             $("#nav-git-tab").prop("disabled", false);
@@ -40,5 +43,6 @@
             $("#repo_pass").val("");
             $("#tests-list").bootstrapTable('refresh');
         });
+})
 </script>
 {{ template_slot("locations_scripts") | safe }}

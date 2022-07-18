@@ -1,4 +1,5 @@
 var analyticsData;
+var interval_id;
 
 function createTest() {
     $("#submit").addClass("disabled");
@@ -895,6 +896,46 @@ function stopTest() {
         type: 'PUT',
         success: function(result) {
             document.location.reload();
+        }
+    });
+}
+
+function auto_update() {
+    var interval = parseInt($('#auto_update').val())
+    if (interval_id != null || interval == 0) {
+        clearInterval(interval_id);
+    }
+    if (interval != 0) {
+        interval_id = setInterval(function() {
+            updateChartAndErrorsTable(interval_id);
+        }, interval);
+    }
+}
+
+function updateChartAndErrorsTable(interval_id) {
+    if ($("#sampler").val() == null) {
+        samplerType = "Request"
+    } else {
+        samplerType = $("#sampler").val().toUpperCase();
+    }
+
+    statusType = $("#status").val().toLowerCase();
+    aggregator = $("#aggregator").val().toLowerCase();
+
+    $.get(
+    `/api/v1/backend_performance/report_status/${getSelectedProjectId()}/${testId}`,
+    function(data) {
+        var status = data["message"]
+        if (!['finished', 'error', 'failed', 'success'].includes(status.toLowerCase())) {
+            const sections = ['#RT', '#AR', '#HT', "#AN"];
+            sections.forEach(element => {
+                if ($(element).hasClass("active")) {
+                    $(element).trigger( "click" )
+                }
+            });
+            fillErrorTable();
+        } else {
+            clearInterval(interval_id);
         }
     });
 }

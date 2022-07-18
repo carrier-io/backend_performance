@@ -144,18 +144,20 @@
 
             <div class="col-xl-8">
                 <ul id="chart-control" class="nav justify-content-end">
+                    {% if test_data['test_status']['status'].lower() not in ['finished', 'error', 'failed', 'success'] %}
                     <li class="nav-item mr-2 mr-md-0">
                         <select class="selectpicker" data-style="btn"
                                 id="auto_update"
                                 onchange="auto_update()">
-                            <option>1 min</option>
-                            <option>3 min</option>
-                            <option>5 min</option>
-                            <option>10 min</option>
-                            <option>30 min</option>
-                            <option>off</option>
+                            <option value="60000">1 min</option>
+                            <option value="180000">3 min</option>
+                            <option value="300000">5 min</option>
+                            <option value="600000">10 min</option>
+                            <option value="1800000">30 min</option>
+                            <option value="0" selected>off</option>
                         </select>
                     </li>
+                    {% endif %}
                     <li class="nav-item mr-2 mr-md-0">
                         <select class="selectpicker" data-style="btn"
                                 id="aggregator"

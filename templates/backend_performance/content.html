@@ -13,12 +13,13 @@
                     }"
                     container_classes="h-100"
             >
-                <template #actions>
+                <template #actions="{master}">
                     <div class="d-flex justify-content-end">
                         <button type="button" class="btn btn-32 btn-secondary" data-toggle="modal"
                                 data-target="#createTestModal"><i class="fas fa-plus"></i></button>
-                        <button type="button" class="btn btn-32 btn-secondary" onclick="refreshTable('tests-list')"><i
-                                class="fas fa-sync"></i></button>
+                        <button type="button" class="btn btn-32 btn-secondary" @click="master.table_actions('refresh')">
+                            <i
+                                    class="fas fa-sync"></i></button>
                         <button type="button" class="btn btn-32 btn-secondary"><i
                                 class="fas fa-filter"></i></button>
                         <button type="button" class="btn btn-32 btn-secondary"><i class="fas fa-tag"></i></button>
@@ -29,17 +30,24 @@
                 <template #table_headers>
                     <th scope="col" data-checkbox="true"></th>
                     <th data-visible="false" data-field="id">index</th>
-                    <th scope="col" data-sortable="true" data-cell-style="nameStyle" data-field="name">Name</th>
-                    <th scope="col" data-sortable="true" data-cell-style="nameStyle" data-field="test_uid">UUID
+                    <th scope="col" data-sortable="true" data-cell-style="test_formatters.name_style" data-field="name">
+                        Name
                     </th>
-                    <th scope="col" data-sortable="true" data-cell-style="nameStyle" data-field="entrypoint">
+                    <th scope="col" data-sortable="true" data-cell-style="test_formatters.name_style"
+                        data-field="test_uid">
+                        UUID
+                    </th>
+                    <th scope="col" data-sortable="true" data-cell-style="test_formatters.name_style"
+                        data-field="entrypoint">
                         Entrypoint
                     </th>
-                    <th scope="col" data-align="center" data-sortable="true" data-formatter=backendLgFormatter
-                        data-field="job_type">Tool
+                    <th scope="col" data-align="center" data-sortable="true" data-formatter=test_formatters.job_type
+                        data-field="job_type">
+                        Tool
                     </th>
-                    <th scope="col" data-align="right" data-cell-style="cellStyle"
-                        data-formatter=backendTestActionFormatter>Actions
+                    <th scope="col" data-align="right" data-cell-style="test_formatters.cell_style"
+                        data-formatter=test_formatters.actions>
+                        Actions
                     </th>
                 </template>
             </Table-Card>
@@ -119,9 +127,9 @@
         </template>
     </Table-Card>
 
-{#    {% include 'security:app/modal.html' %}#}
+    {% include 'backend_performance:backend_performance/create.html' %}
+    {% include 'backend_performance:backend_performance/runtest.html' %}
 </div>
 
-{% include 'backend_performance:create.html' %}
-{% include 'backend_performance:runtest.html' %}
-{% include 'backend_performance:thresholds.html' %}
+
+{#{% include 'backend_performance:thresholds.html' %}#}

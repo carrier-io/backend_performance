@@ -1,11 +1,9 @@
-import json
 from queue import Empty
 
-from pylon.core.tools import log
 from sqlalchemy import and_
 
 from flask_restful import Resource
-from flask import request, make_response
+from flask import request
 
 from tools import api_tools
 from ...models.api_tests import PerformanceApiTest
@@ -76,7 +74,7 @@ class API(Resource):
 
     def post(self, project_id: int):
         """
-        Create test and run if indicated
+        Create test and run on demand
         """
         run_test_ = request.json.pop('run_test', False)
         test_data, errors = parse_test_data(
@@ -88,10 +86,7 @@ class API(Resource):
         if errors:
             return errors, 400
 
-        log.warning('TEST DATA %s', test_data)
-
         schedules = test_data.pop('scheduling', [])
-        log.warning('schedules %s', schedules)
 
         test = PerformanceApiTest(**test_data)
         test.insert()

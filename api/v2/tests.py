@@ -31,7 +31,7 @@ class API(Resource):
             if schedules:
                 try:
                     test['scheduling'] = self.module.context.rpc_manager.timeout(
-                        2).scheduling_performance_load_from_db_by_ids(schedules)
+                        2).scheduling_backend_performance_load_from_db_by_ids(schedules)
                 except Empty:
                     ...
             rows.append(test)

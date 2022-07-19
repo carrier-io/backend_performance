@@ -76,7 +76,7 @@ class PerformanceApiTest(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin
         schedule_data['test_id'] = self.id
         schedule_data['project_id'] = self.project_id
         try:
-            schedule_id = self.rpc.timeout(2).performance_test_create_scheduling(data=schedule_data)
+            schedule_id = self.rpc.timeout(2).scheduling_backend_performance_create_schedule(data=schedule_data)
             log.info(f'schedule_id {schedule_id}')
             updated_schedules = set(self.schedules)
             updated_schedules.add(schedule_id)

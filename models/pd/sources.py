@@ -9,6 +9,12 @@ class SourceABC(ABC, BaseModel):
     def execution_json(self) -> dict:
         ...
 
+    @validator('*', pre=True, allow_reuse=True)
+    def empty_str_to_none(cls, value):
+        if value == '':
+            return None
+        return value
+
 
 class SourceGitSSH(SourceABC):
     repo: str

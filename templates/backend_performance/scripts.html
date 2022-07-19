@@ -7,6 +7,7 @@
 {#<script src="{{ url_for('backend_performance.static', filename='js/thresholds.js') }}"></script>#}
 
 {{ template_slot('params_table_scripts') | safe }}
+{{ template_slot('sources_scripts') | safe }}
 {{ template_slot("integrations_backend_performance_scripts") | safe }}
 {{ template_slot("backend_performance_scheduling_test_creat_scripts") | safe }}
 

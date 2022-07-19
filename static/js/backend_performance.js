@@ -9,12 +9,23 @@ var test_formatters = {
         }
     },
     actions(value, row, index) {
+        console.log('actions formatter', row)
         return `
             <div class="d-flex justify-content-end">
-                <button type="button" class="btn btn-24 btn-action" onclick="runTestModal('${row.id}')" data-toggle="tooltip" data-placement="top" title="Run Test"><i class="fas fa-play"></i></button>
-                <button type="button" class="btn btn-24 btn-action" onclick="editTest('${row.id}')"><i class="fas fa-cog"></i></button>
-                <button type="button" class="btn btn-24 btn-action"><i class="fas fa-share-alt"></i></button>
-                <button type="button" class="btn btn-24 btn-action" onclick="deleteTests('${row.id}')"><i class="fas fa-trash-alt"></i></button>
+                <button type="button" class="btn btn-24 btn-action test_run" 
+                        data-toggle="tooltip" data-placement="top" title="Run Test"
+                >
+                    <i class="fas fa-play"></i>
+                </button>
+                <button type="button" class="btn btn-24 btn-action test_edit">
+                    <i class="fas fa-cog"></i>
+                </button>
+                <button type="button" class="btn btn-24 btn-action">
+                    <i class="fas fa-share-alt"></i>
+                </button>
+                <button type="button" class="btn btn-24 btn-action test_delete">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
             </div>
         `
     },
@@ -35,12 +46,29 @@ var test_formatters = {
             }
         }
     },
+    action_events: {
+        "click .test_run": function (e, value, row, index) {
+            // apiActions.run(row.id, row.name)
+            console.log('test_run', row)
+        },
+
+        "click .test_edit": function (e, value, row, index) {
+            console.log('test_edit', row)
+            const component_proxy = vueVm.registered_components.create_modal
+            component_proxy.mode = 'update'
+            component_proxy.set(row)
+        },
+
+        "click .test_delete": function (e, value, row, index) {
+            console.log('test_delete', row)
+        }
+    }
 
 }
 
 const TestCreateModal = {
     delimiters: ['[[', ']]'],
-    props: ['modal_id', 'modal_header', 'runners', 'test_params_id'],
+    props: ['modal_id', 'modal_header', 'runners', 'test_params_id', 'source_card_id'],
     template: `
 <div class="modal modal-base fixed-left fade shadow-sm" tabindex="-1" role="dialog" :id="modal_id">
     <div class="modal-dialog modal-dialog-aside" role="document">
@@ -54,15 +82,29 @@ const TestCreateModal = {
                         <button type="button" class="btn btn-secondary mr-2" data-dismiss="modal" aria-label="Close">
                             Cancel
                         </button>
-                        <button type="button" id="submit" class="btn btn-secondary mr-2" 
-                            @click="handleCreate"
+                        <button type="button" class="btn btn-secondary mr-2" 
+                            @click="() => handleCreate(false)"
+                            v-if="mode === 'create'"
                         >
                             Save
                         </button>
-                        <button type="button" id="save" class="btn btn-basic" 
+                        <button type="button" class="btn btn-basic" 
                             @click="() => handleCreate(true)"
+                            v-if="mode === 'create'"
                         >
                             Save and start
+                        </button>
+                        <button type="button" class="btn btn-secondary mr-2" 
+                            @click="() => handleUpdate(false)"
+                            v-if="mode === 'update'"
+                        >
+                            Update
+                        </button>
+                        <button type="button" class="btn btn-basic" 
+                            @click="() => handleUpdate(true)"
+                            v-if="mode === 'update'"
+                        >
+                            Update and start
                         </button>
                     </div>
                 </div>
@@ -85,7 +127,7 @@ const TestCreateModal = {
                                        v-model='name'
                                        :class="{ 'is-invalid': errors?.name }"
                                    >
-                                   <div class="invalid-feedback">[[ errors.name ]]</div>
+                                   <div class="invalid-feedback">[[ get_error_msg('name') ]]</div>
                             </div>
                             <div class="d-flex">
                                 <div class="flex-fill">
@@ -99,7 +141,7 @@ const TestCreateModal = {
                                                v-model='test_type'
                                                :class="{ 'is-invalid': errors?.test_type }"
                                                >
-                                               <div class="invalid-feedback">[[ errors.test_type ]]</div>
+                                               <div class="invalid-feedback">[[ get_error_msg('test_type') ]]</div>
                                     </div>
                                 </div>
                                 <div class="flex-fill">
@@ -113,7 +155,7 @@ const TestCreateModal = {
                                                v-model='test_env'
                                                :class="{ 'is-invalid': errors?.test_env }"
                                                >
-                                           <div class="invalid-feedback">[[ errors.test_env ]]</div>
+                                           <div class="invalid-feedback">[[ get_error_msg('test_env') ]]</div>
                                     </div>
                                 </div>
                             </div>
@@ -133,7 +175,7 @@ const TestCreateModal = {
                                         </option>
                                     </optgroup>
                                 </select>
-                                <div class="invalid-feedback">[[ errors.runner ]]</div>
+                                <div class="invalid-feedback">[[ get_error_msg('runner') ]]</div>
                             </div>
                             <div class="form-group">
                                 <div class="custom-control custom-checkbox custom-control-inline">
@@ -143,7 +185,7 @@ const TestCreateModal = {
                                         v-model='compile_tests'
                                         :class="{ 'is-invalid': errors?.compile_tests }"
                                         >
-                                        <div class="invalid-feedback">[[ errors.compile_tests ]]</div>
+                                        <div class="invalid-feedback">[[ get_error_msg('compile_tests') ]]</div>
                                     </label>
                                 </div>
                             </div>
@@ -162,7 +204,7 @@ const TestCreateModal = {
                                            v-model='entrypoint'
                                            :class="{ 'is-invalid': errors?.entrypoint }"
                                            >
-                                           <div class="invalid-feedback">[[ errors.entrypoint ]]</div>
+                                           <div class="invalid-feedback">[[ get_error_msg('entrypoint') ]]</div>
                                 </div>
                             </div>
                         </div>
@@ -259,82 +301,204 @@ const TestCreateModal = {
 </div>
     `,
     data() {
-        return {
-            name: '',
-            test_type: '',
-            test_env: '',
-            compile_tests: false,
-            entrypoint: '',
-            runner: null,
-            errors: {},
-            advanced_params_icon: 'fas fa-chevron-down'
-        }
+        return this.initial_state()
     },
     mounted() {
+        $(this.$el).on('hide.bs.modal', this.clear)
         this.runner = this.default_runner
     },
     computed: {
-        // advanced_params_icon() {
-        //     console.log('advanced_params_icon', this.$refs.advanced_params)
-        //     return 'fas fa-chevron-down'
-        // }
-        // runners_ordered() {
-        //     return Object.keys(this.$props.runners).sort((a, b) => a.toLowerCase() === 'jmeter' ? 1 : 0)
-        // }
         default_runner() {
             return this.$props.runners &&
                 this.$props.runners[Object.keys(this.$props.runners).reverse()[0]][0].version
                 || null
         },
         test_parameters() {
-            console.log('COMPUTED')
             return ParamsTable.Manager(this.$props.test_params_id)
         },
-        body_data() {
+        source() {
+            return SourceCard.Manager(this.$props.source_card_id)
+        },
+        integrations() {
+            try {
+                return IntegrationSection.Manager()
+            } catch (e) {
+                console.warn('No integration section')
+                return undefined
+            }
+        },
+        scheduling() {
+            try {
+                return SchedulingSection.Manager()
+            } catch (e) {
+                console.warn('No scheduling section')
+                return undefined
+            }
+        }
+    },
+    watch: {
+        errors(newValue,) {
+            if (Object.keys(newValue).length > 0) {
+                newValue.test_parameters ?
+                    this.test_parameters.setError(newValue.test_parameters) :
+                    this.test_parameters.clearErrors()
+                newValue.source ?
+                    this.source.setError(newValue.source) :
+                    this.source.clearErrors()
+                newValue.integrations ?
+                    this.integrations?.setError(newValue.integrations) :
+                    this.integrations?.clearErrors()
+                newValue.scheduling ?
+                    this.scheduling?.setError(newValue.scheduling) :
+                    this.scheduling?.clearErrors()
+            } else {
+                this.test_parameters.clearErrors()
+                this.source.clearErrors()
+                this.integrations?.clearErrors()
+                this.scheduling?.clearErrors()
+            }
+        }
+    },
+    methods: {
+        get_error_msg(field_name) {
+            return this.errors[field_name]?.reduce((acc, item) => {
+                return acc === '' ? item.msg : [acc, item.msg].join('; ')
+            }, '')
+        },
+        get_data() {
             const data = {
                 common_params: {
                     name: this.name,
                     entrypoint: this.entrypoint,
                     runner: this.runner,
+                    source: this.source.get(),
                 },
-                test_parameters: this.test_parameters.get()
+                test_parameters: this.test_parameters.get(),
+                integrations: this.integrations?.get() || [],
+                scheduling: this.scheduling?.get() || [],
             }
-            if (vueVm.scheduling) { data['scheduling'] = vueVm.scheduling }
             return data
-        }
-
-    },
-    methods: {
+        },
         handle_advanced_params_icon(e) {
             this.advanced_params_icon = this.$refs.advanced_params.classList.contains('show') ?
                 'fas fa-chevron-down' : 'fas fa-chevron-up'
         },
-        handleClose() {
-            $(this.$el).modal('hide')
-        },
         async handleCreate(run_test = false) {
+            this.clearErrors()
             const resp = await fetch(`/api/v2/backend_performance/tests/${getSelectedProjectId()}`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({...this.body_data, run_test})
+                body: JSON.stringify({...this.get_data(), run_test})
             })
             if (resp.ok) {
                 console.log('data', data)
-                this.handleClose()
+                this.hide()
+            } else {
+                await this.handleError(resp)
+            }
+        },
+        async handleUpdate(run_test = false) {
+            this.clearErrors()
+            const resp = await fetch(`/api/v2/backend_performance/test/${getSelectedProjectId()}/${this.id}`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({...this.get_data(), run_test})
+            })
+            if (resp.ok) {
+                console.log('data', data)
+                this.hide()
             } else {
                 await this.handleError(resp)
             }
         },
         async handleError(response) {
+            //     errorData?.forEach(item => {
+            //     const [errLoc, ...rest] = item.loc
+            //     item.loc = rest
+            //     this.dataModel[errLoc]?.setError(item)
+            // })
+            // alertCreateTest?.add('Please fix errors below', 'danger', true, 5000)
             try {
                 const error_data = await response.json()
-                error_data.forEach(item => {
-                    this.errors[item.loc[0]] = item.msg
-                })
+                // error_data?.forEach(item => {
+                //     const [errLoc, ...rest] = item.loc
+                //     item.loc = rest
+                //     if (this.errors[errLoc]) {
+                //         this.errors[errLoc].push(item)
+                //     } else {
+                //         this.errors[errLoc] = [item]
+                //     }
+                // })
+                this.errors = error_data?.reduce((acc, item) => {
+                    const [errLoc, ...rest] = item.loc
+                    item.loc = rest
+                    if (acc[errLoc]) {
+                        acc[errLoc].push(item)
+                    } else {
+                        acc[errLoc] = [item]
+                    }
+                    return acc
+                }, {})
+
             } catch (e) {
-                alertMain.add(e, 'danger-overlay')
+                alertCreateTest.add(e, 'danger-overlay')
             }
         },
+        initial_state() {
+            return {
+                id: null,
+                test_uid: null,
+
+                name: '',
+                parallel_runners: 1,
+                location: 'default',
+                entrypoint: '',
+                runner: this.default_runner,
+                env_vars: {},
+                customization: {},
+                cc_env_vars: {},
+
+                test_type: '',
+                test_env: '',
+                compile_tests: false,
+                errors: {},
+
+                advanced_params_icon: 'fas fa-chevron-down',
+                mode: 'create',
+            }
+        },
+        set(data) {
+            console.log('load', data)
+            const {test_parameters, integrations, scheduling, source, ...rest} = data
+
+            // common fields
+            Object.assign(this.$data, rest)
+
+            // special fields
+            this.test_parameters.set(test_parameters)
+            this.source.set(source)
+            this.integrations.set(integrations)
+            this.scheduling.set(scheduling)
+
+            this.show()
+        },
+        clear() {
+            Object.assign(this.$data, this.initial_state())
+            this.test_parameters.clear()
+            this.source.clear()
+            this.integrations.clear()
+            this.scheduling.clear()
+        },
+        clearErrors() {
+            this.errors = {}
+        },
+        show() {
+            $(this.$el).modal('show')
+        },
+        hide() {
+            $(this.$el).modal('hide')
+            // this.clear() // - happens on close event
+        }
     }
 }
 

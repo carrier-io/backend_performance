@@ -16,7 +16,7 @@
             </div>
             <div class="modal-body">
                 {{ template_slot("params_table_content", payload={"caption": "Test Parameters", "modal_id": "runner"}) | safe }}
-                {{ template_slot("locations_content", payload={"modal_id": "runner"}) | safe }}
+{#                {{ template_slot("locations_content", payload={"modal_id": "runner"}) | safe }}#}
                 {% include 'backend_performance:reporting-config.html' %}
                 <div class="row p-4">
                     <div class="col"></div>

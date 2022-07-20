@@ -126,7 +126,7 @@
         <template #table_headers>
             <th scope="col" data-checkbox="true"></th>
             <th data-visible="false" data-field="id">index</th>
-            <th scope="col" data-sortable="true" data-field="name" data-formatter=createLinkToTest>Name</th>
+            <th scope="col" data-sortable="true" data-field="name" data-formatter=report_formatters.createLinkToTest>Name</th>
             <th scope="col" data-sortable="true" data-field="start_time">Date</th>
             <th scope="col" data-sortable="true" data-field="duration">Duration</th>
             <th scope="col" data-sortable="true" data-field="vusers">vUsers</th>
@@ -136,7 +136,7 @@
             <th scope="col" data-sortable="true" data-field="failure_rate">Fail Rate</th>
             <th scope="col" data-sortable="true" data-field="tags">Tags</th>
             <th scope="col" data-sortable="true" data-field="test_status.status"
-                data-formatter="reportsStatusFormatter">Status
+                data-formatter="report_formatters.reportsStatusFormatter">Status
             </th>
         </template>
     </Table-Card>

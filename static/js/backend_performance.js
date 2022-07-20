@@ -73,7 +73,36 @@ var test_formatters = {
 
         }
     }
+}
 
+var report_formatters = {
+    reportsStatusFormatter(value, row, index) {
+        switch (value.toLowerCase()) {
+            case 'error':
+                return `<div style="color: var(--red)"><i class="fas fa-exclamation-circle error"></i> ${value}</div>`
+            case 'failed':
+                return `<div style="color: var(--red)"><i class="fas fa-exclamation-circle error"></i> ${value}</div>`
+            case 'success':
+                return `<div style="color: var(--green)"><i class="fas fa-exclamation-circle error"></i> ${value}</div>`
+            case 'canceled':
+                return `<div style="color: var(--gray)"><i class="fas fa-times-circle"></i> ${value}</div>`
+            case 'finished':
+                return `<div style="color: var(--info)"><i class="fas fa-check-circle"></i> ${value}</div>`
+            case 'in progress':
+                return `<div style="color: var(--basic)"><i class="fas fa-spinner fa-spin fa-secondary"></i> ${value}</div>`
+            case 'post processing':
+                return `<div style="color: var(--basic)"><i class="fas fa-spinner fa-spin fa-secondary"></i> ${value}</div>`
+            case 'pending...':
+                return `<div style="color: var(--basic)"><i class="fas fa-spinner fa-spin fa-secondary"></i> ${value}</div>`
+            case 'preparing...':
+                return `<div style="color: var(--basic)"><i class="fas fa-spinner fa-spin fa-secondary"></i> ${value}</div>`
+            default:
+                return value
+        }
+    },
+    createLinkToTest(value, row, index) {
+        return `<a class="test form-control-label" href="./results?result_id=${row.id}" role="button">${row.name}</a>`
+    }
 }
 
 const TestCreateModal = {

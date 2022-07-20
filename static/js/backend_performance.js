@@ -68,7 +68,7 @@ var test_formatters = {
 
 const TestCreateModal = {
     delimiters: ['[[', ']]'],
-    props: ['modal_id', 'modal_header', 'runners', 'test_params_id', 'source_card_id'],
+    props: ['modal_id', 'runners', 'test_params_id', 'source_card_id', 'locations'],
     template: `
 <div class="modal modal-base fixed-left fade shadow-sm" tabindex="-1" role="dialog" :id="modal_id">
     <div class="modal-dialog modal-dialog-aside" role="document">
@@ -76,7 +76,7 @@ const TestCreateModal = {
             <div class="modal-header">
                 <div class="row w-100">
                     <div class="col">
-                        <h2>[[ modal_header ]]</h2>
+                        <h2>[[ mode === 'create' ? 'Create Backend Tests' : 'Update Backend Test' ]]</h2>
                     </div>
                     <div class="col-xs">
                         <button type="button" class="btn btn-secondary mr-2" data-dismiss="modal" aria-label="Close">
@@ -212,7 +212,16 @@ const TestCreateModal = {
                 </div>
                 
                 
-                <slot name='locations'></slot>
+                <Locations 
+                    v-model:location="location"
+                    v-model:parallel_runners="parallel_runners"
+                    v-model:cpu="cpu_quota"
+                    v-model:memory="memory_quota"
+                    
+                    v-bind="locations"
+                    ref="locations"
+                ></Locations>
+                <button @click="() => this.$refs.locations.fetch_locations()">FETCH</button>
                 <slot name='params_table'></slot>
                 <slot name='integrations'></slot>
                 <slot name='scheduling'></slot>
@@ -372,6 +381,10 @@ const TestCreateModal = {
                     entrypoint: this.entrypoint,
                     runner: this.runner,
                     source: this.source.get(),
+                    env_vars: {
+                        cpu_quota: this.cpu_quota,
+                        memory_quota: this.memory_quota
+                    }
                 },
                 test_parameters: this.test_parameters.get(),
                 integrations: this.integrations?.get() || [],
@@ -391,7 +404,7 @@ const TestCreateModal = {
                 body: JSON.stringify({...this.get_data(), run_test})
             })
             if (resp.ok) {
-                console.log('data', data)
+                console.log('data', await resp.json())
                 this.hide()
             } else {
                 await this.handleError(resp)
@@ -405,7 +418,7 @@ const TestCreateModal = {
                 body: JSON.stringify({...this.get_data(), run_test})
             })
             if (resp.ok) {
-                console.log('data', data)
+                console.log('data', await resp.json())
                 this.hide()
             } else {
                 await this.handleError(resp)
@@ -450,8 +463,12 @@ const TestCreateModal = {
                 test_uid: null,
 
                 name: '',
-                parallel_runners: 1,
+
                 location: 'default',
+                parallel_runners: 1,
+                cpu_quota: 1,
+                memory_quota: 4,
+
                 entrypoint: '',
                 runner: this.default_runner,
                 env_vars: {},
@@ -469,10 +486,12 @@ const TestCreateModal = {
         },
         set(data) {
             console.log('load', data)
-            const {test_parameters, integrations, scheduling, source, ...rest} = data
+            const {test_parameters, integrations, scheduling, source, env_vars:all_env_vars, ...rest} = data
+
+            const {cpu_quota, memory_quota, ...env_vars} = all_env_vars
 
             // common fields
-            Object.assign(this.$data, rest)
+            Object.assign(this.$data, {...rest, cpu_quota, memory_quota, env_vars})
 
             // special fields
             this.test_parameters.set(test_parameters)
@@ -496,6 +515,7 @@ const TestCreateModal = {
             $(this.$el).modal('show')
         },
         hide() {
+            vueVm.registered_components.table_tests?.table_action('refresh')
             $(this.$el).modal('hide')
             // this.clear() // - happens on close event
         }

@@ -4,10 +4,10 @@
         instance_name="create_modal"
 
         modal_id="createTestModal"
-        modal_header="Create Backend Tests"
         :runners='{{ runners | tojson }}'
         test_params_id="backend_test_params"
         source_card_id="{{ source_container_id }}"
+        :locations='{{ locations }}'
 >
     <template #alert_bar>
         {{ template_slot("alert_bar", payload={
@@ -22,9 +22,9 @@
             "container_id": source_container_id
             }) | safe }}
     </template>
-    <template #locations>
-        {{ template_slot("locations_content", payload={"modal_id": "backend"}) | safe }}
-    </template>
+{#    <template #locations>#}
+{#        {{ template_slot("locations_content", payload={"modal_id": "backend"}) | safe }}#}
+{#    </template>#}
 
     <template #params_table>
         {{ template_slot("params_table_content", payload={"caption": "Test Parameters", "modal_id": "backend"}) | safe }}

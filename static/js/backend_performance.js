@@ -1,3 +1,10 @@
+const test_delete = ids => {
+    const url = `/api/v1/backend_performance/tests/${getSelectedProjectId()}?` + $.param({"id[]": ids})
+    fetch(url, {
+        method: 'DELETE'
+    }).then(response => response.ok && vueVm.registered_components.table_tests?.table_action('refresh'))
+}
+
 var test_formatters = {
     job_type(value, row, index) {
         if (row.job_type === "perfmeter") {
@@ -9,7 +16,6 @@ var test_formatters = {
         }
     },
     actions(value, row, index) {
-        console.log('actions formatter', row)
         return `
             <div class="d-flex justify-content-end">
                 <button type="button" class="btn btn-24 btn-action test_run" 
@@ -50,6 +56,8 @@ var test_formatters = {
         "click .test_run": function (e, value, row, index) {
             // apiActions.run(row.id, row.name)
             console.log('test_run', row)
+            const component_proxy = vueVm.registered_components.run_modal
+            component_proxy.set(row)
         },
 
         "click .test_edit": function (e, value, row, index) {
@@ -61,6 +69,8 @@ var test_formatters = {
 
         "click .test_delete": function (e, value, row, index) {
             console.log('test_delete', row)
+            test_delete(row.id)
+
         }
     }
 
@@ -124,8 +134,9 @@ const TestCreateModal = {
                                 </p>
                                 <input type="text" class="form-control form-control-alternative"
                                        placeholder="Test Name"
+                                       :disabled="mode !== 'create'"
                                        v-model='name'
-                                       :class="{ 'is-invalid': errors?.name }"
+                                       :class="{ 'is-invalid': errors?.name , 'disabled': mode !== 'create'}"
                                    >
                                    <div class="invalid-feedback">[[ get_error_msg('name') ]]</div>
                             </div>
@@ -152,10 +163,10 @@ const TestCreateModal = {
                                         </p>
                                         <input type="text" class="form-control form-control-alternative"
                                                placeholder="Test Environment"
-                                               v-model='test_env'
-                                               :class="{ 'is-invalid': errors?.test_env }"
+                                               v-model='env_type'
+                                               :class="{ 'is-invalid': errors?.env_type }"
                                                >
-                                           <div class="invalid-feedback">[[ get_error_msg('test_env') ]]</div>
+                                           <div class="invalid-feedback">[[ get_error_msg('env_type') ]]</div>
                                     </div>
                                 </div>
                             </div>
@@ -165,8 +176,8 @@ const TestCreateModal = {
                                     <h13>Choose the runner for the test.</h13>
                                 </p>
                                 <select class="selectpicker bootstrap-select__b mt-1" data-style="btn" 
-                                v-model="runner"
-                                :class="{ 'is-invalid': errors?.runner }"
+                                    v-model="runner"
+                                    :class="{ 'is-invalid': errors?.runner }"
                                 >
                                     
                                     <optgroup v-for='runner_group in Object.keys(runners).reverse()' :label="runner_group">
@@ -221,7 +232,7 @@ const TestCreateModal = {
                     v-bind="locations"
                     ref="locations"
                 ></Locations>
-                <button @click="() => this.$refs.locations.fetch_locations()">FETCH</button>
+                
                 <slot name='params_table'></slot>
                 <slot name='integrations'></slot>
                 <slot name='scheduling'></slot>
@@ -314,6 +325,7 @@ const TestCreateModal = {
     },
     mounted() {
         $(this.$el).on('hide.bs.modal', this.clear)
+        $(this.$el).on('show.bs.modal', this.$refs.locations.fetch_locations)
         this.runner = this.default_runner
     },
     computed: {
@@ -375,20 +387,36 @@ const TestCreateModal = {
             }, '')
         },
         get_data() {
+
             const data = {
                 common_params: {
                     name: this.name,
+                    test_type: this.test_type,
+                    env_type: this.env_type,
                     entrypoint: this.entrypoint,
                     runner: this.runner,
                     source: this.source.get(),
                     env_vars: {
                         cpu_quota: this.cpu_quota,
                         memory_quota: this.memory_quota
-                    }
+                    },
+                    parallel_runners: this.parallel_runners,
+                    cc_env_vars: {}
                 },
                 test_parameters: this.test_parameters.get(),
                 integrations: this.integrations?.get() || [],
                 scheduling: this.scheduling?.get() || [],
+            }
+            let csv_files = {}
+            $("#splitCSV .flex-row").slice(1,).each(function (_, item) {
+                const file = $(item).find('input[type=text]')
+                const header = $(item).find('input[type=checkbox]')
+                if (file[0].value) {
+                    csv_files[file[0].value] = header[0].checked
+                }
+            })
+            if (Object.keys(csv_files).length > 0) {
+                data.common_params.cc_env_vars.csv_files = csv_files
             }
             return data
         },
@@ -398,7 +426,7 @@ const TestCreateModal = {
         },
         async handleCreate(run_test = false) {
             this.clearErrors()
-            const resp = await fetch(`/api/v2/backend_performance/tests/${getSelectedProjectId()}`, {
+            const resp = await fetch(`/api/v1/backend_performance/tests/${getSelectedProjectId()}`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({...this.get_data(), run_test})
@@ -412,7 +440,7 @@ const TestCreateModal = {
         },
         async handleUpdate(run_test = false) {
             this.clearErrors()
-            const resp = await fetch(`/api/v2/backend_performance/test/${getSelectedProjectId()}/${this.id}`, {
+            const resp = await fetch(`/api/v1/backend_performance/test/${getSelectedProjectId()}/${this.id}`, {
                 method: 'PUT',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({...this.get_data(), run_test})
@@ -425,23 +453,8 @@ const TestCreateModal = {
             }
         },
         async handleError(response) {
-            //     errorData?.forEach(item => {
-            //     const [errLoc, ...rest] = item.loc
-            //     item.loc = rest
-            //     this.dataModel[errLoc]?.setError(item)
-            // })
-            // alertCreateTest?.add('Please fix errors below', 'danger', true, 5000)
             try {
                 const error_data = await response.json()
-                // error_data?.forEach(item => {
-                //     const [errLoc, ...rest] = item.loc
-                //     item.loc = rest
-                //     if (this.errors[errLoc]) {
-                //         this.errors[errLoc].push(item)
-                //     } else {
-                //         this.errors[errLoc] = [item]
-                //     }
-                // })
                 this.errors = error_data?.reduce((acc, item) => {
                     const [errLoc, ...rest] = item.loc
                     item.loc = rest
@@ -463,6 +476,8 @@ const TestCreateModal = {
                 test_uid: null,
 
                 name: '',
+                test_type: '',
+                env_type: '',
 
                 location: 'default',
                 parallel_runners: 1,
@@ -475,8 +490,6 @@ const TestCreateModal = {
                 customization: {},
                 cc_env_vars: {},
 
-                test_type: '',
-                test_env: '',
                 compile_tests: false,
                 errors: {},
 
@@ -486,18 +499,35 @@ const TestCreateModal = {
         },
         set(data) {
             console.log('load', data)
-            const {test_parameters, integrations, scheduling, source, env_vars:all_env_vars, ...rest} = data
+            const {test_parameters, integrations, scheduling, source, env_vars: all_env_vars, ...rest} = data
 
             const {cpu_quota, memory_quota, ...env_vars} = all_env_vars
 
+            let test_type = ''
+            let env_type = ''
+            const test_parameters_filtered = test_parameters.filter(item => {
+                if (item.name === 'test_type') {
+                    test_type = item.default;
+                    return false
+                }
+                if (item.name === 'env_type') {
+                    env_type = item.default;
+                    return false
+                }
+                if (item.name === 'test_name') {
+                    env_type = item.default;
+                    return false
+                }
+                return true
+            })
             // common fields
-            Object.assign(this.$data, {...rest, cpu_quota, memory_quota, env_vars})
+            Object.assign(this.$data, {...rest, cpu_quota, memory_quota, env_vars, test_type, env_type})
 
             // special fields
-            this.test_parameters.set(test_parameters)
+            this.test_parameters.set(test_parameters_filtered)
             this.source.set(source)
-            this.integrations.set(integrations)
-            this.scheduling.set(scheduling)
+            integrations && this.integrations.set(integrations)
+            scheduling && this.scheduling.set(scheduling)
 
             this.show()
         },
@@ -507,6 +537,9 @@ const TestCreateModal = {
             this.source.clear()
             this.integrations.clear()
             this.scheduling.clear()
+            $('#backend_parallel').text(this.parallel_runners)
+            $('#backend_cpu').text(this.cpu_quota)
+            $('#backend_memory').text(this.memory_quota)
         },
         clearErrors() {
             this.errors = {}
@@ -523,3 +556,201 @@ const TestCreateModal = {
 }
 
 register_component('TestCreateModal', TestCreateModal)
+
+
+function addCSVSplit(id, key = "", is_header = "") {
+    $(`#${id}`).append(`<div class="d-flex flex-row">
+    <div class="flex-fill">
+        <input type="text" class="form-control form-control-alternative" placeholder="File Path" value="${key}">
+    </div>
+    <div class="flex-fill m-auto pl-3">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" value="">
+          <label class="form-check-label">Ignore first line</label>
+        </div>
+    </div>
+    <div class="m-auto">
+        <button type="button" class="btn btn-32 btn-action" onclick="removeParam(event)"><i class="fas fa-minus"></i></button>
+    </div>
+</div>`)
+}
+
+
+const TestRunModal = {
+    delimiters: ['[[', ']]'],
+    props: ['test_params_id'],
+    template: `
+        <div class="modal modal-base fixed-left fade shadow-sm" tabindex="-1" role="dialog" id="runTestModal">
+            <div class="modal-dialog modal-dialog-aside" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <div class="row w-100">
+                            <div class="col">
+                                <h3 class="ml-4 mt-3 mb-3">Run Backend Test</h3>
+                            </div>
+                            <div class="col-xs">
+                                <button type="button" class="btn btn-secondary mr-2" data-dismiss="modal" aria-label="Close">
+                                    Cancel
+                                </button>
+                                <button type="button" class="btn btn-basic" 
+                                    @click="handleRun"
+                                >
+                                    Run test
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-body">
+                        <slot name="test_parameters"></slot>
+                        <Locations 
+                            v-model:location="location"
+                            v-model:parallel_runners="parallel_runners"
+                            v-model:cpu="cpu_quota"
+                            v-model:memory="memory_quota"
+                            
+                            ref="locations"
+                        ></Locations>
+                        <div class="row p-4">
+                            <div class="col"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `,
+    computed: {
+        test_parameters() {
+            return ParamsTable.Manager(this.$props.test_params_id)
+        },
+
+    },
+    mounted() {
+        $(this.$el).on('hide.bs.modal', this.clear)
+        $(this.$el).on('show.bs.modal', this.$refs.locations.fetch_locations)
+    },
+    data() {
+        return this.initial_state()
+    },
+    methods: {
+        initial_state() {
+            return {
+                id: null,
+                test_uid: null,
+
+                location: 'default',
+                parallel_runners: 1,
+                cpu_quota: 1,
+                memory_quota: 4,
+
+                env_vars: {},
+                customization: {},
+                cc_env_vars: {},
+
+                compile_tests: false,
+                errors: {},
+            }
+        },
+        set(data) {
+            console.log('set data called', data)
+            const {test_parameters, env_vars: all_env_vars, ...rest} = data
+
+            const {cpu_quota, memory_quota, ...env_vars} = all_env_vars
+
+            // common fields
+            Object.assign(this.$data, {...rest, cpu_quota, memory_quota, env_vars,})
+
+            // special fields
+            this.test_parameters.set(test_parameters)
+            this.show()
+        },
+        show() {
+            $(this.$el).modal('show')
+        },
+        hide() {
+            vueVm.registered_components.table_tests?.table_action('refresh')
+            $(this.$el).modal('hide')
+            // this.clear() // - happens on close event
+        },
+        clear() {
+            Object.assign(this.$data, this.initial_state())
+            this.test_parameters.clear()
+        },
+        clearErrors() {
+            this.errors = {}
+        },
+        get_data() {
+            const test_params = this.test_parameters.get()
+            const name = test_params.find(i => i.name === 'test_name')
+            const test_type = test_params.find(i => i.name === 'test_type')
+            const env_type = test_params.find(i => i.name === 'env_type')
+            const data = {
+                common_params: {
+                    name: name,
+                    test_type: test_type,
+                    env_type: env_type,
+                    env_vars: {
+                        cpu_quota: this.cpu_quota,
+                        memory_quota: this.memory_quota
+                    },
+                    parallel_runners: this.parallel_runners
+                },
+                test_parameters: test_params,
+            }
+            return data
+        },
+        async handleRun() {
+            this.clearErrors()
+            const resp = await fetch(`/api/v1/backend_performance/test/${getSelectedProjectId()}/${this.id}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(this.get_data())
+            })
+            if (resp.ok) {
+                console.log('data', await resp.json())
+                this.hide()
+            } else {
+                await this.handleError(resp)
+            }
+        },
+        async handleError(response) {
+            try {
+                const error_data = await response.json()
+                this.errors = error_data?.reduce((acc, item) => {
+                    const [errLoc, ...rest] = item.loc
+                    item.loc = rest
+                    if (acc[errLoc]) {
+                        acc[errLoc].push(item)
+                    } else {
+                        acc[errLoc] = [item]
+                    }
+                    return acc
+                }, {})
+
+            } catch (e) {
+                alertCreateTest.add(e, 'danger-overlay')
+            }
+        },
+    },
+    watch: {
+        errors(newValue,) {
+            if (Object.keys(newValue).length > 0) {
+                newValue.test_parameters ?
+                    this.test_parameters.setError(newValue.test_parameters) :
+                    this.test_parameters.clearErrors()
+            } else {
+                this.test_parameters.clearErrors()
+            }
+        }
+    },
+}
+register_component('TestRunModal', TestRunModal)
+
+
+$(document).on('vue_init', () => {
+    $('#delete_tests').on('click', e => {
+        const ids_to_delete = $(e.target).closest('.card').find('table.table').bootstrapTable('getSelections').map(
+            item => item.id
+        ).join(',')
+        ids_to_delete && test_delete(ids_to_delete)
+    })
+})

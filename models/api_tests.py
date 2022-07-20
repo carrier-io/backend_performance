@@ -138,7 +138,7 @@ class PerformanceApiTest(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin
         execution_json = {
             'test_id': self.test_uid,
             "container": self.container,
-            "execution_params": ExecutionParams.from_orm(self).dict(exclude_none=True),
+            "execution_params": ExecutionParams.from_orm(self).json(exclude_none=True),
             "cc_env_vars": CcEnvVars.from_orm(self).dict(exclude_none=True),
             "job_name": self.name,
             "job_type": self.job_type,

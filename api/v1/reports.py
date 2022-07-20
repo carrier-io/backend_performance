@@ -32,6 +32,7 @@ class API(Resource):
         reports = []
         project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
         total, res = api_tools.get(project, args, APIReport)
+        log.critical('REPORTS GET %s', res)
         for each in res:
             each_json = each.to_json()
             each_json["start_time"] = each_json["start_time"].replace("T", " ").split(".")[0]

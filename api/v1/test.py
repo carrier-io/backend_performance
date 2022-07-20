@@ -24,6 +24,12 @@ class API(Resource):
             PerformanceApiTest.get_api_filter(project_id, test_id)
         ).first()
         if request.args.get("raw"):
+            test = test.to_json((
+                "influx.port", "influx.host", "galloper_url",
+                "influx.db", "comparison_db", "telegraf_db",
+                "loki_host", "loki_port", "influx.username", "influx.password"
+            ))
+            # test = test.to_json()
             schedules = test.pop('schedules', [])
             if schedules:
                 try:
@@ -31,12 +37,7 @@ class API(Resource):
                         2).scheduling_backend_performance_load_from_db_by_ids(schedules)
                 except Empty:
                     test['scheduling'] = []
-            return test.to_json((
-                "influx.port", "influx.host", "galloper_url",
-                "influx.db", "comparison_db", "telegraf_db",
-                "loki_host", "loki_port", "influx.username", "influx.password",
-                'schedules'
-            ))
+            return test
         if request.args.get("type") == "docker":
             message = test.configure_execution_json('docker', execution=request.args.get("exec", False))
         else:
@@ -78,6 +79,15 @@ class API(Resource):
                 default=env_type
             ).dict()
         )
+        # test_params_list = [i.get('name') for i in test_data['test_parameters']]
+        # from ...constants import JOB_CONTAINER_MAPPING
+        # if "influx.db" not in test_params_list:
+        #     test_data['test_parameters'].append(
+        #         PerformanceTestParam(
+        #             name="influx.db",
+        #             default=JOB_CONTAINER_MAPPING.get(test_data['runner'], {}).get('influx_db')
+        #         ).dict()
+        #     )
 
         test_query = PerformanceApiTest.query.filter(PerformanceApiTest.get_api_filter(project_id, test_id))
 

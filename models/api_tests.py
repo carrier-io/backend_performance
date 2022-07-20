@@ -11,6 +11,7 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
+import json
 from queue import Empty
 from typing import List, Union
 
@@ -135,10 +136,21 @@ class PerformanceApiTest(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin
         super().insert()
 
     def configure_execution_json(self, output: str = 'cc', execution: bool = False):
+        test_params_list = [i.get('name') for i in self.test_parameters]
+        from .pd.performance_test import PerformanceTestParam
+        if "influx.db" not in test_params_list:
+            self.test_parameters.append(
+                PerformanceTestParam(
+                    name="influx.db",
+                    default=self.influx_db
+                ).dict()
+            )
+        exec_params = ExecutionParams.from_orm(self).dict(exclude_none=True)
+
         execution_json = {
             'test_id': self.test_uid,
             "container": self.container,
-            "execution_params": ExecutionParams.from_orm(self).json(exclude_none=True),
+            "execution_params": json.dumps(exec_params),
             "cc_env_vars": CcEnvVars.from_orm(self).dict(exclude_none=True),
             "job_name": self.name,
             "job_type": self.job_type,

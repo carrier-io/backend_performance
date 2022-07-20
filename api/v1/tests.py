@@ -25,8 +25,8 @@ class API(Resource):
         for i in res:
             test = i.to_json((
                 "influx.port", "influx.host", "galloper_url",
-                 "influx.db", "comparison_db", "telegraf_db",
-                 "loki_host", "loki_port", "influx.username", "influx.password",
+                "influx.db", "comparison_db", "telegraf_db",
+                "loki_host", "loki_port", "influx.username", "influx.password",
             ))
             schedules = test.pop('schedules', [])
             if schedules:
@@ -93,28 +93,34 @@ class API(Resource):
         test_type = test_data.pop('test_type')
         env_type = test_data.pop('env_type')
 
-        # test_params_list = [i.get('name') for i in test_data['test_parameters']]
-        # if 'test_name' not in test_params_list:
         test_data['test_parameters'].append(
             PerformanceTestParam(
                 name="test_name",
                 default=test_data['name']
             ).dict()
         )
-        # if 'test_type' not in test_params_list:
         test_data['test_parameters'].append(
             PerformanceTestParam(
                 name="test_type",
                 default=test_type
             ).dict()
         )
-        # if 'test_env' not in test_params_list:
         test_data['test_parameters'].append(
             PerformanceTestParam(
                 name="env_type",
                 default=env_type
             ).dict()
         )
+
+        # test_params_list = [i.get('name') for i in test_data['test_parameters']]
+        # from ...constants import JOB_CONTAINER_MAPPING
+        # if "influx.db" not in test_params_list:
+        #     test_data['test_parameters'].append(
+        #         PerformanceTestParam(
+        #             name="influx.db",
+        #             default=JOB_CONTAINER_MAPPING.get(test_data['runner'], {}).get('influx_db')
+        #         ).dict()
+        #     )
 
         compile_file_name = ''
         if test_data['source']['name'] == 'artifact':

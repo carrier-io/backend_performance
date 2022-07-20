@@ -18,7 +18,7 @@ class RPC:
 
     @web.rpc('backend_performance_test_create_common_parameters', 'parse_common_test_parameters')
     # @rpc_tools.wrap_exceptions(RuntimeError)
-    @rpc_tools.wrap_exceptions(ValidationError)
+    # @rpc_tools.wrap_exceptions(ValidationError)
     def parse_common_test_parameters(self, project_id: int, test_params: dict, **kwargs) -> dict:
         overrideable_only = kwargs.pop('overrideable_only', False)
         project = self.context.rpc_manager.call.project_get_or_404(project_id=project_id)

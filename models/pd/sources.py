@@ -10,9 +10,9 @@ class SourceABC(ABC, BaseModel):
         ...
 
     @validator('*', pre=True, allow_reuse=True)
-    def empty_str_to_none(cls, value):
+    def empty_str_to_none(cls, value, field):
         if value == '':
-            return None
+            return field.default
         return value
 
 

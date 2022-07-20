@@ -32,7 +32,7 @@ def get_backend_test_data(event):
     tests_count = 1
     if lg_type == 'jmeter':
         for i in range(tests_count):
-            exec_params = event["execution_params"]["cmd"] + " "
+            exec_params = json.loads(event["execution_params"])["cmd"] + " "
             test_type = re.findall('-Jtest_type=(.+?) ', exec_params)
             test_type = test_type[0] if len(test_type) else 'demo'
             environment = re.findall("-Jenv_type=(.+?) ", exec_params)
@@ -49,7 +49,7 @@ def get_backend_test_data(event):
                     break
     elif lg_type == 'gatling':
         for i in range(tests_count):
-            exec_params = event["execution_params"]
+            exec_params = json.loads(event["execution_params"])
             test_type = exec_params['test_type'] if exec_params.get('test_type') else 'demo'
             test_name = exec_params['test'].split(".")[1].lower() if exec_params.get('test') else 'test'
             environment = exec_params['env'] if exec_params.get('env') else 'demo'

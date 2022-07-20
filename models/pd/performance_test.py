@@ -19,8 +19,8 @@ _default_params = {
         "telegraf_db": "{{secret.telegraf_db}}",
         "loki_host": "{{secret.loki_host}}",
         "loki_port": "{{secret.loki_port}}",
-        "test_type": "default",
-        "env_type": "not_specified"
+        # "test_type": "default",
+        # "env_type": "not_specified"
     }
 
 

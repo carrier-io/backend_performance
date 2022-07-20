@@ -1,17 +1,17 @@
+from queue import Empty
+
 from sqlalchemy import and_
-from uuid import uuid4
-from json import loads
 
 from flask_restful import Resource
-from flask import request, make_response
+from flask import request
 
 from tools import api_tools
-from ...models.api_tests import ApiTests
-from ...utils.utils import compile_tests
+from ...models.api_tests import PerformanceApiTest
+from ...models.pd.performance_test import PerformanceTestParam
+from ...utils.utils import run_test, parse_test_data, compile_tests
 
 
 class API(Resource):
-
     url_params = [
         '<int:project_id>',
     ]
@@ -20,67 +20,118 @@ class API(Resource):
         self.module = module
 
     def get(self, project_id: int):
-        reports = []
-        total, res = api_tools.get(project_id, request.args, ApiTests)
-        for each in res:
-            reports.append(each.to_json(["influx.port", "influx.host", "galloper_url",
-                                         "influx.db", "comparison_db", "telegraf_db",
-                                         "loki_host", "loki_port", "influx.username", "influx.password"]))
-        return make_response(
-            {"total": total, "rows": reports},
-            200
-        )
+        total, res = api_tools.get(project_id, request.args, PerformanceApiTest)
+        rows = []
+        for i in res:
+            test = i.to_json((
+                "influx.port", "influx.host", "galloper_url",
+                 "influx.db", "comparison_db", "telegraf_db",
+                 "loki_host", "loki_port", "influx.username", "influx.password",
+            ))
+            schedules = test.pop('schedules', [])
+            if schedules:
+                try:
+                    test['scheduling'] = self.module.context.rpc_manager.timeout(
+                        2).scheduling_backend_performance_load_from_db_by_ids(schedules)
+                except Empty:
+                    test['scheduling'] = []
+            rows.append(test)
+        return {'total': total, 'rows': rows}, 200
+
+    @staticmethod
+    def get_schedules_ids(filter_) -> set:
+        r = set()
+        for i in PerformanceApiTest.query.with_entities(PerformanceApiTest.schedules).filter(
+                filter_
+        ).all():
+            r.update(set(*i))
+        return r
 
     def delete(self, project_id: int):
         project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
-
         try:
             delete_ids = list(map(int, request.args["id[]"].split(',')))
         except TypeError:
-            return make_response('IDs must be integers', 400)
+            return 'IDs must be integers', 400
 
-        query_result = ApiTests.query.filter(
-            and_(ApiTests.project_id == project.id, ApiTests.id.in_(delete_ids))
-        ).all()
-        for each in query_result:
-            each.delete()
-        return make_response({'ids': delete_ids}, 200)
+        filter_ = and_(
+            PerformanceApiTest.project_id == project.id,
+            PerformanceApiTest.id.in_(delete_ids)
+        )
+
+        try:
+            self.module.context.rpc_manager.timeout(3).scheduling_delete_schedules(
+                self.get_schedules_ids(filter_)
+            )
+        except Empty:
+            ...
+
+        PerformanceApiTest.query.filter(
+            filter_
+        ).delete()
+        PerformanceApiTest.commit()
+
+        return {'ids': delete_ids}, 200
 
     def post(self, project_id: int):
-        project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
-        from pylon.core.tools import log
-        args = request.form
-        log.info("******************************************")
-        log.info(args)
-        log.info("******************************************")
+        """
+        Create test and run on demand
+        """
+        run_test_ = request.json.pop('run_test', False)
+        compile_tests_flag = request.json.pop('compile_tests', False)
+        test_data, errors = parse_test_data(
+            project_id=project_id,
+            request_data=request.json,
+            rpc=self.module.context.rpc_manager,
+        )
 
-        if args.get("git"):
-            file_name = ""
-            bucket = ""
-            git_settings = loads(args["git"])
-        else:
-            git_settings = {}
-            file_name = args["file"].filename
+        if errors:
+            return errors, 400
+
+        schedules = test_data.pop('scheduling', [])
+
+        test_type = test_data.pop('test_type')
+        env_type = test_data.pop('env_type')
+
+        # test_params_list = [i.get('name') for i in test_data['test_parameters']]
+        # if 'test_name' not in test_params_list:
+        test_data['test_parameters'].append(
+            PerformanceTestParam(
+                name="test_name",
+                default=test_data['name']
+            ).dict()
+        )
+        # if 'test_type' not in test_params_list:
+        test_data['test_parameters'].append(
+            PerformanceTestParam(
+                name="test_type",
+                default=test_type
+            ).dict()
+        )
+        # if 'test_env' not in test_params_list:
+        test_data['test_parameters'].append(
+            PerformanceTestParam(
+                name="env_type",
+                default=env_type
+            ).dict()
+        )
+
+        compile_file_name = ''
+        if test_data['source']['name'] == 'artifact':
+            project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
             bucket = "tests"
-            api_tools.upload_file(bucket, args["file"], project, create_if_not_exists=True)
-        if args["compile"] and args["runner"] in ["v3.1", "v2.3"]:
-            compile_tests(project.id, file_name, args["runner"])
+            api_tools.upload_file(bucket, test_data['source']['file'], project, create_if_not_exists=True)
+            compile_file_name = test_data['source']['file'].filename
 
-        test = ApiTests(project_id=project.id,
-                        test_uid=str(uuid4()),
-                        name=args["name"],
-                        parallel=args["parallel"],
-                        region=args["region"],
-                        bucket=bucket,
-                        file=file_name,
-                        git=git_settings,
-                        local_path='',
-                        entrypoint=args["entrypoint"],
-                        runner=args["runner"],
-                        reporting=loads(args["reporting"]),
-                        params=loads(args["params"]),
-                        env_vars=loads(args["env_vars"]),
-                        customization=loads(args["customization"]),
-                        cc_env_vars=loads(args["cc_env_vars"]))
+        if compile_tests_flag:
+            compile_tests(project.id, compile_file_name, test_data["runner"])
+
+        test = PerformanceApiTest(**test_data)
         test.insert()
-        return test.to_json(exclude_fields=("id",))
+
+        test.handle_change_schedules(schedules)
+
+        if run_test_:
+            resp = run_test(test)
+            return resp, resp.get('code', 200)
+        return test.to_json(), 200

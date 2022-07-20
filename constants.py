@@ -1,7 +1,6 @@
 from ..shared.tools.constants import CURRENT_RELEASE
 
-
-JOB_CONTAINER_MAPPING = {
+JMETER_MAPPING = {
     "v5.5": {
         "container": f"getcarrier/perfmeter:{CURRENT_RELEASE}-5.5",
         "job_type": "perfmeter",
@@ -47,6 +46,9 @@ JOB_CONTAINER_MAPPING = {
         "job_type": "perfmeter",
         "influx_db": "{{secret.jmeter_db}}"
     },
+}
+
+GATLING_MAPPING = {
     "v3.1": {
         "container": f"getcarrier/perfgun:{CURRENT_RELEASE}-3.1",
         "job_type": "perfgun",
@@ -57,6 +59,10 @@ JOB_CONTAINER_MAPPING = {
         "job_type": "perfgun",
         "influx_db": "{{secret.gatling_db}}"
     }
+}
+JOB_CONTAINER_MAPPING = {
+    **JMETER_MAPPING,
+    **GATLING_MAPPING
 }
 
 JOB_TYPE_MAPPING = {

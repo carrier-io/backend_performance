@@ -18,7 +18,7 @@ from tools import db_tools, db
 
 
 class APIReport(db_tools.AbstractBaseMixin, db.Base):
-    __tablename__ = "api_report"
+    __tablename__ = "performance_report_api"
 
     id = Column(Integer, primary_key=True)
     project_id = Column(Integer, unique=False, nullable=False)
@@ -60,8 +60,17 @@ class APIReport(db_tools.AbstractBaseMixin, db.Base):
             "description": "Check if there are enough workers to perform the test"
         }
     )
+    test_config = Column(JSON, nullable=False, unique=False)
 
     def to_json(self, exclude_fields: tuple = ()) -> dict:
         json_dict = super().to_json(exclude_fields=("requests",))
         json_dict["requests"] = self.requests.split(";")
         return json_dict
+
+    def insert(self):
+        if not self.test_config:
+            from .api_tests import PerformanceApiTest
+            self.test_config = PerformanceApiTest.query.filter(
+                PerformanceApiTest.test_uid == self.test_uid
+            ).first().to_json()
+        super().insert()

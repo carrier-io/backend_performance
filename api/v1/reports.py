@@ -11,9 +11,9 @@ from flask import current_app, request, make_response
 from ....projects.models.statistics import Statistic
 from ...models.api_baseline import APIBaseline
 from ...models.api_reports import APIReport
-from ...utils.utils import get
+# from ...utils.utils import get
 from ...connectors.influx import get_test_details, delete_test_data
-from tools import MinioClient
+from tools import MinioClient, api_tools
 
 
 class API(Resource):
@@ -31,7 +31,8 @@ class API(Resource):
             return report
         reports = []
         project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
-        total, res = get(project, args, APIReport)
+        total, res = api_tools.get(project, args, APIReport)
+        log.critical('REPORTS GET %s', res)
         for each in res:
             each_json = each.to_json()
             each_json["start_time"] = each_json["start_time"].replace("T", " ").split(".")[0]

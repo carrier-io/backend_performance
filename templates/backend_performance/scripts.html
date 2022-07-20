@@ -1,0 +1,48 @@
+{#<script src="{{ url_for('design-system.static', filename='assets/vendor/nouislider/nouislider.js') }}"></script>#}
+
+{#<script src="{{ url_for('design-system.static', filename='assets/js/table-formatters.js') }}"></script>#}
+
+{#<script src="{{ url_for('backend_performance.static', filename='js/performanceBackend.js') }}"></script>#}
+<script src="{{ url_for('backend_performance.static', filename='js/backend_performance.js') }}"></script>
+{#<script src="{{ url_for('backend_performance.static', filename='js/thresholds.js') }}"></script>#}
+
+{{ template_slot('params_table_scripts') | safe }}
+{{ template_slot('sources_scripts') | safe }}
+{{ template_slot('locations_scripts') | safe }}
+{{ template_slot("integrations_backend_performance_scripts") | safe }}
+{{ template_slot("backend_performance_scheduling_test_creat_scripts") | safe }}
+
+{#<script>#}
+{#        $('#createTestModal').on('hide.bs.modal', function(e) {#}
+{#            $('#test_name').val("");#}
+{#            $("#test_name").prop("disabled", false);#}
+{#            $('#test_type').val("");#}
+{#            $('#test_env').val("");#}
+{#            $("#testrunners").show();#}
+{#            $("#compileTests").show();#}
+{#            $("#fileUpload").show();#}
+{#            $("#submit").removeClass("disabled");#}
+{#            $("#save").removeClass("disabled");#}
+{#            $('#backend_test_params').bootstrapTable('removeAll')#}
+{#            $('#submit').removeAttr('onclick');#}
+{#            $('#submit').attr('onClick', `createTest()`);#}
+{#            $('#save').removeAttr('onclick');#}
+{#            $('#save').attr('onClick', `createTest()`);#}
+{#            $("#entrypoint").prop("disabled", false);#}
+{#            $("#entrypoint").val("");#}
+{#            $('#backend_parallel').val("1");#}
+{#            $("#nav-git-https-tab").prop("disabled", false);#}
+{#            $("#nav-file-tab").prop("disabled", false);#}
+{#            $("#nav-git-tab").prop("disabled", false);#}
+{#            $('a[href="#nav-git"]').click();#}
+{#            $("#repo").val("");#}
+{#            $("#repo_branch").val("");#}
+{#            $("#repo_key").val("");#}
+{#            $("#repo_https").val("");#}
+{#            $("#repo_branch_https").val("");#}
+{#            $("#repo_user").val("");#}
+{#            $("#repo_pass").val("");#}
+{#            $("#tests-list").bootstrapTable('refresh');#}
+{#        });#}
+{#</script>#}
+

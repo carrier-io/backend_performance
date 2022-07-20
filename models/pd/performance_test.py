@@ -1,3 +1,4 @@
+import string
 from typing import Optional, List, Iterable
 from uuid import uuid4
 from pydantic import BaseModel, validator, AnyUrl, parse_obj_as, root_validator, constr
@@ -31,6 +32,12 @@ class PerformanceTestParam(TestParameter):
             values['default'] = _default_params[values['name']]
         return values
 
+    # @validator('name', pre=True, allow_reuse=True)
+    # def empty_str_to_none(cls, value):
+    #     if value == '':
+    #         return None
+    #     return value
+
 
 class PerformanceTestParams(TestParamsBase):
     test_parameters: List[PerformanceTestParam]
@@ -50,7 +57,7 @@ class PerformanceTestParams(TestParamsBase):
     def exclude_params(self, exclude: Iterable, leave_manually_set=True):
         self.test_parameters = [
             p for p in self.test_parameters
-            if p.name not in exclude or p.default != _default_params.get(p.name)
+            if p.name not in exclude and p.default != _default_params.get(p.name)
         ]
         return self
 
@@ -70,6 +77,8 @@ class TestCommon(TestOverrideable):
     project_id: int
     test_uid: Optional[str]
     name: str
+    test_type: str
+    env_type: str
     parallel_runners: int
     entrypoint: str
     runner: str
@@ -90,11 +99,17 @@ class TestCommon(TestOverrideable):
                 del values[k]
         return values
 
-    ## check if this is needed
-    # @validator('name')
-    # def sanitize(cls, value):
-    #     valid_chars = "_%s%s" % (string.ascii_letters, string.digits)
-    #     return ''.join(c for c in value if c in valid_chars)
+    @validator('name', 'test_type', 'env_type')
+    def check_allowed_chars(cls, value):
+        try:
+            int(value[0])
+            assert False, 'Can not start with a number'
+        except ValueError:
+            ...
+
+        valid_chars = f'{string.ascii_letters}{string.digits}_'
+        assert all(c in valid_chars for c in value), 'Only letters, numbers and "_" allowed'
+        return value
 
     @validator('runner')
     def validate_runner(cls, value):

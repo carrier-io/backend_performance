@@ -1,12 +1,11 @@
-from json import loads
-from copy import deepcopy
+from queue import Empty
 from typing import Union
 
 from flask import request
 from flask_restful import Resource
 
 from ...models.api_tests import PerformanceApiTest
-from ...models.pd.performance_test import PerformanceTestParams
+from ...models.pd.performance_test import PerformanceTestParam
 from ...utils.utils import run_test, parse_test_data
 
 
@@ -25,10 +24,18 @@ class API(Resource):
             PerformanceApiTest.get_api_filter(project_id, test_id)
         ).first()
         if request.args.get("raw"):
+            schedules = test.pop('schedules', [])
+            if schedules:
+                try:
+                    test['scheduling'] = self.module.context.rpc_manager.timeout(
+                        2).scheduling_backend_performance_load_from_db_by_ids(schedules)
+                except Empty:
+                    test['scheduling'] = []
             return test.to_json((
                 "influx.port", "influx.host", "galloper_url",
                 "influx.db", "comparison_db", "telegraf_db",
-                "loki_host", "loki_port", "influx.username", "influx.password"
+                "loki_host", "loki_port", "influx.username", "influx.password",
+                'schedules'
             ))
         if request.args.get("type") == "docker":
             message = test.configure_execution_json('docker', execution=request.args.get("exec", False))
@@ -50,6 +57,28 @@ class API(Resource):
         if errors:
             return errors, 400
 
+        test_type = test_data.pop('test_type')
+        env_type = test_data.pop('env_type')
+
+        test_data['test_parameters'].append(
+            PerformanceTestParam(
+                name="test_name",
+                default=test_data['name']
+            ).dict()
+        )
+        test_data['test_parameters'].append(
+            PerformanceTestParam(
+                name="test_type",
+                default=test_type
+            ).dict()
+        )
+        test_data['test_parameters'].append(
+            PerformanceTestParam(
+                name="env_type",
+                default=env_type
+            ).dict()
+        )
+
         test_query = PerformanceApiTest.query.filter(PerformanceApiTest.get_api_filter(project_id, test_id))
 
         schedules = test_data.pop('scheduling', [])
@@ -70,11 +99,10 @@ class API(Resource):
 
     def post(self, project_id: int, test_id: Union[int, str]):
         """ Run test with possible overridden params
-            {
         """
 
         config_only_flag = request.json.pop('type', False)
-        execution_flag = request.json.pop('execution', False)
+        execution_flag = request.json.pop('execution', True)
         test_data, errors = parse_test_data(
             project_id=project_id,
             request_data=request.json,
@@ -100,9 +128,9 @@ class API(Resource):
         # test_data.update(test_params_existing.dict())
 
         test.__dict__.update(test_data)
-        return {
-                   'test': test.to_json(),
-                   'config': run_test(test, config_only=True, execution=execution_flag)
-               }, 200
+        # return {
+        #    'test': test.to_json(),
+        #    'config': run_test(test, config_only=True, execution=execution_flag)
+        # }, 200
         resp = run_test(test, config_only=config_only_flag, execution=execution_flag)
         return resp, resp.get('code', 200)

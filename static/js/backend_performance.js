@@ -216,24 +216,22 @@ const TestCreateModal = {
                                     </optgroup>
                                 </select>
                                 <div class="invalid-feedback">[[ get_error_msg('runner') ]]</div>
-                            </div>
-                            <div class="form-group">
-                                <div class="custom-control custom-checkbox custom-control-inline">
-                                    <label class="custom-control-label" for="compile">
-                                    Compile tests for Gatling
-                                    <input type="checkbox" class="custom-control-input" disabled 
-                                        v-model='compile_tests'
-                                        :class="{ 'is-invalid': errors?.compile_tests }"
-                                        >
+                                <label class="mb-0 mt-1 w-100 d-flex align-items-center custom-checkbox"
+                                    v-if="is_gatling_selected"
+                                    >
+                                        <input type="checkbox" class="mr-2"
+                                            v-model='compile_tests'
+                                            :class="{ 'is-invalid': errors?.compile_tests }"
+                                            >
                                         <div class="invalid-feedback">[[ get_error_msg('compile_tests') ]]</div>
+                                        <h9> Compile tests for Gatling </h9>
                                     </label>
-                                </div>
                             </div>
                         </div>
                         <div class="col">
                             <slot name='sources'></slot>
                             
-                            <div class="form-group mt-2">
+                            <div class="form-group mt-3">
                                 <div class="form-group">
                                     <h9>Entrypoint</h9>
                                     <p>
@@ -384,6 +382,11 @@ const TestCreateModal = {
                 console.warn('No scheduling section')
                 return undefined
             }
+        },
+        is_gatling_selected() {
+            return Boolean(
+                this.$props.runners.Gatling?.find(i => i.version === this.runner) !== undefined
+            )
         }
     },
     watch: {
@@ -407,6 +410,9 @@ const TestCreateModal = {
                 this.integrations?.clearErrors()
                 this.scheduling?.clearErrors()
             }
+        },
+        is_gatling_selected(newValue) {
+            if (!newValue) {this.compile_tests = false}
         }
     },
     methods: {

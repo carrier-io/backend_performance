@@ -256,6 +256,8 @@ const TestCreateModal = {
                     v-model:cpu="cpu_quota"
                     v-model:memory="memory_quota"
                     
+                    modal_id="backend"
+                    
                     v-bind="locations"
                     ref="locations"
                 ></Locations>

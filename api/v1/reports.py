@@ -14,7 +14,7 @@ from ...models.api_reports import APIReport
 # from ...utils.utils import get
 from ...connectors.influx import get_test_details, delete_test_data
 from tools import MinioClient, api_tools
-
+from influxdb.exceptions import InfluxDBClientError
 
 class API(Resource):
     url_params = [
@@ -138,7 +138,10 @@ class API(Resource):
             and_(APIReport.project_id == project.id, APIReport.id.in_(delete_ids))
         ).all()
         for each in query_result:
-            delete_test_data(each.build_id, each.name, each.lg_type)
+            try:
+                delete_test_data(each.build_id, each.name, each.lg_type)
+            except InfluxDBClientError as e:
+                log.warning('InfluxDBClientError %s', e)
             baseline = APIBaseline.query.filter_by(project_id=project.id, report_id=each.id).first()
             if baseline:
                 baseline.delete()

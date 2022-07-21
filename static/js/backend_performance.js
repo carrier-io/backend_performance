@@ -1,10 +1,3 @@
-const test_delete = ids => {
-    const url = `/api/v1/backend_performance/tests/${getSelectedProjectId()}?` + $.param({"id[]": ids})
-    fetch(url, {
-        method: 'DELETE'
-    }).then(response => response.ok && vueVm.registered_components.table_tests?.table_action('refresh'))
-}
-
 var test_formatters = {
     job_type(value, row, index) {
         if (row.job_type === "perfmeter") {
@@ -72,6 +65,29 @@ var test_formatters = {
             test_delete(row.id)
 
         }
+    }
+}
+
+var threshold_formatters = {
+    actions(value, row, index) {
+        var id = row['id'];
+        return `
+        <div class="d-flex justify-content-end">
+            <button type="button" class="btn btn-24 btn-action"><i class="fas fa-cog"></i></button>
+            <button type="button" class="btn btn-24 btn-action"><i class="fas fa-trash-alt"></i></button>
+        </div>
+        `
+    },
+    rules(value, row, index) {
+        let comparisonMap = new Map([
+            ["gte", ">="],
+            ["lte", "<="],
+            ["lt", "<"],
+            ["gt", ">"],
+            ["eq", "=="]
+        ]);
+        comparison = comparisonMap.get(row.comparison)
+        return row.aggregation + "(" + row.target + ") " + comparison
     }
 }
 
@@ -414,7 +430,9 @@ const TestCreateModal = {
             }
         },
         is_gatling_selected(newValue) {
-            if (!newValue) {this.compile_tests = false}
+            if (!newValue) {
+                this.compile_tests = false
+            }
         }
     },
     methods: {
@@ -469,8 +487,8 @@ const TestCreateModal = {
                 body: JSON.stringify({...this.get_data(), run_test})
             })
             if (resp.ok) {
-                console.log('data', await resp.json())
                 this.hide()
+                vueVm.registered_components.table_tests?.table_action('refresh')
             } else {
                 await this.handleError(resp)
             }
@@ -483,8 +501,8 @@ const TestCreateModal = {
                 body: JSON.stringify({...this.get_data(), run_test})
             })
             if (resp.ok) {
-                console.log('data', await resp.json())
                 this.hide()
+                vueVm.registered_components.table_tests?.table_action('refresh')
             } else {
                 await this.handleError(resp)
             }
@@ -535,7 +553,6 @@ const TestCreateModal = {
             }
         },
         set(data) {
-            console.log('load', data)
             const {test_parameters, integrations, scheduling, source, env_vars: all_env_vars, ...rest} = data
 
             const {cpu_quota, memory_quota, ...env_vars} = all_env_vars
@@ -585,7 +602,6 @@ const TestCreateModal = {
             $(this.$el).modal('show')
         },
         hide() {
-            vueVm.registered_components.table_tests?.table_action('refresh')
             $(this.$el).modal('hide')
             // this.clear() // - happens on close event
         }
@@ -704,7 +720,6 @@ const TestRunModal = {
             $(this.$el).modal('show')
         },
         hide() {
-            vueVm.registered_components.table_tests?.table_action('refresh')
             $(this.$el).modal('hide')
             // this.clear() // - happens on close event
         },
@@ -743,8 +758,9 @@ const TestRunModal = {
                 body: JSON.stringify(this.get_data())
             })
             if (resp.ok) {
-                console.log('data', await resp.json())
                 this.hide()
+                // vueVm.registered_components.table_tests?.table_action('refresh')
+                vueVm.registered_components.table_results?.table_action('refresh')
             } else {
                 await this.handleError(resp)
             }
@@ -782,12 +798,31 @@ const TestRunModal = {
 }
 register_component('TestRunModal', TestRunModal)
 
+const test_delete = ids => {
+    const url = `/api/v1/backend_performance/tests/${getSelectedProjectId()}?` + $.param({"id[]": ids})
+    fetch(url, {
+        method: 'DELETE'
+    }).then(response => response.ok && vueVm.registered_components.table_tests?.table_action('refresh'))
+}
+
+const results_delete = ids => {
+    const url = `/api/v1/backend_performance/reports/${getSelectedProjectId()}?` + $.param({"id[]": ids})
+    fetch(url, {
+        method: 'DELETE'
+    }).then(response => response.ok && vueVm.registered_components.table_results?.table_action('refresh'))
+}
 
 $(document).on('vue_init', () => {
     $('#delete_tests').on('click', e => {
-        const ids_to_delete = $(e.target).closest('.card').find('table.table').bootstrapTable('getSelections').map(
+        const ids_to_delete = vueVm.registered_components.table_tests?.table_action('getSelections').map(
             item => item.id
         ).join(',')
         ids_to_delete && test_delete(ids_to_delete)
+    })
+    $('#delete_results').on('click', e => {
+        const ids_to_delete = vueVm.registered_components.table_results?.table_action('getSelections').map(
+            item => item.id
+        ).join(',')
+        ids_to_delete && results_delete(ids_to_delete)
     })
 })

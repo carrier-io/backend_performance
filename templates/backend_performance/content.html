@@ -111,14 +111,14 @@
             }"
             container_classes="mt-3"
     >
-        <template #actions>
+        <template #actions="{master}">
             <div class="d-flex justify-content-end">
-                <button type="button" class="btn btn-32 btn-secondary" onclick="refreshTable('results-list')">
+                <button type="button" class="btn btn-32 btn-secondary" @click="master.table_action('refresh')">
                     <i class="fas fa-sync"></i>
                 </button>
                 <button type="button" class="btn btn-32 btn-secondary"><i class="fas fa-filter"></i></button>
                 <button type="button" class="btn btn-32 btn-secondary"><i class="fas fa-tag"></i></button>
-                <button type="button" class="btn btn-32 btn-secondary" onclick="deleteReports()">
+                <button type="button" class="btn btn-32 btn-secondary" id="delete_results">
                     <i class="fas fa-trash-alt"></i>
                 </button>
             </div>
@@ -126,7 +126,8 @@
         <template #table_headers>
             <th scope="col" data-checkbox="true"></th>
             <th data-visible="false" data-field="id">index</th>
-            <th scope="col" data-sortable="true" data-field="name" data-formatter=report_formatters.createLinkToTest>Name</th>
+            <th scope="col" data-sortable="true" data-field="name"
+                data-formatter=report_formatters.createLinkToTest>Name</th>
             <th scope="col" data-sortable="true" data-field="start_time">Date</th>
             <th scope="col" data-sortable="true" data-field="duration">Duration</th>
             <th scope="col" data-sortable="true" data-field="vusers">vUsers</th>

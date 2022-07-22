@@ -6,7 +6,8 @@ from pylon.core.tools import web
 from pydantic import ValidationError
 
 from ..models.api_tests import PerformanceApiTest
-from ..models.pd.performance_test import TestCommon, PerformanceTestParams, TestOverrideable
+from ..models.pd.performance_test import TestCommon, PerformanceTestParams, TestOverrideable, \
+    PerformanceTestParamsCreate, PerformanceTestParamsRun
 from ..utils.utils import run_test
 
 
@@ -36,7 +37,11 @@ class RPC:
     @web.rpc('backend_performance_test_create_test_parameters', 'parse_test_parameters')
     @rpc_tools.wrap_exceptions(ValidationError)
     def parse_test_parameters(self, data: list, **kwargs) -> dict:
-        pd_object = PerformanceTestParams(test_parameters=data)
+        validate_for_run = kwargs.pop('purpose', None) == 'run'
+        if validate_for_run:
+            pd_object = PerformanceTestParamsRun(test_parameters=data)
+        else:
+            pd_object = PerformanceTestParamsCreate(test_parameters=data)
         return pd_object.dict(**kwargs)
 
     @web.rpc('backend_performance_run_scheduled_test', 'run_scheduled_test')

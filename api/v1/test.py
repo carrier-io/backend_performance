@@ -24,12 +24,7 @@ class API(Resource):
             PerformanceApiTest.get_api_filter(project_id, test_id)
         ).first()
         if request.args.get("raw"):
-            test = test.to_json((
-                "influx.port", "influx.host", "galloper_url",
-                "influx.db", "comparison_db", "telegraf_db",
-                "loki_host", "loki_port", "influx.username", "influx.password"
-            ))
-            # test = test.to_json()
+            test = test.api_json()
             schedules = test.pop('schedules', [])
             if schedules:
                 try:
@@ -58,36 +53,20 @@ class API(Resource):
         if errors:
             return errors, 400
 
-        test_type = test_data.pop('test_type')
-        env_type = test_data.pop('env_type')
-
-        test_data['test_parameters'].append(
-            PerformanceTestParam(
-                name="test_name",
-                default=test_data['name']
-            ).dict()
-        )
         test_data['test_parameters'].append(
             PerformanceTestParam(
                 name="test_type",
-                default=test_type
+                default=test_data.pop('test_type'),
+                description='auto-generated from test type'
             ).dict()
         )
         test_data['test_parameters'].append(
             PerformanceTestParam(
                 name="env_type",
-                default=env_type
+                default=test_data.pop('env_type'),
+                description='auto-generated from environment'
             ).dict()
         )
-        # test_params_list = [i.get('name') for i in test_data['test_parameters']]
-        # from ...constants import JOB_CONTAINER_MAPPING
-        # if "influx.db" not in test_params_list:
-        #     test_data['test_parameters'].append(
-        #         PerformanceTestParam(
-        #             name="influx.db",
-        #             default=JOB_CONTAINER_MAPPING.get(test_data['runner'], {}).get('influx_db')
-        #         ).dict()
-        #     )
 
         test_query = PerformanceApiTest.query.filter(PerformanceApiTest.get_api_filter(project_id, test_id))
 
@@ -103,9 +82,7 @@ class API(Resource):
             resp = run_test(test)
             return resp, resp.get('code', 200)
 
-        return test.to_json(("influx.port", "influx.host", "galloper_url",
-                             "influx.db", "comparison_db", "telegraf_db",
-                             "loki_host", "loki_port", "influx.username", "influx.password")), 200
+        return test.api_json(), 200
 
     def post(self, project_id: int, test_id: Union[int, str]):
         """ Run test with possible overridden params
@@ -122,6 +99,9 @@ class API(Resource):
                 'exclude_defaults': True,
                 'exclude_unset': True,
             },
+            test_create_rpc_kwargs={
+                'purpose': 'run'
+            }
         )
 
         if errors:
@@ -130,12 +110,6 @@ class API(Resource):
         test = PerformanceApiTest.query.filter(
             PerformanceApiTest.get_api_filter(project_id, test_id)
         ).first()
-
-        # rewrite test params, not merge
-        # test_params_overridden = PerformanceTestParams(test_parameters=test_data.pop('test_parameters', []))
-        # test_params_existing = PerformanceTestParams.from_orm(test)
-        # test_params_existing.update(test_params_overridden)
-        # test_data.update(test_params_existing.dict())
 
         test.__dict__.update(test_data)
         # return {

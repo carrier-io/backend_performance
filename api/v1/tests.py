@@ -23,11 +23,7 @@ class API(Resource):
         total, res = api_tools.get(project_id, request.args, PerformanceApiTest)
         rows = []
         for i in res:
-            test = i.to_json((
-                "influx.port", "influx.host", "galloper_url",
-                "influx.db", "comparison_db", "telegraf_db",
-                "loki_host", "loki_port", "influx.username", "influx.password",
-            ))
+            test = i.api_json()
             schedules = test.pop('schedules', [])
             if schedules:
                 try:
@@ -90,39 +86,23 @@ class API(Resource):
 
         schedules = test_data.pop('scheduling', [])
 
-        test_type = test_data.pop('test_type')
-        env_type = test_data.pop('env_type')
-
-        test_data['test_parameters'].append(
-            PerformanceTestParam(
-                name="test_name",
-                default=test_data['name']
-            ).dict()
-        )
         test_data['test_parameters'].append(
             PerformanceTestParam(
                 name="test_type",
-                default=test_type
+                default=test_data.pop('test_type'),
+                description='auto-generated from test type'
             ).dict()
         )
         test_data['test_parameters'].append(
             PerformanceTestParam(
                 name="env_type",
-                default=env_type
+                default=test_data.pop('env_type'),
+                description='auto-generated from environment'
             ).dict()
         )
 
-        # test_params_list = [i.get('name') for i in test_data['test_parameters']]
-        # from ...constants import JOB_CONTAINER_MAPPING
-        # if "influx.db" not in test_params_list:
-        #     test_data['test_parameters'].append(
-        #         PerformanceTestParam(
-        #             name="influx.db",
-        #             default=JOB_CONTAINER_MAPPING.get(test_data['runner'], {}).get('influx_db')
-        #         ).dict()
-        #     )
-
         compile_file_name = ''
+        project = None
         if test_data['source']['name'] == 'artifact':
             project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
             bucket = "tests"
@@ -130,6 +110,8 @@ class API(Resource):
             compile_file_name = test_data['source']['file'].filename
 
         if compile_tests_flag:
+            if not project:
+                project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
             compile_tests(project.id, compile_file_name, test_data["runner"])
 
         test = PerformanceApiTest(**test_data)
@@ -140,4 +122,4 @@ class API(Resource):
         if run_test_:
             resp = run_test(test)
             return resp, resp.get('code', 200)
-        return test.to_json(), 200
+        return test.api_json(), 200

@@ -4,6 +4,13 @@
     test_params_id="runner_test_params"
 >
     <template #test_parameters>
-        {{ template_slot("params_table_content", payload={"caption": "Test Parameters", "modal_id": "runner"}) | safe }}
+        {{ template_slot("params_table_content", payload={
+            "caption": "Test Parameters",
+            "modal_id": "runner",
+            'custom_formatters': {
+                'name': 'custom_params_table_formatters.input',
+                'action': 'custom_params_table_formatters.action'
+            }
+        }) | safe }}
     </template>
 </Test-Run-Modal>

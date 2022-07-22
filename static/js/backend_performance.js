@@ -121,6 +121,26 @@ var report_formatters = {
     }
 }
 
+var custom_params_table_formatters = {
+    input(value, row, index, field) {
+        if (['test_name', 'test_type', 'env_type'].includes(row.name)) {
+            return `
+                <input type="text" class="form-control form-control-alternative" disabled
+                    onchange="ParamsTable.updateCell(this, ${index}, '${field}')" value="${value}">
+                <div class="invalid-tooltip invalid-tooltip-custom"></div>
+            `
+        }
+        return ParamsTable.inputFormatter(value, row, index, field)
+
+    },
+    action(value, row, index, field) {
+        if (['test_name', 'test_type', 'env_type'].includes(row.name)) {
+            return ''
+        }
+        return ParamsTable.parametersDeleteFormatter(value, row, index)
+    }
+}
+
 const TestCreateModal = {
     delimiters: ['[[', ']]'],
     props: ['modal_id', 'runners', 'test_params_id', 'source_card_id', 'locations'],

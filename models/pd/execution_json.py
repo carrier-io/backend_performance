@@ -26,9 +26,6 @@ class ExecutionParams(PerformanceTestParams):
 
     env_vars: dict = {}
 
-    # todo: convert to json
-    # todo: extend env_vars into final dict()
-
     class Config:
         fields = {
             'additional_files': 'customization'
@@ -90,13 +87,6 @@ class ExecutionParams(PerformanceTestParams):
             env_vars=db_object.env_vars,
             influxdb_database=db_object.influx_db
         ))
-        # return cls(
-        #     job_type=db_object.job_type,
-        #     entrypoint=db_object.entrypoint,
-        #     test_parameters=super().from_orm(db_object),
-        #     customization=db_object.customization,
-        #     env_vars=db_object.env_vars
-        # )
 
 
 class CcEnvVars(BaseModel):

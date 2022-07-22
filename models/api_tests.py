@@ -23,6 +23,7 @@ from tools import constants as c
 from .pd.execution_json import ExecutionParams, CcEnvVars
 from ..constants import JOB_CONTAINER_MAPPING
 from ..utils.utils import parse_source
+from .pd.performance_test import PerformanceTestParams
 
 
 class PerformanceApiTest(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin):
@@ -32,12 +33,8 @@ class PerformanceApiTest(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin
     test_uid = Column(String(128), unique=True, nullable=False)
     name = Column(String(128), nullable=False)
 
-    parallel_runners = Column(Integer, nullable=False)  #- runners
-    location = Column(String(128), nullable=False)  #- engine location
-    # region = Column(String(128), nullable=False)
-
-    # bucket = Column(String(128), nullable=False) # migrated to sources
-    # file = Column(String(128), nullable=False) # migrated to sources
+    parallel_runners = Column(Integer, nullable=False)
+    location = Column(String(128), nullable=False)
 
     entrypoint = Column(String(128), nullable=False)
     runner = Column(String(128), nullable=False)
@@ -50,15 +47,11 @@ class PerformanceApiTest(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin
 
     schedules = Column(ARRAY(Integer), nullable=True, default=[])
 
-    env_vars = Column(JSON)  #-?
-    customization = Column(JSON)   #-?
-    cc_env_vars = Column(JSON)   #-?
+    env_vars = Column(JSON)
+    customization = Column(JSON)
+    cc_env_vars = Column(JSON)
 
-    # git = Column(JSON)   #-? source?
-    # local_path = Column(String(128))  # - source local
     source = Column(JSON, nullable=False)
-
-    # job_type = Column(String(20))
 
     @property
     def container(self):
@@ -72,19 +65,41 @@ class PerformanceApiTest(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin
     def influx_db(self):
         return JOB_CONTAINER_MAPPING.get(self.runner, {}).get('influx_db')
 
+    @property
+    def default_test_parameters(self):
+        _default_params = {
+            "influx.db": self.influx_db,
+            "influx.port": "{{secret.influx_port}}",
+            "influx.host": "{{secret.influx_ip}}",
+            "influx.username": "{{secret.influx_user}}",
+            "influx.password": "{{secret.influx_password}}",
+            "galloper_url": "{{secret.galloper_url}}",
+            "comparison_db": "{{secret.comparison_db}}",
+            "telegraf_db": "{{secret.telegraf_db}}",
+            "loki_host": "{{secret.loki_host}}",
+            "loki_port": "{{secret.loki_port}}",
+            "test_name": self.name
+            # "test_type": "default",
+            # "env_type": "not_specified"
+        }
+        return PerformanceTestParams(test_parameters=[
+            {'name': k, 'default': v, 'description': 'default parameter'}
+            for k, v in _default_params.items()
+        ])
+
 
     def add_schedule(self, schedule_data: dict, commit_immediately: bool = True):
         schedule_data['test_id'] = self.id
         schedule_data['project_id'] = self.project_id
         try:
             schedule_id = self.rpc.timeout(2).scheduling_backend_performance_create_schedule(data=schedule_data)
-            log.info(f'schedule_id {schedule_id}')
+            log.info(f'Created schedule_id {schedule_id}')
             updated_schedules = set(self.schedules)
             updated_schedules.add(schedule_id)
             self.schedules = list(updated_schedules)
             if commit_immediately:
                 self.commit()
-            log.info(f'self.schedules {self.schedules}')
+            log.info(f'All test.schedules {self.schedules}')
         except Empty:
             log.warning('No scheduling rpc found')
 
@@ -93,8 +108,7 @@ class PerformanceApiTest(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin
         ids_to_delete = set(self.schedules).difference(new_schedules_ids)
         self.schedules = []
         for s in schedules_data:
-            log.warning('!!!adding schedule')
-            log.warning(s)
+            log.info('Adding schedule %s', s)
             self.add_schedule(s, commit_immediately=False)
         try:
             self.rpc.timeout(2).scheduling_delete_schedules(ids_to_delete)
@@ -104,7 +118,6 @@ class PerformanceApiTest(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin
 
     @classmethod
     def get_api_filter(cls, project_id: int, test_id: Union[int, str]):
-        log.info(f'getting filter int? {isinstance(test_id, int)}  {test_id}')
         if isinstance(test_id, int):
             return and_(
                 cls.project_id == project_id,
@@ -115,36 +128,7 @@ class PerformanceApiTest(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin
             cls.test_uid == test_id
         )
 
-    def insert(self):
-        test_params_list = [i.get('name') for i in self.test_parameters]
-
-        from .pd.performance_test import PerformanceTestParam
-        if "influx.db" not in test_params_list:
-            self.test_parameters.append(
-                PerformanceTestParam(
-                    name="influx.db",
-                    default=self.influx_db
-                ).dict()
-            )
-        if "test_name" not in test_params_list:
-            self.test_parameters.append(
-                PerformanceTestParam(
-                    name="test_name",
-                    default=self.name
-                ).dict()
-            )
-        super().insert()
-
     def configure_execution_json(self, output: str = 'cc', execution: bool = False):
-        test_params_list = [i.get('name') for i in self.test_parameters]
-        from .pd.performance_test import PerformanceTestParam
-        if "influx.db" not in test_params_list:
-            self.test_parameters.append(
-                PerformanceTestParam(
-                    name="influx.db",
-                    default=self.influx_db
-                ).dict()
-            )
         exec_params = ExecutionParams.from_orm(self).dict(exclude_none=True)
 
         execution_json = {
@@ -186,12 +170,6 @@ class PerformanceApiTest(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin
         # else:
         #     execution_json["email_recipients"] = self.emails
 
-
-
-        # todo: leave this? to json?
-        # execution_json["execution_params"] = dumps(execution_json["execution_params"])
-
-
         if execution:
             execution_json = secrets_tools.unsecret(execution_json, project_id=self.project_id)
         if output == 'cc':
@@ -203,13 +181,26 @@ class PerformanceApiTest(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin
                          secrets_tools.unsecret("{{secret.auth_token}}", project_id=self.project_id),
                          c.CURRENT_RELEASE, self.test_uid)
 
-    def to_json(self, exclude_fields: tuple = ()) -> dict:
+    def to_json(self, exclude_fields: tuple = (), keep_custom_test_parameters: bool = True) -> dict:
         test = super().to_json(exclude_fields=exclude_fields)
         if 'job_type' not in exclude_fields:
             test['job_type'] = self.job_type
-        if test.get('test_parameters'):
-            from .pd.performance_test import PerformanceTestParams
-            test['test_parameters'] = PerformanceTestParams.from_orm(self).exclude_params(
+        if test.get('test_parameters') and 'test_parameters' not in exclude_fields:
+            tp = self.default_test_parameters
+            tp.update(PerformanceTestParams.from_orm(self))
+            if keep_custom_test_parameters:
+                exclude_fields = set(exclude_fields) - set(
+                    i.name for i in PerformanceTestParams.from_orm(self).test_parameters
+                )
+            test['test_parameters'] = tp.exclude_params(
                 exclude_fields
             ).dict()['test_parameters']
         return test
+
+    def api_json(self):
+        return self.to_json(
+            exclude_fields=tuple(
+                tp.name for tp in self.default_test_parameters.test_parameters
+                if tp.name != 'test_name'  # leve test_name here
+            )
+        )

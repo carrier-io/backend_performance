@@ -8,58 +8,51 @@ from ...constants import JOB_CONTAINER_MAPPING
 from ...utils.utils import parse_source
 from ....shared.models.pd.test_parameters import TestParamsBase, TestParameter  # todo: workaround for this import
 
-_default_params = {
-        # "influx.db":
-        # "test_name":
-        "influx.port": "{{secret.influx_port}}",
-        "influx.host": "{{secret.influx_ip}}",
-        "influx.username": "{{secret.influx_user}}",
-        "influx.password": "{{secret.influx_password}}",
-        "galloper_url": "{{secret.galloper_url}}",
-        "comparison_db": "{{secret.comparison_db}}",
-        "telegraf_db": "{{secret.telegraf_db}}",
-        "loki_host": "{{secret.loki_host}}",
-        "loki_port": "{{secret.loki_port}}",
-        # "test_type": "default",
-        # "env_type": "not_specified"
-    }
+special_params = {'test_name', 'test_type', 'env_type'}
 
 
 class PerformanceTestParam(TestParameter):
-    @root_validator
-    def _default_params(cls, values: dict):
-        if values['name'] in _default_params and not values.get('default'):
-            values['default'] = _default_params[values['name']]
-        return values
+    ...
 
-    # @validator('name', pre=True, allow_reuse=True)
-    # def empty_str_to_none(cls, value):
-    #     if value == '':
-    #         return None
-    #     return value
+
+class PerformanceTestParamCreate(PerformanceTestParam):
+    _reserved_names = special_params
+
+    @validator('name')
+    def reserved_names(cls, value):
+        assert value not in cls._reserved_names, f'Name {value} is reserved. Please choose another name'
+        return value
+
+
+class PerformanceTestParamRun(PerformanceTestParam):
+    _required_params = special_params
 
 
 class PerformanceTestParams(TestParamsBase):
     test_parameters: List[PerformanceTestParam]
 
-    @validator('test_parameters', pre=True)
-    def validate_default_params(cls, value: list):
-        missing_params = set(
-            _default_params.keys()
-        ).difference(
-            set(i.get('name') for i in value)
-        )
-        for i in missing_params:
-            value.append(PerformanceTestParam(name=i).dict())
-
-        return value
-
-    def exclude_params(self, exclude: Iterable, leave_manually_set=True):
+    def exclude_params(self, exclude: Iterable):
         self.test_parameters = [
             p for p in self.test_parameters
-            if p.name not in exclude and p.default != _default_params.get(p.name)
+            if p.name not in exclude
         ]
         return self
+
+
+class PerformanceTestParamsCreate(PerformanceTestParams):
+    test_parameters: List[PerformanceTestParamCreate]
+
+    @validator('test_parameters')
+    def unique_names(cls, value: list):
+        import collections
+        duplicates = [item for item, count in collections.Counter(i.name for i in value).items() if count > 1]
+        assert not duplicates, f'Duplicated names not allowed: {duplicates}'
+        return value
+
+
+class PerformanceTestParamsRun(PerformanceTestParamsCreate):
+    _required_params = special_params
+    test_parameters: List[PerformanceTestParamRun]
 
 
 class TestOverrideable(BaseModel):

@@ -310,6 +310,7 @@
 
 </div>
 
+{% if test_data['test_status']['status'].lower() in ['finished', 'error', 'failed', 'success'] %}
 <div class="card card-12 pb-4 card-table">
     <div class="card-header">
         <div class="row">
@@ -342,6 +343,7 @@
         </table>
     </div>
 </div>
+{% endif %}
 
 <div class="card card-12 pb-4 card-table">
     <div class="card-header">

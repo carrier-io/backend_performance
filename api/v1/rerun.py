@@ -1,8 +1,4 @@
-from flask import make_response
 from flask_restful import Resource
-
-from ...models.tests import SecurityTestsDAST
-from ...utils import run_test
 
 
 class API(Resource):

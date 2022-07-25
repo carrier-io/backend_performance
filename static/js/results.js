@@ -22,7 +22,6 @@ const reRunTest = () => {
 $(document).on('vue_init', () => {
     const disable_inputs = () => {
         $('#config_modal span[contenteditable]').attr('contenteditable', false)
-        $('#config_modal a.nav-link').addClass('disabled')
         $('#config_modal input').attr('disabled', true)
         $('#config_modal input[type=text]').attr('readonly', true)
         $('#config_modal button').attr('disabled', true)

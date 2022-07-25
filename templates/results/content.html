@@ -15,7 +15,7 @@
             </div>
             <div class="col-8">
                 <div class="d-flex justify-content-end">
-                    <button type="button" class="btn btn-secondary" onclick="rerunTest()"
+                    <button type="button" class="btn btn-secondary" onclick="reRunTest()"
                             data-toggle="tooltip" data-placement="top" title="Rerun Test"><i class="fas fa-play"></i>
                     </button>
                     <button type="button" class="btn btn-secondary mx-2" onclick="downloadReport()"
@@ -29,7 +29,9 @@
                             data-toggle="tooltip" data-placement="top" title="Set current report as thresholds">
                         Set as threshold
                     </button>
-                    <button class="btn btn-secondary" id="config-test" onclick="showConfig()"
+                    <button class="btn btn-secondary" id="show_config_btn"
+                            data-toggle="modal"
+                            data-target="#config_modal"
                             data-toggle="tooltip" data-placement="top" title="Show config for current test run">
                         Show config
                     </button>
@@ -395,3 +397,6 @@
 
 
 <!--</div>-->
+{% with test_config = test_data['test_config'] %}
+    {% include 'backend_performance:results/config_modal.html' %}
+{% endwith %}

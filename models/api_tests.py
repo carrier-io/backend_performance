@@ -205,5 +205,6 @@ class PerformanceApiTest(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin
             exclude_fields=tuple(
                 tp.name for tp in self.default_test_parameters.test_parameters
                 if tp.name != 'test_name'  # leve test_name here
-            )
+            ),
+            keep_custom_test_parameters=True  # explicitly
         )

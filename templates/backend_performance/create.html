@@ -1,11 +1,15 @@
+{#{% set modal_id = modal_id | default('create_modal') %}#}
+{#{% set modal_id = 'create_modal' %}#}
 {% set source_container_id = "source_card" %}
+
+
 <Test-Create-Modal
         @register="register"
-        instance_name="create_modal"
+        instance_name="{{ modal_id }}"
 
-        modal_id="createTestModal"
+        modal_id="{{ modal_id }}"
         :runners='{{ runners | tojson }}'
-        test_params_id="backend_test_params"
+        test_params_id="{{ modal_id }}_test_params"
         source_card_id="{{ source_container_id }}"
         :locations='{{ locations }}'
 >
@@ -20,14 +24,13 @@
         {{ template_slot("sources_content", payload={
             "chapters": ["git", "artifact"],
             "container_id": source_container_id
-            }) | safe }}
+        }) | safe }}
     </template>
-{#    <template #locations>#}
-{#        {{ template_slot("locations_content", payload={"modal_id": "backend"}) | safe }}#}
-{#    </template>#}
-
     <template #params_table>
-        {{ template_slot("params_table_content", payload={"caption": "Test Parameters", "modal_id": "backend"}) | safe }}
+        {{ template_slot("params_table_content", payload={
+            "caption": "Test Parameters",
+            "modal_id": modal_id
+        }) | safe }}
     </template>
     <template #integrations>
         {{ template_slot("integrations_backend_performance_content") | safe }}
@@ -37,102 +40,3 @@
     </template>
 </Test-Create-Modal>
 
-
-{#<div class="modal modal-base fixed-left fade shadow-sm" tabindex="-1" role="dialog" id="createTestModal">#}
-{#    <div class="modal-dialog modal-dialog-aside" role="document">#}
-{#        <div class="modal-content">#}
-{#            <div class="modal-header">#}
-{#                <div class="row w-100">#}
-{#                    <div class="col">#}
-{#                        <h2>Create Backend Tests</h2>#}
-{#                    </div>#}
-{#                    <div class="col-xs">#}
-{#                        <button type="button" class="btn btn-secondary mr-2" data-dismiss="modal" aria-label="Close">#}
-{#                            Cancel#}
-{#                        </button>#}
-{#                        <button type="button" id="submit" class="btn btn-secondary mr-2" onclick="createTest()">#}
-{#                            Save#}
-{#                        </button>#}
-{#                        <button type="button" id="save" class="btn btn-basic" onclick="createTest()">Save and#}
-{#                            start#}
-{#                        </button>#}
-{#                    </div>#}
-{#                </div>#}
-{#            </div>#}
-{##}
-{#            {{ template_slot("alert_bar", payload={#}
-{#                "alert_container_id": "alertCreateTest",#}
-{#                "max_alerts": 2,#}
-{#                "overlay_max_width": "1100px"#}
-{#            }) | safe }}#}
-{##}
-{#            <div class="modal-body">#}
-{#                <div class="section">#}
-{#                     <div class="row">#}
-{#                        <div class="col">#}
-{#                            <div class="form-group">#}
-{#                                <h9>Test Name</h9>#}
-{#                                <p><h13>Enter a name that describes the purpose of your test.</h13></p>#}
-{#                                <input type="text" id="test_name" class="form-control form-control-alternative" placeholder="Test Name">#}
-{#                            </div>#}
-{#                            <div class="d-flex">#}
-{#                                <div class="flex-fill">#}
-{#                                    <div class="form-group">#}
-{#                                        <h9>Test Type</h9>#}
-{#                                        <p><h13>Tag to group tests by type</h13></p>#}
-{#                                        <input type="text" id="test_type" class="form-control form-control-alternative" placeholder="Test Type">#}
-{#                                    </div>#}
-{#                                </div>#}
-{#                                <div class="flex-fill">#}
-{#                                    <div class="form-group">#}
-{#                                        <h9>Environment</h9>#}
-{#                                        <p><h13>Tag to group tests by env</h13></p>#}
-{#                                        <input type="text" id="test_env" class="form-control form-control-alternative" placeholder="Test Environment">#}
-{#                                    </div>#}
-{#                                </div>#}
-{#                            </div>#}
-{#                            <div class="form-group" id="testrunners">#}
-{#                                <h9>Test runner</h9>#}
-{#                                <p><h13>Choose the runner for the test.</h13></p>#}
-{#                                <select class="selectpicker bootstrap-select__b mt-1" data-style="btn" id="runner">#}
-{#                                    <optgroup label="jMeter">#}
-{#                                        <option value="v5.5">JMeter v5.5</option>#}
-{#                                        <option value="v5.4.1">JMeter v5.4.1</option>#}
-{#                                        <option value="v5.3">JMeter v5.3</option>#}
-{#                                        <option value="v5.2.1">JMeter v5.2.1</option>#}
-{#                                        <option value="v5.2">JMeter v5.2</option>#}
-{#                                        <option value="v5.1.1">JMeter v5.1.1</option>#}
-{#                                        <option value="v5.1">JMeter v5.1</option>#}
-{#                                        <option value="v5.0">JMeter v5.0</option>#}
-{#                                        <option value="v4.0">JMeter v4.0</option>#}
-{#                                    </optgroup>#}
-{#                                    <optgroup label="Gatling">#}
-{#                                        <option value="v3.1">Gatling v3.1</option>#}
-{#                                        <option value="v2.3">Gatling v2.3</option>#}
-{#                                    </optgroup>#}
-{#                                </select>#}
-{#                            </div>#}
-{#                            <div class="form-group" id="compileTests">#}
-{#                                <div class="custom-control custom-checkbox custom-control-inline">#}
-{#                                    <input type="checkbox" class="custom-control-input" id="compile" disabled>#}
-{#                                    <label class="custom-control-label" for="compile">Compile tests for Gatling</label>#}
-{#                                </div>#}
-{#                            </div>#}
-{#                        </div>#}
-{#                        <div class="col">#}
-{#                            {{ template_slot("sources_content", payload={"chapters": ["git", "artifact"]}) | safe }}#}
-{#                            <div class="form-group mt-2">#}
-{#                                <div class="form-group">#}
-{#                                    <h9>Entrypoint</h9>#}
-{#                                    <p><h13>File for jMeter and class for gatling</h13></p>#}
-{#                                    <input type="text" id="entrypoint" class="form-control form-control-alternative"#}
-{#                                   placeholder="Entrypoint (e.g. some.jmx or some.Test)">#}
-{#                                </div>#}
-{#                            </div>#}
-{#                        </div>#}
-{#                    </div>#}
-{#                </div>#}
-{#                {{ template_slot("locations_content", payload={"modal_id": "backend"}) | safe }}#}
-{#                {{ template_slot("params_table_content", payload={"caption": "Test Parameters", "modal_id": "backend"}) | safe }}#}
-{##}
-{#                {{ template_slot("integrations_backend_performance_content") | safe }}#}

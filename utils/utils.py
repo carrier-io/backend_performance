@@ -108,7 +108,7 @@ def run_test(test: 'PerformanceApiTest', config_only: bool = False, execution: b
         onexx=0, twoxx=0, threexx=0, fourxx=0, fivexx=0,
         requests="",
         test_uid=test.test_uid,
-        test_config=test.to_json()
+        test_config=test.api_json()
     )
     report.insert()
     event["cc_env_vars"]["REPORT_ID"] = str(report.id)

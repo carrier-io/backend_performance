@@ -34,3 +34,18 @@
         });
     });
 </script>
+
+
+<script src="{{ url_for('backend_performance.static', filename='js/results.js') }}"></script>
+{{ template_slot('params_table_scripts') | safe }}
+{{ template_slot('sources_scripts') | safe }}
+{{ template_slot('locations_scripts') | safe }}
+{{ template_slot('integrations_backend_performance_scripts') | safe }}
+<script>
+    $(document).on('vue_init', () => {
+        const nav_links = $('#source_card_config a.nav-link')
+        nav_links.removeClass('disabled')
+        SourceCard.Manager('source_card_config').set({{ source_data | default({}) | tojson }})
+        nav_links.addClass('disabled')
+    })
+</script>

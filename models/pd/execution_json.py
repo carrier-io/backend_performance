@@ -82,7 +82,7 @@ class ExecutionParams(PerformanceTestParams):
         return cls(**dict(
             job_type=db_object.job_type,
             entrypoint=db_object.entrypoint,
-            test_parameters=db_object.test_parameters,
+            test_parameters=db_object.all_test_parameters.dict()['test_parameters'],
             customization=db_object.customization,
             env_vars=db_object.env_vars,
             influxdb_database=db_object.influx_db

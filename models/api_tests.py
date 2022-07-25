@@ -66,7 +66,7 @@ class PerformanceApiTest(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin
         return JOB_CONTAINER_MAPPING.get(self.runner, {}).get('influx_db')
 
     @property
-    def default_test_parameters(self):
+    def default_test_parameters(self) -> PerformanceTestParams:
         _default_params = {
             "influx.db": self.influx_db,
             "influx.port": "{{secret.influx_port}}",
@@ -87,6 +87,11 @@ class PerformanceApiTest(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin
             for k, v in _default_params.items()
         ])
 
+    @property
+    def all_test_parameters(self) -> PerformanceTestParams:
+        tp = self.default_test_parameters
+        tp.update(PerformanceTestParams.from_orm(self))
+        return tp
 
     def add_schedule(self, schedule_data: dict, commit_immediately: bool = True):
         schedule_data['test_id'] = self.id
@@ -186,13 +191,11 @@ class PerformanceApiTest(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin
         if 'job_type' not in exclude_fields:
             test['job_type'] = self.job_type
         if test.get('test_parameters') and 'test_parameters' not in exclude_fields:
-            tp = self.default_test_parameters
-            tp.update(PerformanceTestParams.from_orm(self))
             if keep_custom_test_parameters:
                 exclude_fields = set(exclude_fields) - set(
                     i.name for i in PerformanceTestParams.from_orm(self).test_parameters
                 )
-            test['test_parameters'] = tp.exclude_params(
+            test['test_parameters'] = self.all_test_parameters.exclude_params(
                 exclude_fields
             ).dict()['test_parameters']
         return test

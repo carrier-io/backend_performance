@@ -78,7 +78,7 @@ class ExecutionParams(PerformanceTestParams):
         return temp
 
     @classmethod
-    def from_orm(cls, db_object):
+    def from_orm(cls, db_object: 'PerformanceApiTest'):
         return cls(**dict(
             job_type=db_object.job_type,
             entrypoint=db_object.entrypoint,
@@ -94,6 +94,7 @@ class CcEnvVars(BaseModel):
     RABBIT_USER: str = "{{secret.rabbit_user}}"
     RABBIT_PASSWORD: str = "{{secret.rabbit_password}}"
     GALLOPER_WEB_HOOK: str = "{{secret.post_processor}}"
+    RABBIT_VHOST: str = "carrier"
     cc_env_vars: dict = {}
 
     @validator('cc_env_vars', always=True)
@@ -112,7 +113,15 @@ class CcEnvVars(BaseModel):
         return temp
 
     @classmethod
-    def from_orm(cls, db_object):
+    def from_orm(cls, db_object: 'PerformanceApiTest'):
+        public_queues = db_object.rpc.call.get_rabbit_queues("carrier")
+        if db_object.location not in public_queues:
+            return cls(
+                cc_env_vars=db_object.cc_env_vars,
+                RABBIT_USER="{{secret.rabbit_project_user}}",
+                RABBIT_PASSWORD="{{secret.rabbit_project_password}}",
+                RABBIT_VHOST="{{secret.rabbit_project_vhost}}"
+            )
         return cls(
             cc_env_vars=db_object.cc_env_vars
         )

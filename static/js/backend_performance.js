@@ -141,8 +141,121 @@ var custom_params_table_formatters = {
     }
 }
 
+const CustomizationItem = {
+    delimiters: ['[[', ']]'],
+    props: ['file', 'path', 'i_index'],
+    emits: ['update:file', 'update:path', 'delete'],
+    template: `
+    <div class="d-flex flex-row">
+        <div class="flex-fill">
+            <input type="text" class="form-control form-control-alternative" placeholder="bucket/file"
+                @change="$emit('update:file', $event.target.value)"
+                :value="file"
+            >
+        </div>
+        <div class="flex-fill pl-3">
+            <input type="text" class="form-control form-control-alternative" placeholder="path/to/file"
+                @change="$emit('update:path', $event.target.value)"
+                :value="path"
+            >
+        </div>
+        <div class="m-auto pl-3">
+            <button type="button" class="btn btn-32 btn-action" 
+                @click="$emit('delete', i_index)"
+            >
+                <i class="fas fa-minus"></i>
+            </button>
+        </div>
+    </div>
+    `,
+    methods: {
+        initial_state() {
+            return {
+                file: '',
+                path: '',
+            }
+        }
+    }
+}
+const Customization = {
+    delimiters: ['[[', ']]'],
+    props: ['customization', 'errors'],
+    emits: ['update:modelValue'],
+    components: {
+        CustomizationItem: CustomizationItem
+    },
+    data() {
+        return {
+            cc_items: []
+        }
+    },
+    template: `
+    <div class="card card-x card-row-1">
+        <div class="card-header">
+            <div class="d-flex flex-row">
+                <div class="flex-fill">
+                    <h9 class="flex-grow-1">Custom plugins and extensions</h9>
+                    <p>
+                        <h13>Bucket and file for your customizations</h13>
+                    </p>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-32 btn-action mt-1"
+                        @click="handle_add_item"
+                    >
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="d-flex flex-row invalid-feedback">[[ errors?.length > 0 ? errors[0]?.msg : '']]</div>
+            <CustomizationItem
+                v-for="(item, index) in cc_items"
+                :key="index"
+                :i_index="index"
+                v-model:file="item.file"
+                v-model:path="item.path"
+                @delete="handle_delete_item"
+            ></CustomizationItem>
+        </div>
+    </div>
+    `,
+    computed: {
+        converted() {
+            return this.cc_items.reduce((acc, i) => {
+                acc[i.file] = i.path
+                return acc
+            }, {})
+        }
+    },
+    methods: {
+        handle_add_item() {
+            this.cc_items.push(CustomizationItem.methods.initial_state())
+            // this.$emit('update:modelValue', this.converted)
+        },
+        handle_delete_item(item_id) {
+            this.cc_items.splice(item_id, 1)
+            // this.$emit('update:modelValue', this.converted)
+        },
+        clear() {
+            this.cc_items = []
+        }
+    },
+    watch: {
+        cc_items: {
+            handler(newValue, oldValue) {
+                this.$emit('update:modelValue', this.converted)
+            },
+            deep: true
+        }
+    },
+
+}
+
 const TestCreateModal = {
     delimiters: ['[[', ']]'],
+    components: {
+        Customization: Customization
+    },
     props: ['modal_id', 'runners', 'test_params_id', 'source_card_id', 'locations'],
     template: `
 <div class="modal modal-base fixed-left fade shadow-sm" tabindex="-1" role="dialog" :id="modal_id">
@@ -324,23 +437,11 @@ const TestCreateModal = {
                         ref="advanced_params"
                     >
                         <div class="col">
-                            <div class="card card-x card-row-1">
-                                <div class="card-header">
-                                    <div class="d-flex flex-row">
-                                        <div class="flex-fill">
-                                            <h9 class="flex-grow-1">Custom plugins and extensions</h9>
-                                            <p>
-                                                <h13>Bucket and file for your customizations</h13>
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <button type="button" class="btn btn-32 btn-action mt-1"
-                                                    onclick="addParam('extCard', 'bucket/file', 'path/to/file')"><i
-                                                    class="fas fa-plus"></i></button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            <Customization
+                                v-model="customization"
+                                ref="customization_component"
+                                :errors="errors.customization"
+                            ></Customization>
                             <div class="card card-x card-row-1" id="splitCSV">
                                 <div class="card-header">
                                     <div class="d-flex flex-row">
@@ -446,6 +547,7 @@ const TestCreateModal = {
                 newValue.scheduling ?
                     this.scheduling?.setError(newValue.scheduling) :
                     this.scheduling?.clearErrors()
+                newValue.customization && $(this.$refs.advanced_params).collapse('show')
             } else {
                 this.test_parameters.clearErrors()
                 this.source.clearErrors()
@@ -480,7 +582,8 @@ const TestCreateModal = {
                         memory_quota: this.memory_quota
                     },
                     parallel_runners: this.parallel_runners,
-                    cc_env_vars: {}
+                    cc_env_vars: {},
+                    customization: this.customization
                 },
                 test_parameters: this.test_parameters.get(),
                 integrations: this.integrations?.get() || [],
@@ -621,6 +724,7 @@ const TestCreateModal = {
             $('#backend_parallel').text(this.parallel_runners)
             $('#backend_cpu').text(this.cpu_quota)
             $('#backend_memory').text(this.memory_quota)
+            this.$refs.customization_component.clear()
         },
         clearErrors() {
             this.errors = {}

@@ -62,6 +62,15 @@ class TestOverrideable(BaseModel):
     customization: dict = {}
     cc_env_vars: dict = {}
 
+    @validator('customization')
+    def validate_customization(cls, value: dict):
+        for k, v in list(value.items()):
+            if any((k, v)):
+                assert all((k, v)), 'All fields must be filled'
+            else:
+                del value[k]
+        return value
+
 
 class TestCommon(TestOverrideable):
     """

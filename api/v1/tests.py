@@ -101,18 +101,16 @@ class API(Resource):
             ).dict()
         )
 
-        compile_file_name = ''
-        project = None
         if test_data['source']['name'] == 'artifact':
             project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
             bucket = "tests"
             api_tools.upload_file(bucket, test_data['source']['file'], project, create_if_not_exists=True)
             compile_file_name = test_data['source']['file'].filename
 
-        if compile_tests_flag:
-            if not project:
-                project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
-            compile_tests(project.id, compile_file_name, test_data["runner"])
+            if compile_tests_flag:  # compiling tests only if source is artifact
+                if not project:
+                    project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
+                compile_tests(project.id, compile_file_name, test_data["runner"])
 
         test = PerformanceApiTest(**test_data)
         test.insert()

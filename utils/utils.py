@@ -118,6 +118,8 @@ def run_test(test: 'PerformanceApiTest', config_only: bool = False, execution: b
     resp['redirect'] = f'/task/{resp["task_id"]}/results'  # todo: where this should lead to?
 
     test.rpc.call.increment_statistics(test.project_id, 'performance_test_runs')
+
+    resp['result_id'] = report.id  # for test rerun
     return resp
 
 

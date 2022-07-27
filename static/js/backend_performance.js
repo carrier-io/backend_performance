@@ -253,7 +253,7 @@ const TestCreateModal = {
                                 </select>
                                 <div class="invalid-feedback">[[ get_error_msg('runner') ]]</div>
                                 <label class="mb-0 mt-1 w-100 d-flex align-items-center custom-checkbox"
-                                    v-if="is_gatling_selected"
+                                    v-if="is_gatling_selected && active_source_tab === 'artifact'"
                                     >
                                         <input type="checkbox" class="mr-2"
                                             v-model='compile_tests'
@@ -392,6 +392,10 @@ const TestCreateModal = {
         $(this.$el).on('hide.bs.modal', this.clear)
         $(this.$el).on('show.bs.modal', this.$refs.locations.fetch_locations)
         this.runner = this.default_runner
+        $(this.source.el).find('a.nav-item').on('click', e => {
+                this.active_source_tab = this.source.get_active_tab(e.target.id)
+            }
+        )
     },
     computed: {
         default_runner() {
@@ -509,6 +513,7 @@ const TestCreateModal = {
             if (resp.ok) {
                 this.hide()
                 vueVm.registered_components.table_tests?.table_action('refresh')
+                run_test && vueVm.registered_components.table_results?.table_action('refresh')
             } else {
                 await this.handleError(resp)
             }
@@ -523,6 +528,7 @@ const TestCreateModal = {
             if (resp.ok) {
                 this.hide()
                 vueVm.registered_components.table_tests?.table_action('refresh')
+                run_test && vueVm.registered_components.table_results?.table_action('refresh')
             } else {
                 await this.handleError(resp)
             }
@@ -570,6 +576,7 @@ const TestCreateModal = {
 
                 advanced_params_icon: 'fas fa-chevron-down',
                 mode: 'create',
+                active_source_tab: undefined
             }
         },
         set(data) {
@@ -624,7 +631,7 @@ const TestCreateModal = {
         hide() {
             $(this.$el).modal('hide')
             // this.clear() // - happens on close event
-        }
+        },
     }
 }
 
@@ -659,7 +666,7 @@ const TestRunModal = {
                     <div class="modal-header">
                         <div class="row w-100">
                             <div class="col">
-                                <h3 class="ml-4 mt-3 mb-3">Run Backend Test</h3>
+                                <h2>Run Backend Test</h2>
                             </div>
                             <div class="col-xs">
                                 <button type="button" class="btn btn-secondary mr-2" data-dismiss="modal" aria-label="Close">

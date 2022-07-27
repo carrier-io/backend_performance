@@ -38,9 +38,8 @@
                                 <input type="text" class="form-control form-control-alternative"
                                        placeholder="Test Name"
                                        disabled
-{#                                        value='{{ test_config['name'] }}'#}
-                                        value='{{- get_test_param_by_name("test_name") -}}'
-                                   >
+                                       value='{{- get_test_param_by_name("test_name") -}}'
+                                >
                             </div>
                             <div class="d-flex">
                                 <div class="flex-fill">
@@ -52,8 +51,8 @@
                                         <input type="text" class="form-control form-control-alternative"
                                                placeholder="Test Type"
                                                disabled
-                                                value='{{- get_test_param_by_name("test_type") -}}'
-                                               >
+                                               value='{{- get_test_param_by_name("test_type") -}}'
+                                        >
                                     </div>
                                 </div>
                                 <div class="flex-fill">
@@ -66,7 +65,7 @@
                                                placeholder="Test Environment"
                                                disabled
                                                value='{{- get_test_param_by_name("env_type") -}}'
-                                               >
+                                        >
                                     </div>
                                 </div>
                             </div>
@@ -76,14 +75,14 @@
                                     <h13>Choose the runner for the test.</h13>
                                 </p>
                                 <select class="selectpicker bootstrap-select__b mt-1" data-style="btn"
-                                    value='{{- test_config['runner'] -}}'
+                                        value='{{- test_config['runner'] -}}'
                                         disabled
                                 >
-                                        <option
+                                    <option
                                             value='{{- test_config['runner'] -}}'
-                                        >
-                                            {{- test_config['runner'] -}}
-                                        </option>
+                                    >
+                                        {{- test_config['runner'] -}}
+                                    </option>
                                 </select>
                             </div>
                         </div>
@@ -131,7 +130,7 @@
                     "disable_add_params": True
                 }) | safe }}
 
-            {{ template_slot("integrations_backend_performance_content") | safe }}
+                {{ template_slot("integrations_backend_performance_content") | safe }}
 
 
             </div>

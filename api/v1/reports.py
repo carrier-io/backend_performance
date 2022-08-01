@@ -88,7 +88,6 @@ class API(Resource):
         return report.to_json()
 
     def put(self, project_id: int):
-        log.info("Update report *************************")
         args = request.json
         project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
         test_data = get_test_details(project_id=project_id, build_id=args["build_id"], test_name=args["test_name"],
@@ -121,9 +120,7 @@ class API(Resource):
         report.vusers = args["vusers"]
         report.duration = args["duration"]
         report.commit()
-        log.info("Here *******************************")
         if report.test_status['status'].lower() in ['finished', 'error', 'failed', 'success']:
-            log.info("Create log file *******************************")
             write_test_run_logs_to_minio_bucket(report, project)
         return {"message": "updated"}
 
@@ -150,7 +147,6 @@ class API(Resource):
 
 
 def write_test_run_logs_to_minio_bucket(test: APIReport, project):
-    log.info("###################################")
     loki_settings_url = urlparse(current_app.config["CONTEXT"].settings.get('loki', {}).get('url'))
     if loki_settings_url:
         #
@@ -192,6 +188,5 @@ def write_test_run_logs_to_minio_bucket(test: APIReport, project):
             bucket_name = str(test.name).replace("_", "").replace(" ", "").lower()
             file_name = f"{test.build_id}.log"
             minio_client.upload_file(bucket_name, file_output, file_name)
-            log.info("################################################")
         else:
             log.warning('Request to loki failed with status %s', response.status_code)

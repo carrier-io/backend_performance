@@ -8,6 +8,7 @@ var test_formatters = {
             return value
         }
     },
+
     actions(value, row, index) {
         return `
             <div class="d-flex justify-content-end">
@@ -16,15 +17,32 @@ var test_formatters = {
                 >
                     <i class="fas fa-play"></i>
                 </button>
-                <button type="button" class="btn btn-24 btn-action test_edit">
-                    <i class="fas fa-cog"></i>
-                </button>
-                <button type="button" class="btn btn-24 btn-action">
-                    <i class="fas fa-share-alt"></i>
-                </button>
-                <button type="button" class="btn btn-24 btn-action test_delete">
-                    <i class="fas fa-trash-alt"></i>
-                </button>
+                <div class="dropdown_multilevel">
+                    <button class="btn btn-24 btn-action" type="button"
+                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li class="dropdown-menu_item dropdown-item d-flex align-items-center">
+                            <span class="w-100 font-h5"><i class="fas fa-share-alt mr-2"></i>Integrate with</span>
+                            <i class="fa fa-sort-down"
+                               style="transform: rotate(270deg)"
+                            ></i>
+                            <ul class="submenu dropdown-menu">
+                                <li class="dropdown-menu_item dropdown-item d-flex align-items-center">
+                                    <span class="w-100 font-h5">Docker command</span>
+                                </li>
+                            </ul>
+                        </li>
+                        <li class="dropdown-menu_item dropdown-item d-flex align-items-center test_edit">
+                            <i class="fas fa-cog mr-2"></i><span class="w-100 font-h5">Settings</span>
+                        </li>
+                        <li class="dropdown-menu_item dropdown-item d-flex align-items-center test_delete">
+                            <i class="fas fa-trash-alt mr-2"></i><span class="w-100 font-h5">Delete</span>
+                        </li>
+                    </ul>
+                </div>
+                
             </div>
         `
     },

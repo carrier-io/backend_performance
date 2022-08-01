@@ -12,6 +12,7 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 import json
+from collections import defaultdict
 from queue import Empty
 from typing import List, Union
 
@@ -136,6 +137,35 @@ class PerformanceApiTest(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin
     def configure_execution_json(self, output: str = 'cc', execution: bool = False):
         exec_params = ExecutionParams.from_orm(self).dict(exclude_none=True)
 
+        mark_for_delete = defaultdict(list)
+        for section, integration in self.integrations.items():
+            for integration_name, integration_data in integration.items():
+                try:
+                    extended_data = self.rpc.call_function_with_timeout(
+                        func=f'execution_json_config_{integration_name}',
+                        timeout=3,
+                        integration_id=integration_data['id'],
+                    )
+                    integration_data.update(extended_data)
+                except Empty:
+                    log.error(f'Cannot find execution json compiler for {integration_name}')
+                    mark_for_delete[section].append(integration_name)
+                except Exception as e:
+                    log.error('Error making config for %s %s', integration_name, e)
+                    mark_for_delete[section].append(integration_name)
+
+        for section, integrations in mark_for_delete.items():
+            for i in integrations:
+                log.warning(f'Some error occurred while building params for {section}/{i}. '
+                            f'Removing from execution json')
+                self.integrations[section].pop(i)
+        # remove empty sections
+        for section in mark_for_delete.keys():
+            if not self.integrations[section]:
+                self.integrations.pop(section)
+
+
+
         execution_json = {
             'test_id': self.test_uid,
             "container": self.container,
@@ -145,35 +175,9 @@ class PerformanceApiTest(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin
             "job_type": self.job_type,
             "concurrency": self.parallel_runners,
             "channel": self.location,
-            **parse_source(self.source).execution_json
+            **parse_source(self.source).execution_json,
+            'integrations': self.integrations
         }
-
-
-        # if self.reporting:
-        #     if "junit" in self.reporting:
-        #         execution_json["junit"] = "True"
-        #     if "quality" in self.reporting:
-        #         execution_json["quality_gate"] = "True"
-        #     if "perfreports" in self.reporting:
-        #         execution_json["save_reports"] = "True"
-        #     if "jira" in self.reporting:
-        #         execution_json["jira"] = "True"
-        #     if "email" in self.reporting:
-        #         execution_json["email"] = "True"
-        #     if "rp" in self.reporting:
-        #         execution_json["report_portal"] = "True"
-        #     if "ado" in self.reporting:
-        #         execution_json["azure_devops"] = "True"
-
-
-        # if emails:
-        #     _emails = self.emails
-        #     for each in emails.split(","):
-        #         if each not in _emails:
-        #             _emails += f",{each}"
-        #     execution_json["email_recipients"] = _emails
-        # else:
-        #     execution_json["email_recipients"] = self.emails
 
         if execution:
             execution_json = secrets_tools.unsecret(execution_json, project_id=self.project_id)

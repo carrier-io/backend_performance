@@ -147,6 +147,7 @@
         {% include 'backend_performance:backend_performance/create.html' %}
         {% include 'backend_performance:backend_performance/runtest.html' %}
     {% endwith %}
+    {% include 'backend_performance:thresholds.html' %}
     <Docker-Command-Modal
         @register="register"
         instance_name="docker_command"
@@ -154,6 +155,3 @@
     >
     </Docker-Command-Modal>
 </div>
-
-
-{#{% include 'backend_performance:thresholds.html' %}#}

@@ -461,20 +461,16 @@ const TestCreateModal = {
                             </div>
                         </div>
                         <div class="col">
-                            <div class="card card-x card-row-1" id="dnsCard">
+                            <div class="card card-x card-row-1" id="QualityGateCart">
                                 <div class="card-header">
-                                    <div class="d-flex flex-row">
-                                        <div class="flex-fill">
-                                            <h9 class="flex-grow-1">DNS Override</h9>
-                                            <p>
-                                                <h13>Specify alternative IPs for hosts used in your script</h13>
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <button type="button" class="btn btn-32 btn-action mt-1"
-                                                    onclick="addParam('dnsCard', 'hostname.company.com', '0.0.0.0')"><i
-                                                    class="fas fa-plus"></i></button>
-                                        </div>
+                                    <div class="d-flex">
+                                        <h9 class="flex-grow-1">QualityGate</h9>
+
+                                        <button type="button" class="btn btn-24 btn-action" onclick="toggleRows('QualityGateCart')"><i class="fas fa-cog"></i></button>
+                                        <label class="custom-toggle">
+                                        <input type="checkbox" id="QualityGateToggle">
+                                        <span class="custom-toggle-slider rounded-circle"></span>
+                                        </label>
                                     </div>
                                 </div>
                             </div>
@@ -756,6 +752,16 @@ function addCSVSplit(id, key = "", is_header = "") {
     <div class="m-auto">
         <button type="button" class="btn btn-32 btn-action" onclick="removeParam(event)"><i class="fas fa-minus"></i></button>
     </div>
+</div>`)
+}
+
+function toggleRows(id) {
+    $(`#${id}`).append(`<div class="d-flex flex-row">
+    <div class="flex-fill">
+        <input type="text" class="form-control form-control-alternative" placeholder="Failed thresholds rate" value="20">
+        <label class="form-check-label">Failed thresholds rate. If the failed thresholds rate in the test is higher than this number, the test will be considered as failed</label>
+    </div>
+
 </div>`)
 }
 

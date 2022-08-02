@@ -23,21 +23,23 @@ class API(Resource):
         test = PerformanceApiTest.query.filter(
             PerformanceApiTest.get_api_filter(project_id, test_id)
         ).first()
-        if request.args.get("raw"):
-            test = test.api_json()
-            schedules = test.pop('schedules', [])
-            if schedules:
-                try:
-                    test['scheduling'] = self.module.context.rpc_manager.timeout(
-                        2).scheduling_backend_performance_load_from_db_by_ids(schedules)
-                except Empty:
-                    test['scheduling'] = []
-            return test
-        if request.args.get("type") == "docker":
-            message = test.configure_execution_json('docker', execution=request.args.get("exec", False))
-        else:
-            message = [{"test_id": test.test_uid}]
-        return {"config": message}  # this is cc format
+        output = request.args.get('output')
+
+        if output == 'docker':
+            return {'cmd': test.docker_command}, 200
+
+        if output == 'test_uid':
+            return {"config":  [{"test_id": test.test_uid}]}, 200  # format is ok?
+
+        test = test.api_json()
+        schedules = test.pop('schedules', [])
+        if schedules:
+            try:
+                test['scheduling'] = self.module.context.rpc_manager.timeout(
+                    2).scheduling_backend_performance_load_from_db_by_ids(schedules)
+            except Empty:
+                test['scheduling'] = []
+        return test
 
     def put(self, project_id: int, test_id: Union[int, str]):
         """ Update test data and run on demand """
@@ -87,9 +89,10 @@ class API(Resource):
     def post(self, project_id: int, test_id: Union[int, str]):
         """ Run test with possible overridden params
         """
-
         config_only_flag = request.json.pop('type', False)
         execution_flag = request.json.pop('execution', True)
+        # output = request.json.pop('output', 'cc')
+
         test_data, errors = parse_test_data(
             project_id=project_id,
             request_data=request.json,
@@ -112,9 +115,11 @@ class API(Resource):
         ).first()
 
         test.__dict__.update(test_data)
-        # return {
-        #    'test': test.to_json(),
-        #    'config': run_test(test, config_only=True, execution=execution_flag)
-        # }, 200
+
+        # if output == '_test':
+        #     return {
+        #        'test': test.to_json(),
+        #        'config': run_test(test, config_only=True, execution=execution_flag)
+        #     }, 200
         resp = run_test(test, config_only=config_only_flag, execution=execution_flag)
         return resp, resp.get('code', 200)

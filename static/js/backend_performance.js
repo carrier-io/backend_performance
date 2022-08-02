@@ -29,7 +29,7 @@ var test_formatters = {
                                style="transform: rotate(270deg)"
                             ></i>
                             <ul class="submenu dropdown-menu">
-                                <li class="dropdown-menu_item dropdown-item d-flex align-items-center">
+                                <li class="dropdown-menu_item dropdown-item d-flex align-items-center int_docker">
                                     <span class="w-100 font-h5">Docker command</span>
                                 </li>
                             </ul>
@@ -82,7 +82,19 @@ var test_formatters = {
             console.log('test_delete', row)
             test_delete(row.id)
 
+        },
+
+        "click .int_docker": async function (e, value, row, index) {
+            const resp = await fetch(`/api/v1/backend_performance/test/${row.project_id}/${row.id}/?output=docker`)
+            if (resp.ok) {
+                const {cmd} = await resp.json()
+                vueVm.docker_command.cmd = cmd
+                vueVm.docker_command.is_open = true
+            } else {
+                showNotify('ERROR', 'Error getting docker command')
+            }
         }
+
     }
 }
 

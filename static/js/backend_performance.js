@@ -812,9 +812,7 @@ const TestRunModal = {
                             
                             ref="locations"
                         ></Locations>
-                        <div class="row p-4">
-                            <div class="col"></div>
-                        </div>
+                        <slot name="integrations"></slot>
                     </div>
                 </div>
             </div>

@@ -1,7 +1,9 @@
+{% set instance_name_prefix = 'runmodal_' %}
 <Test-Run-Modal
     @register="register"
     instance_name="run_modal"
     test_params_id="runner_test_params"
+    instance_name_prefix="{{ instance_name_prefix }}"
 >
     <template #test_parameters>
         {{ template_slot("params_table_content", payload={
@@ -13,7 +15,9 @@
             }
         }) | safe }}
     </template>
-{#    <template #integrations>#}
-{#        {{ template_slot("integrations_backend_performance_content") | safe }}#}
-{#    </template>#}
+    <template #integrations>
+        {{ template_slot("integrations_backend_performance_content", payload={
+            'instance_name_prefix': instance_name_prefix
+        }) | safe }}
+    </template>
 </Test-Run-Modal>

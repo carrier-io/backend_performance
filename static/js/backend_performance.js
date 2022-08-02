@@ -798,7 +798,7 @@ function toggleRows(id) {
 
 const TestRunModal = {
     delimiters: ['[[', ']]'],
-    props: ['test_params_id'],
+    props: ['test_params_id', 'instance_name_prefix'],
     template: `
         <div class="modal modal-base fixed-left fade shadow-sm" tabindex="-1" role="dialog" id="runTestModal">
             <div class="modal-dialog modal-dialog-aside" role="document">
@@ -840,7 +840,14 @@ const TestRunModal = {
         test_parameters() {
             return ParamsTable.Manager(this.$props.test_params_id)
         },
-
+        integrations() {
+            try {
+                return IntegrationSection.Manager(this.$props.instance_name_prefix)
+            } catch (e) {
+                console.warn('No integration section')
+                return undefined
+            }
+        },
     },
     mounted() {
         $(this.$el).on('hide.bs.modal', this.clear)
@@ -870,7 +877,7 @@ const TestRunModal = {
         },
         set(data) {
             console.log('set data called', data)
-            const {test_parameters, env_vars: all_env_vars, ...rest} = data
+            const {test_parameters, env_vars: all_env_vars, integrations, ...rest} = data
 
             const {cpu_quota, memory_quota, ...env_vars} = all_env_vars
 
@@ -879,6 +886,7 @@ const TestRunModal = {
 
             // special fields
             this.test_parameters.set(test_parameters)
+            this.integrations.set(integrations)
             this.show()
         },
         show() {
@@ -891,16 +899,18 @@ const TestRunModal = {
         clear() {
             Object.assign(this.$data, this.initial_state())
             this.test_parameters.clear()
+            this.integrations.clear()
         },
         clearErrors() {
             this.errors = {}
         },
         get_data() {
             const test_params = this.test_parameters.get()
+            const integrations = this.integrations.get()
             const name = test_params.find(i => i.name === 'test_name')
             const test_type = test_params.find(i => i.name === 'test_type')
             const env_type = test_params.find(i => i.name === 'env_type')
-            const data = {
+            return {
                 common_params: {
                     name: name,
                     test_type: test_type,
@@ -912,8 +922,8 @@ const TestRunModal = {
                     parallel_runners: this.parallel_runners
                 },
                 test_parameters: test_params,
+                integrations: integrations,
             }
-            return data
         },
         async handleRun() {
             this.clearErrors()
@@ -955,8 +965,12 @@ const TestRunModal = {
                 newValue.test_parameters ?
                     this.test_parameters.setError(newValue.test_parameters) :
                     this.test_parameters.clearErrors()
+                newValue.integrations ?
+                    this.integrations.setError(newValue.integrations) :
+                    this.integrations.clearErrors()
             } else {
                 this.test_parameters.clearErrors()
+                this.integrations.clearErrors()
             }
         }
     },

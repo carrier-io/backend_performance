@@ -78,7 +78,6 @@ def _calculate_limit(limit, total):
 
 def run_test(test: 'PerformanceApiTest', config_only: bool = False, execution: bool = False) -> dict:
     event = test.configure_execution_json(
-        output='cc',
         execution=execution
     )
 

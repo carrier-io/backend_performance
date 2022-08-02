@@ -94,6 +94,19 @@ class PerformanceApiTest(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin
         tp.update(PerformanceTestParams.from_orm(self))
         return tp
 
+    @property
+    def docker_command(self):
+        cmd_template = 'docker run -e project_id={project_id} -e galloper_url={galloper_url}' \
+                       ' -e token={token} getcarrier/control_tower:{control_tower_version} --test_id={test_id}'
+        return cmd_template.format(
+            project_id=self.project_id,
+            galloper_url=secrets_tools.unsecret("{{secret.galloper_url}}", project_id=self.project_id),
+            token=secrets_tools.unsecret("{{secret.auth_token}}", project_id=self.project_id),
+            control_tower_version=c.CURRENT_RELEASE,
+            test_id=self.test_uid
+        )
+
+
     def add_schedule(self, schedule_data: dict, commit_immediately: bool = True):
         schedule_data['test_id'] = self.id
         schedule_data['project_id'] = self.project_id
@@ -134,7 +147,7 @@ class PerformanceApiTest(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin
             cls.test_uid == test_id
         )
 
-    def configure_execution_json(self, output: str = 'cc', execution: bool = False):
+    def configure_execution_json(self, execution: bool = False) -> dict:
         exec_params = ExecutionParams.from_orm(self).dict(exclude_none=True)
 
         mark_for_delete = defaultdict(list)
@@ -164,8 +177,6 @@ class PerformanceApiTest(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin
             if not self.integrations[section]:
                 self.integrations.pop(section)
 
-
-
         execution_json = {
             'test_id': self.test_uid,
             "container": self.container,
@@ -181,14 +192,8 @@ class PerformanceApiTest(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin
 
         if execution:
             execution_json = secrets_tools.unsecret(execution_json, project_id=self.project_id)
-        if output == 'cc':
-            return execution_json
-        else:
-            return "docker run -e project_id=%s -e galloper_url=%s -e token=%s" \
-                   " getcarrier/control_tower:%s --test_id=%s" \
-                   "" % (self.project_id, secrets_tools.unsecret("{{secret.galloper_url}}", project_id=self.project_id),
-                         secrets_tools.unsecret("{{secret.auth_token}}", project_id=self.project_id),
-                         c.CURRENT_RELEASE, self.test_uid)
+
+        return execution_json
 
     def to_json(self, exclude_fields: tuple = (), keep_custom_test_parameters: bool = True) -> dict:
         test = super().to_json(exclude_fields=exclude_fields)

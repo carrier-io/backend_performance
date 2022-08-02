@@ -148,4 +148,10 @@
         {% include 'backend_performance:backend_performance/runtest.html' %}
     {% endwith %}
     {% include 'backend_performance:thresholds.html' %}
+    <Docker-Command-Modal
+        @register="register"
+        instance_name="docker_command"
+        modal_id="docker_command_modal"
+    >
+    </Docker-Command-Modal>
 </div>

@@ -11,6 +11,7 @@ from flask import current_app, request, make_response
 from ....projects.models.statistics import Statistic
 from ...models.api_baseline import APIBaseline
 from ...models.api_reports import APIReport
+from ...models.api_tests import PerformanceApiTest
 # from ...utils.utils import get
 from ...connectors.influx import get_test_details, delete_test_data
 from tools import MinioClient, api_tools
@@ -51,7 +52,6 @@ class API(Resource):
         # if not ProjectQuota.check_quota(project_id=project_id, quota='performance_test_runs'):
         #     return {"Forbidden": "The number of performance test runs allowed in the project has been exceeded"}
         report = APIReport(name=args["test_name"],
-                           test_status=args["test_status"],
                            project_id=project.id,
                            environment=args["environment"],
                            type=args["type"],
@@ -79,7 +79,6 @@ class API(Resource):
                            fourxx=0,
                            fivexx=0,
                            requests="",
-                           release_id=args.get("release_id"),
                            test_uid=args.get("test_id"))
         report.insert()
         statistic = Statistic.query.filter_by(project_id=project_id).first()

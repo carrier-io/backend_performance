@@ -41,6 +41,7 @@
 {{ template_slot('sources_scripts') | safe }}
 {{ template_slot('locations_scripts') | safe }}
 {{ template_slot('integrations_backend_performance_scripts') | safe }}
+<script src="{{ url_for('backend_performance.static', filename='js/quality_gate.js') }}"></script>
 <script>
     $(document).on('vue_init', () => {
         const nav_links = $('#source_card_config a.nav-link')

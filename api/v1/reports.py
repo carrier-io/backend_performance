@@ -186,6 +186,8 @@ def write_test_run_logs_to_minio_bucket(test: APIReport, project):
             file_output.seek(0)
             bucket_name = str(test.name).replace("_", "").replace(" ", "").lower()
             file_name = f"{test.build_id}.log"
+            if bucket_name not in minio_client.list_bucket():
+                minio_client.create_bucket(bucket_name)
             minio_client.upload_file(bucket_name, file_output, file_name)
         else:
             log.warning('Request to loki failed with status %s', response.status_code)

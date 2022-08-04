@@ -196,7 +196,8 @@ def parse_test_data(project_id: int, request_data: dict,
             if raise_immediately:
                 return test_data, errors
         except Exception as e:
-            log.warning(f'Exception as e {type(e)} in backend_performance_test_create_{k}')
+            from traceback import format_exc
+            log.warning(f'Exception as e {type(e)} in backend_performance_test_create_{k}\n{format_exc()}')
             e.loc = [k, *getattr(e, 'loc', [])]
             errors.append(ValidationErrorPD(e.loc, str(e)).dict())
             if raise_immediately:

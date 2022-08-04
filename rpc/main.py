@@ -66,9 +66,11 @@ class RPC:
 
     @web.rpc(f'backend_performance_test_create_integration_validate_quality_gate')
     @rpc_tools.wrap_exceptions(ValidationError)
-    def backend_performance_test_create_integration_validate(self, data: dict, **kwargs) -> dict:
+    def backend_performance_test_create_integration_validate(self, data: dict, pd_kwargs: Optional[dict] = None, **kwargs) -> dict:
+        if not pd_kwargs:
+            pd_kwargs = {}
         pd_object = QualityGate(**data)
-        return pd_object.dict(**kwargs)
+        return pd_object.dict(**pd_kwargs)
 
     @web.rpc('execution_json_config_quality_gate')
     @rpc_tools.wrap_exceptions(RuntimeError)

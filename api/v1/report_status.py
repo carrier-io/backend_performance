@@ -21,6 +21,8 @@ class API(Resource):
         project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
         report = APIReport.query.filter_by(project_id=project.id, id=report_id).first()
         test_status = request.json["test_status"]
+        if test_status.get("description") == "Failed update report":
+            report.end_time = report.start_time
         report.test_status = test_status
         report.commit()
         return {"message": f"status changed to {report.test_status['status']}"}

@@ -8,6 +8,7 @@ from pydantic import ValidationError
 from ..models.api_tests import PerformanceApiTest
 from ..models.pd.performance_test import TestCommon, PerformanceTestParams, TestOverrideable, \
     PerformanceTestParamsCreate, PerformanceTestParamsRun
+from ..models.pd.quality_gate import QualityGate
 from ..utils.utils import run_test
 
 
@@ -62,3 +63,17 @@ class RPC:
         ).first()
         if test:
             return test.job_type
+
+    @web.rpc(f'backend_performance_test_create_integration_validate_quality_gate')
+    @rpc_tools.wrap_exceptions(ValidationError)
+    def backend_performance_test_create_integration_validate(self, data: dict, **kwargs) -> dict:
+        pd_object = QualityGate(**data)
+        return pd_object.dict(**kwargs)
+
+    @web.rpc('execution_json_config_quality_gate')
+    @rpc_tools.wrap_exceptions(RuntimeError)
+    def make_execution_json_config(self, integration_id: int) -> dict:
+        """ Prepare execution_json for this integration """
+        # no extra data to add to execution json
+        # but rpc needs to exist
+        return {}

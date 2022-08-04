@@ -100,13 +100,37 @@ function editThreshold(index) {
     deleteThreshold(index, insertThreshold);
 }
 
-$(document).ready(function() {
-    updateEnvPicker();
+function ruleFormatter(value, row, index) {
+    let comparisonMap = new Map([
+        ["gte", ">="],
+        ["lte", "<="],
+        ["lt", "<"],
+        ["gt", ">"],
+        ["eq", "=="]
+    ]);
+    comparison = comparisonMap.get(row.comparison)
+    return row.aggregation + "(" + row.target + ") " + comparison
+}
 
-    $('#createThresholdModal').on('hide.bs.modal', function(e) {
-        $("#modal_title").html("Create Threshold");
-        $("#add_threshold").html("Save");
-        $("#add_threshold").attr('onclick', `insertThreshold()`);
-        $("#th_value").val("");
+function thresholdsActionFormatter(value, row, index) {
+    var id = row['id'];
+    return `
+    <div class="d-flex justify-content-end">
+        <button type="button" class="btn btn-24 btn-action" onclick="showEditThreshold('${id}')"><i class="fas fa-cog"></i></button>
+        <button type="button" class="btn btn-24 btn-action" onclick="deleteThreshold('` + id + `')"><i class="fas fa-trash-alt"></i></button>
+    </div>
+    `
+}
+
+$(document).on('vue_init', () => {
+    $(document).ready(function() {
+        updateEnvPicker();
+
+        $('#createThresholdModal').on('hide.bs.modal', function(e) {
+            $("#modal_title").html("Create Threshold");
+            $("#add_threshold").html("Save");
+            $("#add_threshold").attr('onclick', `insertThreshold()`);
+            $("#th_value").val("");
+        });
     });
-});
+})

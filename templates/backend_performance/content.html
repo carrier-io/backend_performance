@@ -137,7 +137,7 @@
             <th scope="col" data-sortable="true" data-field="throughput">TPS</th>
             <th scope="col" data-sortable="true" data-field="failure_rate">Fail Rate</th>
             <th scope="col" data-sortable="true" data-field="tags">Tags</th>
-            <th scope="col" data-sortable="true" data-field="test_status.status"
+            <th scope="col" data-sortable="true" data-field="test_status"
                 data-formatter="report_formatters.reportsStatusFormatter">Status
             </th>
         </template>
@@ -147,7 +147,11 @@
         {% include 'backend_performance:backend_performance/create.html' %}
         {% include 'backend_performance:backend_performance/runtest.html' %}
     {% endwith %}
+    {% include 'backend_performance:thresholds.html' %}
+    <Docker-Command-Modal
+        @register="register"
+        instance_name="docker_command"
+        modal_id="docker_command_modal"
+    >
+    </Docker-Command-Modal>
 </div>
-
-
-{#{% include 'backend_performance:thresholds.html' %}#}

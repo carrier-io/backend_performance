@@ -14,16 +14,19 @@
             </div>
             <div class="col-8">
                 <div class="d-flex justify-content-end">
+                    {% if test_data['test_status']['status'].lower() in ['finished', 'error', 'failed',
+                    'success'] %}
                     <button type="button" class="btn btn-secondary" onclick="reRunTest()"
                             data-toggle="tooltip" data-placement="top" title="Rerun Test"><i class="fas fa-play"></i>
                     </button>
-                    <button type="button" class="btn btn-secondary mx-2" onclick="downloadReport()"
+                    <button hidden type="button" class="btn btn-secondary mx-2" onclick="downloadReport()"
                             data-toggle="tooltip" data-placement="top" title="Download report"><i
                             class="fas fa-file-download"></i></button>
                     <button class="btn btn-secondary mx-2" id="set_baseline" onclick="setBaseline()"
                             data-toggle="tooltip" data-placement="top" title="Set current report as baseline">
                         Set as baseline
                     </button>
+                    {% endif %}
                     <button hidden class="btn btn-secondary mx-2" id="not_worse_than" onclick="setThresholds()"
                             data-toggle="tooltip" data-placement="top" title="Set current report as thresholds">
                         Set as threshold

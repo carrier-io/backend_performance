@@ -76,10 +76,8 @@ def _calculate_limit(limit, total):
     return len(total) if limit == 'All' else limit
 
 
-
 def run_test(test: 'PerformanceApiTest', config_only: bool = False, execution: bool = False) -> dict:
     event = test.configure_execution_json(
-        output='cc',
         execution=execution
     )
 
@@ -180,7 +178,6 @@ def parse_test_data(project_id: int, request_data: dict,
 
     for k, v in request_data.items():
         try:
-            # log.info(f'security test create :: parsing :: [{k}]')
             test_data.update(rpc.call_function_with_timeout(
                 func=f'backend_performance_test_create_{k}',
                 timeout=2,

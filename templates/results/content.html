@@ -10,8 +10,7 @@
         <div class="row">
             <div class="col-4">
                 <h3><a id="back-button" href="/-/performance/backend"><i
-                        class="fas fa-arrow-left"></i></a> {{
-                    test_data["name"] }} (back)</h3>
+                        class="fas fa-arrow-left"></i></a> {{test_data["name"] }} (back)</h3>
             </div>
             <div class="col-8">
                 <div class="d-flex justify-content-end">
@@ -136,180 +135,204 @@
     </div>
 </div>
 
-<div class="card card-12 pb-4 card-table">
-    <div class="card-header">
-        <div class="row">
+<div class="card card-12 p-28 mt-3">
+    <div class="d-flex justify-content-between pb-4">
+        <h1 class="font-h2">Requests summary</h1>
+        <div class="d-flex align-items-center">
 
-            <div class="col-4">
-                <h3 class="text-gray mb-0">Requests summary</h3>
+            {% if test_data['test_status']['status'].lower() not in ['finished', 'error', 'failed', 'success'] %}
+            <div class="complex-list">
+                <select class="selectpicker dropdown-menu__simple" data-style="btn"
+                        id="auto_update"
+                        onchange="auto_update()">
+                    <option value="60000">1 min</option>
+                    <option value="180000">3 min</option>
+                    <option value="300000">5 min</option>
+                    <option value="600000">10 min</option>
+                    <option value="1800000">30 min</option>
+                    <option value="0" selected>off</option>
+                </select>
+            </div>
+            {% endif %}
+            <div class="complex-list">
+                <select class="selectpicker dropdown-menu__simple" data-style="btn"
+                        id="aggregator"
+                        onchange="switchAggregator()">
+                    <option>auto</option>
+                    <option>1s</option>
+                    <option>5s</option>
+                    <option>30s</option>
+                    <option>1m</option>
+                    <option>5m</option>
+                    <option>10m</option>
+                </select>
+            </div>
+            <div class="complex-list">
+                <select class="selectpicker dropdown-menu__simple" data-style="btn"
+                    id="status"
+                    onchange="switchStatus()">
+                    <option>all</option>
+                    <option>ok</option>
+                    <option>ko</option>
+                </select>
+            </div>
+            <div class="complex-list">
+                <select class="selectpicker dropdown-menu__simple" data-style="btn"
+                        id="sampler"
+                        onchange="switchSampler()">
+                    <option>REQUEST</option>
+                    <option>TRANSACTION</option>
+                </select>
             </div>
 
-            <div class="col-xl-8">
-                <ul id="chart-control" class="nav justify-content-end">
-                    {% if test_data['test_status']['status'].lower() not in ['finished', 'error', 'failed', 'success'] %}
-                    <li class="nav-item mr-2 mr-md-0">
-                        <select class="selectpicker" data-style="btn"
-                                id="auto_update"
-                                onchange="auto_update()">
-                            <option value="60000">1 min</option>
-                            <option value="180000">3 min</option>
-                            <option value="300000">5 min</option>
-                            <option value="600000">10 min</option>
-                            <option value="1800000">30 min</option>
-                            <option value="0" selected>off</option>
-                        </select>
-                    </li>
-                    {% endif %}
-                    <li class="nav-item mr-2 mr-md-0">
-                        <select class="selectpicker" data-style="btn"
-                                id="aggregator"
-                                onchange="switchAggregator()">
-                            <option>auto</option>
-                            <option>1s</option>
-                            <option>5s</option>
-                            <option>30s</option>
-                            <option>1m</option>
-                            <option>5m</option>
-                            <option>10m</option>
-                        </select>
-                    </li>
-                    <li class="nav-item mr-2 mr-md-0">
-                        <select class="selectpicker" data-style="btn" id="status"
-                                onchange="switchStatus()">
-                            <option>all</option>
-                            <option>ok</option>
-                            <option>ko</option>
-                        </select>
-                    </li>
-                    <li class="nav-item mr-2 mr-md-0">
-                        <select class="selectpicker" data-style="btn"
-                                id="sampler"
-                                onchange="switchSampler()">
-                            <option>REQUEST</option>
-                            <option>TRANSACTION</option>
-                        </select>
-                    </li>
-
-                    <nav class="striped nav nav-tabs source-selector">
-                        <a id="RT"
-                           onclick="loadRequestData('/api/v1/backend_performance/charts/requests/summary', 'Response time, ms')"
-                           class="nav-item nav-link active" data-toggle="tab">Responses
-                        </a>
-                        <a id="AR"
-                           onclick="loadRequestData('/api/v1/backend_performance/charts/requests/average', 'Response time, ms')"
-                           class="nav-item nav-link" data-toggle="tab">Average Response
-                        </a>
-                        <a id="HT"
-                           onclick="loadRequestData('/api/v1/backend_performance/charts/requests/hits', 'Hits/Requests per second')"
-                           class="nav-item nav-link" data-toggle="tab">TPS
-                        </a>
-                        <a id="AN" onclick="displayAnalytics()" class="nav-item nav-link"
-                           data-toggle="tab">Analytics
-                        </a>
-                    </nav>
-                    <button type="button" id="DW" onclick="downloadPic()" class="btn btn-secondary btn-32"><i
-                            class="fas fa-download"></i></button>
-                </ul>
-            </div>
+            <ul class="custom-tabs nav nav-pills mr-3" id="pills-tab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <a id="RT" class="font-h5 font-uppercase active"
+                    onclick="loadRequestData('/api/v1/backend_performance/charts/requests/summary', 'Response time, ms')"
+                    data-toggle="pill">Responses</a>
+                </li>
+                <li class="nav-item active" role="presentation">
+                    <a id="AR" class="font-h5 font-uppercase"
+                   onclick="loadRequestData('/api/v1/backend_performance/charts/requests/average', 'Response time, ms')"
+                   data-toggle="pill">Average Response</a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a id="HT" class="font-h5 font-uppercase"
+                    onclick="loadRequestData('/api/v1/backend_performance/charts/requests/hits', 'Hits/Requests per second')"
+                    data-toggle="pill">TPS</a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a id="AN" class="font-h5 font-uppercase"
+                    onclick="displayAnalytics()"
+                   data-toggle="pill">Analytics</a>
+                </li>
+            </ul>
+            <button id="DW" onclick="downloadPic()" class="btn btn-secondary btn-icon mr-2"><i
+                    class="fas fa-download"></i></button>
         </div>
     </div>
-    <div class="card-body" id="preset">
-        <!-- Chart -->
-        <div class="float-left" style="width:100%;">
-            <div class="chart float-left" style="width:75%;">
-                <div class="chartjs-size-monitor">
-                    <div class="chartjs-size-monitor-expand">
-                        <div class="">
-                        </div>
+    <div class="position-relative">
+        <div id="preset">
+            <div class="d-flex mt-3">
+                <div class="chart flex-grow-1 d-flex flex-column justify-content-between">
+                    <div class="flex-grow-1">
+                        <canvas id="chart-requests" class="chart-canvas chartjs-render-monitor"
+                            style="display: block; height: 450px; width: 100%;"></canvas>
                     </div>
-                    <div class="chartjs-size-monitor-shrink">
-                        <div class=""></div>
-                    </div>
+                    <div style="height: 50px"></div>
                 </div>
-                <canvas id="chart-requests" class="chart-canvas chartjs-render-monitor"
-                        style="display: block; height: 450px; width: 100%;"></canvas>
-
-            </div>
-            <div class="card" style="width:25%;">
-                <div class="d-flex flex-column p-3">
-                    <label
-                            class="mb-0 w-100 d-flex align-items-center custom-checkbox custom-checkbox__multicolor"
-                            for="all_checkbox">
-                        <input
-                                class="mx-2 custom__checkbox"
-                                checked="true" id="all_checkbox" onclick="selectOrUnselectRequests()"
-                                style="--cbx-color: var(--basic);"
-                                type="checkbox">
-                        <span class="w-100 d-inline-block">Select/Unselect all</span>
-                    </label>
-                </div>
-                <hr class="my-0">
-                <div id="chartjs-custom-legend" class="custom-chart-legend d-flex flex-column px-3 py-3"></div>
-            </div>
-        </div>
-        <div class="col" style="width:75%;">
-            <h6>Time Picker</h6>
-            <div class="row">
-                <div class="col">
-                    <div class="w-100">
-                        <div class="mt-3 slider-holder">
-                            <div id="vuh-perfomance-time-picker"></div>
-                        </div>
+                <div class="card" style="width:280px; margin-left: 28px">
+                    <div class="d-flex flex-column p-3">
+                        <label
+                                class="mb-0 w-100 d-flex align-items-center custom-checkbox custom-checkbox__multicolor"
+                                for="all_checkbox">
+                            <input
+                                    class="mx-2 custom__checkbox"
+                                    checked="true" id="all_checkbox" onclick="selectOrUnselectRequests()"
+                                    style="--cbx-color: var(--basic);"
+                                    type="checkbox">
+                            <span class="w-100 d-inline-block">Select/Unselect all</span>
+                        </label>
                     </div>
+                    <hr class="my-0">
+                    <div id="chartjs-custom-legend"
+                         class="custom-chart-legend d-flex flex-column px-3 py-3"
+                         style="height: 400px; overflow: scroll;"
+                    ></div>
                 </div>
             </div>
         </div>
-
-    </div>
-
-
-    <div class="card-body" id="analytics">
-        <!-- Chart -->
-        <div class="float-left" style="width:100%;">
-            <div class="chart float-left" style="width:75%;">
-                <div class="chartjs-size-monitor">
-                    <div class="chartjs-size-monitor-expand">
-                        <div class="">
-                        </div>
+        <div id="analytics">
+            <div class="d-flex mt-3">
+                <div class="chart flex-grow-1 d-flex flex-column justify-content-between">
+                    <div class="flex-grow-1">
+                        <canvas id="chart-analytics" class="chart-canvas chartjs-render-monitor"
+                            style="display: block; height: 450px; width: 100%;"></canvas>
                     </div>
-                    <div class="chartjs-size-monitor-shrink">
-                        <div class=""></div>
-                    </div>
+                    <div style="height: 50px"></div>
                 </div>
-                <canvas id="chart-analytics" class="chart-canvas chartjs-render-monitor"
-                        style="display: block; height: 450px; width: 100%;"></canvas>
-            </div>
+                <div id="dataFilter" class="card" style=" width:280px; margin-left: 28px">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <p class="font-h5 font-bold py-3 px-4 text-gray-800">DATA FILTER</p>
+                        <p class="text-purple font-semibold font-h5 cursor-pointer">Clear all<i class="icon__16x16 icon-plus__16-purple mx-3"></i></p>
+                    </div>
 
-
-            <div class="card" style="width:25%;">
-                <h4> Metrics </h4>
-                <div class="pre-scrollable pr-3">
-                    {% for chapter in analytics_control %}
-                    <div class="card mb-3">
-                        <div class="card-body">
-                            <h5 class="card-title">{{ chapter }}</h5>
-                            <div class="row">
-                                {% for item in analytics_control[chapter] %}
-                                <div class="col-md-6">
-                                    <div class="custom-control custom-control-alternative custom-checkbox mb-3">
-                                        <input class="custom-control-input" id="{{chapter}}_{{item}}"
-                                               type="checkbox"
-                                               onchange="{{ analytics_control[chapter][item] }}">
-                                        <label class="custom-control-label"
-                                               for="{{chapter}}_{{item}}">{{item}}</label>
+                    <hr class="my-0">
+                    <div class="py-3 px-4">
+                        <p class="font-h5 font-bold mb-2 mt-3 text-gray-800">Transactions/Request</p>
+                        <div id="selectTransactions" class="complex-list">
+                            <button class="btn btn-select dropdown-toggle text-left w-100" type="button"
+                                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <span class="complex-list_empty d-inline-block" style="width: calc(100% - 26px);">Select</span>
+                            </button>
+                            <div class="dropdown-menu close-outside">
+                                <div class="px-3 pb-2 search-group">
+                                    <div class="custom-input custom-input_search__sm position-relative">
+                                        <input
+                                                type="text"
+                                                oninput="searchTransactions(event)"
+                                                placeholder="Search">
+                                        <img src="/design-system/static/assets/ico/search.svg" class="icon-search position-absolute">
                                     </div>
                                 </div>
-                                {% endfor %}
+                                <li class="dropdown-item dropdown-menu_item d-flex align-items-center">
+                                    <label
+                                            class="mb-0 w-100 d-flex align-items-center custom-checkbox select-all">
+                                        <input type="checkbox"
+                                               onchange="selectAllTransactions(event)">
+                                        <span class="w-100 d-inline-block ml-3">All</span>
+                                    </label>
+                                </li>
+                                <ul class="my-0 dropdown-menu__scroll-area">
+                                </ul>
+                            </div>
+                        </div>
+                        <p class="font-h5 font-bold mb-2 mt-3 text-gray-800">Metrics</p>
+                        <div id="selectMetrics" class="complex-list">
+                            <button class="btn btn-select dropdown-toggle text-left w-100" type="button"
+                                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <span class="complex-list_empty d-inline-block" style="width: calc(100% - 26px);">Select</span>
+                            </button>
+                            <div class="dropdown-menu close-outside">
+                                <div class="px-3 pb-2 search-group">
+                                    <div class="custom-input custom-input_search__sm position-relative">
+                                        <input
+                                                type="text"
+                                                oninput="searchMetrics(event)"
+                                                placeholder="Search">
+                                        <img src="/design-system/static/assets/ico/search.svg" class="icon-search position-absolute">
+                                    </div>
+                                </div>
+                                <li class="dropdown-item dropdown-menu_item d-flex align-items-center">
+                                    <label
+                                            class="mb-0 w-100 d-flex align-items-center custom-checkbox select-all">
+                                        <input type="checkbox"
+                                               onchange="selectAllMetrics(event)">
+                                        <span class="w-100 d-inline-block ml-3">All</span>
+                                    </label>
+                                </li>
+                                <ul class="my-0 dropdown-menu__scroll-area">
+                                </ul>
                             </div>
                         </div>
                     </div>
-                    {% endfor %}
+                </div>
+            </div>
+            <div id="chartjs-custom-legend-analytic" style="margin-top: 65px" class="d-grid grid-column-7"></div>
+        </div>
+        <div class="row pr-4 pl-2 position-absolute w-100" style="bottom: 40px; left: 0">
+            <div class="col">
+                <label class="w-100 mb-0 font-h5 font-semibold">
+                    Time picker
+                </label>
+                <div style="width: calc(100% - 290px);">
+                    <div class="slider-holder">
+                        <div id="vuh-perfomance-time-picker"></div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-
-
 </div>
 
 {% if test_data['test_status']['status'].lower() in ['finished', 'error', 'failed', 'success'] %}

@@ -1,6 +1,8 @@
 <script src="{{ url_for('design-system.static', filename='assets/js/dropdowns.js') }}"></script>
 <script src="{{ url_for('design-system.static', filename='assets/vendor/nouislider/nouislider.js') }}"></script>
 <script src="{{ url_for('design-system.static', filename='assets/vendor/nouislider/wNumb.min.js') }}"></script>
+<script src="{{ url_for('backend_performance.static', filename='js/components/DropdownAnalytic.js') }}"></script>
+<script src="{{ url_for('backend_performance.static', filename='js/components/DropdownsAnalytic.js') }}"></script>
 <script src="{{ url_for('backend_performance.static', filename='js/performanceBackend.js') }}"></script>
 <script src="https://unpkg.com/bootstrap-table@1.15.5/dist/bootstrap-table.min.js"></script>
 <script src="{{ url_for('backend_performance.static', filename='js/logs_updater.js') }}"></script>
@@ -9,12 +11,21 @@
 <script>
     let low_value = 0;
     let high_value = 100;
+    const allTransactions = (Object.keys({{ analytics_control | tojson }})).filter(item => item !== '' && item !== 'All')
+    const allMetrics = Object.keys({{ analytics_control['All'] | tojson }})
+    let foundedMetrics = [...allMetrics];
+    let foundedTransactions = [...allTransactions];
     $(document).ready(function() {
         setParams();
         loadRequestData('/api/v1/backend_performance/charts/requests/summary', "Response time, ms");
         fillErrorTable();
         fillSummaryTable();
-       // $('#RT').trigger( "click" )
+        generateListMetric();
+        generateListTransactions();
+        // const analyticDropdowns = new AnalyticDropdowns('fasf', 'asfasf', ['q','w','e'], []);
+        //
+        // analyticDropdowns.generateBody();
+        // $('#RT').trigger( "click" )
         $("#analytics").hide();
         const perfomanceTimePicker = noUiSlider.create($("#vuh-perfomance-time-picker")[0], {
             range: {

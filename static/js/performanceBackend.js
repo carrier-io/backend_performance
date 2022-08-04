@@ -607,17 +607,51 @@ updateChart = function(e, datasetIndex) {
     ci.update();
 };
 
+function updateChartAnalytic(e, datasetIndex) {
+    var index = datasetIndex;
+    var ci = e.view.analyticsLine;
+    var curr = ci.data.datasets[index]._meta;
+    curr = Object.values(curr)[0]
+    curr.hidden = !curr.hidden
+    ci.update();
+};
+
+function turnOnAllLine() {
+    window.analyticsLine.data.datasets.forEach((item, index) => {
+        let curr = item._meta;
+        curr = Object.values(curr)[0];
+        curr.hidden = false;
+    })
+    window.analyticsLine.update();
+}
 function analyticsCanvas() {
     console.log("analyticsCanvas ******************")
     var analyticsContext=document.getElementById("chart-analytics").getContext("2d");
-    analyticsLine = Chart.Line(analyticsContext, {
+    window.analyticsLine = Chart.Line(analyticsContext, {
         data: analyticsData,
         options: {
             responsive: true,
             hoverMode: 'index',
             stacked: false,
+            legendCallback: (chart) => {
+                return chart.data.datasets.map((item, index) => {
+                    return `
+                        <div class="d-flex mb-3 float-left mr-3">
+                            <label class="mb-0 w-100 d-flex align-items-center custom-checkbox custom-checkbox__multicolor legend-item">
+                                <input class="mx-2 custom__checkbox"
+                                    onclick="updateChartAnalytic(event, ${chart.legend.legendItems[index].datasetIndex})"
+                                    id="${chart.legend.legendItems[index].datasetIndex}"
+                                    type="checkbox"
+                                    checked="true"
+                                    style="--cbx-color: ${item.backgroundColor}"/>
+                                <span class="legend-span">${item.label}</span>
+                            </label>
+                        </div>
+                            `
+                }).join("")
+            },
             legend: {
-                display: true,
+                display: false,
                 position: 'bottom',
                 labels: {
                     fontSize: 10,
@@ -766,6 +800,8 @@ $.get(
         analyticsLine.data.datasets.push(data.datasets[0]);
         analyticsLine.update();
     }
+    turnOnAllLine();
+    document.getElementById('chartjs-custom-legend-analytic').innerHTML = analyticsLine.generateLegend();
   }
  );
 }
@@ -938,4 +974,257 @@ function updateChartAndErrorsTable(interval_id) {
             clearInterval(interval_id);
         }
     });
+}
+
+let selectedMetrics = [];
+let selectedTransactions = [];
+
+function selectTransaction({ target: { checked }}, transaction) {
+    if(checked) {
+        selectedTransactions.push(transaction);
+        selectedMetrics.forEach(metric => {
+            getDataForAnalysis(metric, transaction)
+        })
+    } else {
+        selectedTransactions = selectedTransactions.filter(item => item !== transaction);
+        analyticsLine.data.datasets = analyticsLine.data.datasets.filter(item => {
+            const label = item.label.split('_').slice(0, -1).join('_');
+            if (transaction !== label) {
+                return item
+            }
+        });
+        document.getElementById('chartjs-custom-legend-analytic').innerHTML = analyticsLine.generateLegend();
+        analyticsLine.update();
+    }
+    computeTitle(selectedTransactions, 'selectTransactions', 'transaction')
+}
+
+function selectMetric({ target: { checked }}, metric) {
+    if(checked) {
+        selectedMetrics.push(metric);
+        selectedTransactions.forEach(transaction => {
+            getDataForAnalysis(metric, transaction)
+        })
+    } else {
+        selectedMetrics = selectedMetrics.filter(item => item !== metric);
+        analyticsLine.data.datasets = analyticsLine.data.datasets.filter(item => {
+            const label = item.label.split('_').pop();
+            if (metric !== label) {
+                return item
+            }
+        });
+        document.getElementById('chartjs-custom-legend-analytic').innerHTML = analyticsLine.generateLegend();
+        analyticsLine.update();
+    }
+    computeTitle(selectedMetrics, 'selectMetrics', 'metric')
+}
+
+function computeTitle(selectedItems, selectorId, typeItem) {
+    const selectedTitle = selectedItems.length > 1 ?
+        `<span class="complex-list_filled d-inline-block"
+          style="width: calc(100% - 26px);">${selectedItems.length} selected</span>` :
+        selectedItems.length === 1 ? `<span class="complex-list_filled d-inline-block"
+          style="width: calc(100% - 26px);">${selectedItems[0]}</span>` :
+        `<span class="complex-list_empty d-inline-block" style="width: calc(100% - 26px);">Select</span>`
+    document.querySelector(`#${selectorId} .dropdown-toggle`).innerHTML = selectedTitle;
+
+    if (selectedItems.length > 0 &&
+        selectedItems.length < (typeItem === 'metric' ? foundedMetrics : foundedTransactions).length) {
+        $(`#${selectorId} .select-all`).addClass('custom-checkbox__minus');
+        $(`#${selectorId} .select-all input`).prop('checked', false);
+    } else if (selectedItems.length === 0) {
+        $(`#${selectorId} .select-all`).removeClass('custom-checkbox__minus');
+        $(`#${selectorId} .select-all input`).prop('checked', false);
+    } else if (selectedItems.length === (typeItem === 'metric' ? foundedMetrics : foundedTransactions).length) {
+        $(`#${selectorId} .select-all`).removeClass('custom-checkbox__minus');
+        $(`#${selectorId} .select-all input`).prop('checked', true);
+    }
+}
+
+function selectAllMetrics({ target: { checked }}) {
+    const selectedTitle = checked ?
+        `<span class="complex-list_filled d-inline-block"
+            style="width: calc(100% - 26px);">${foundedMetrics.length} selected</span>` :
+        `<span class="complex-list_empty d-inline-block" style="width: calc(100% - 26px);">Select</span>`
+
+    document.querySelector('#selectMetrics .dropdown-toggle').innerHTML = selectedTitle;
+
+    if(checked) {
+        const restedMetrics = foundedMetrics.filter(x => !selectedMetrics.includes(x)).concat(selectedMetrics.filter(x => !foundedMetrics.includes(x)));
+
+        selectedTransactions.forEach(transaction => {
+            restedMetrics.forEach(metric => {
+                getDataForAnalysis(metric, transaction)
+            })
+        })
+        selectedMetrics = [...foundedMetrics];
+        $('#selectMetrics .dropdown-menu ul .dropdown-item').each(function(i, ch) {
+            $(ch).children().children().prop('checked', true);
+        });
+    } else {
+        selectedMetrics = []
+        $('#selectMetrics .dropdown-menu ul .dropdown-item').each(function(i, ch) {
+            $(ch).children().children().prop('checked', false);
+        });
+        $('#selectMetrics .select-all').removeClass('custom-checkbox__minus');
+        analyticsLine.data.datasets = [];
+        analyticsLine.update()
+        document.getElementById('chartjs-custom-legend-analytic').innerHTML = '';
+    }
+}
+
+function selectAllTransactions({ target: { checked }}) {
+    const selectedTitle = checked ?
+        `<span class="complex-list_filled d-inline-block"
+            style="width: calc(100% - 26px);">${foundedTransactions.length} selected</span>` :
+        `<span class="complex-list_empty d-inline-block" style="width: calc(100% - 26px);">Select</span>`
+
+    document.querySelector('#selectTransactions .dropdown-toggle').innerHTML = selectedTitle;
+
+    if(checked) {
+        const restedTransactions = foundedTransactions.filter(x => !selectedTransactions.includes(x)).concat(selectedTransactions.filter(x => !foundedTransactions.includes(x)));
+
+        selectedMetrics.forEach(metric => {
+            restedTransactions.forEach(transaction => {
+                getDataForAnalysis(metric, transaction)
+            })
+        })
+
+        selectedTransactions = [...foundedTransactions]
+        $('#selectTransactions .dropdown-menu ul .dropdown-item').each(function(i, ch) {
+            $(ch).children().children().prop('checked', true);
+        });
+    } else {
+        selectedTransactions = []
+        $('#selectTransactions .dropdown-menu ul .dropdown-item').each(function(i, ch) {
+            $(ch).children().children().prop('checked', false);
+        });
+        $('#selectTransactions .select-all').removeClass('custom-checkbox__minus');
+        analyticsLine.data.datasets = [];
+        analyticsLine.update()
+        document.getElementById('chartjs-custom-legend-analytic').innerHTML = '';
+    }
+}
+function generateListMetric () {
+    const list = foundedMetrics.map(item => {
+        return  `
+            <li class="dropdown-item dropdown-menu_item d-flex align-items-center">
+                <label class="mb-0 w-100 d-flex align-items-center custom-checkbox">
+                    <input
+                        onclick="selectMetric(event, '${item}')"
+                        type="checkbox">
+                    <span class="w-100 d-inline-block ml-3 legend-span">${ item }</span>
+                </label>
+            </li>
+        `
+    }).join('')
+
+    document.querySelector(`#selectMetrics .dropdown-menu ul`).innerHTML = list;
+}
+
+function generateListTransactions () {
+    const list = foundedTransactions.map(item => {
+        return  `
+            <li class="dropdown-item dropdown-menu_item d-flex align-items-center">
+                <label class="mb-0 w-100 d-flex align-items-center custom-checkbox">
+                    <input
+                        onclick="selectTransaction(event, '${item}')"
+                        type="checkbox">
+                    <span class="w-100 d-inline-block ml-3 legend-span">${ item }</span>
+                </label>
+            </li>
+        `
+    }).join('')
+
+    document.querySelector(`#selectTransactions .dropdown-menu ul`).innerHTML = list;
+}
+
+function searchMetrics({ target: { value }}) {
+    if (value) {
+        foundedMetrics = allMetrics.filter(metric => {
+            return metric.toUpperCase().includes(value.toUpperCase())
+        })
+        generateListMetric()
+    } else {
+        foundedMetrics = [...allMetrics]
+    }
+}
+
+function searchTransactions({ target: { value }}) {
+    if (value) {
+        foundedTransactions = allTransactions.filter(metric => {
+            return metric.toUpperCase().includes(value.toUpperCase())
+        })
+        generateListMetric()
+    } else {
+        foundedTransactions = [...allTransactions]
+    }
+}
+
+class AnalyticDropdowns {
+    #selectedMetrics = [];
+    #selectedTransactions = [];
+    constructor(
+        querySelectorMetric,
+        querySelectorTransaction,
+        foundedMetrics,
+        foundedTransactions,
+        ) {
+        this.querySelectorMetric = querySelectorMetric;
+        this.querySelectorTransaction = querySelectorTransaction;
+        this.foundedMetrics = foundedMetrics;
+        this.foundedTransactions = foundedTransactions;
+    }
+
+    generateBody () {
+        document.getElementById('dataFilter').innerText +=
+        `
+            <div>
+                <p class="font-h5 font-bold mb-2 mt-3 text-gray-800">Metrics</p>
+                <div id="${this.querySelectorMetric}" class="complex-list">
+                    <button class="btn btn-select dropdown-toggle text-left w-100" type="button"
+                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <span class="complex-list_empty d-inline-block" style="width: calc(100% - 26px);">Select</span>
+                    </button>
+                    <div class="dropdown-menu close-outside">
+                        <div class="px-3 pb-2 search-group">
+                            <div class="custom-input custom-input_search__sm position-relative">
+                                <input
+                                    type="text"
+                                    oninput="searchMetrics(event)"
+                                    placeholder="Search">
+                                <img src="/design-system/static/assets/ico/search.svg" class="icon-search position-absolute">
+                            </div>
+                        </div>
+                        <li class="dropdown-item dropdown-menu_item d-flex align-items-center">
+                            <label
+                                class="mb-0 w-100 d-flex align-items-center custom-checkbox select-all">
+                                <input type="checkbox"
+                                       onchange="selectAllMetrics(event)">
+                                <span class="w-100 d-inline-block ml-3">All</span>
+                            </label>
+                        </li>
+                        <ul class="my-0 dropdown-menu__scroll-area">
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        `
+    }
+
+    generateListMetric () {
+        const list = this.foundedMetrics.map(item => {
+            return  `
+            <li class="dropdown-item dropdown-menu_item d-flex align-items-center">
+                <label class="mb-0 w-100 d-flex align-items-center custom-checkbox">
+                    <input
+                        onclick="selectMetric(event, '${item}')"
+                        type="checkbox">
+                    <span class="w-100 d-inline-block ml-3 legend-span">${ item }</span>
+                </label>
+            </li>
+        `
+        }).join('')
+        document.querySelector(`#${this.querySelectorMetric} .dropdown-menu ul`).innerHTML = list;
+    }
 }

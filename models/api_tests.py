@@ -157,14 +157,14 @@ class PerformanceApiTest(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin
                     extended_data = self.rpc.call_function_with_timeout(
                         func=f'execution_json_config_{integration_name}',
                         timeout=3,
-                        integration_id=integration_data['id'],
+                        integration_id=integration_data.get('id'),
                     )
                     integration_data.update(extended_data)
                 except Empty:
                     log.error(f'Cannot find execution json compiler for {integration_name}')
                     mark_for_delete[section].append(integration_name)
                 except Exception as e:
-                    log.error('Error making config for %s %s', integration_name, e)
+                    log.error('Error making config for %s %s', integration_name, str(e))
                     mark_for_delete[section].append(integration_name)
 
         for section, integrations in mark_for_delete.items():

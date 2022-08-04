@@ -51,6 +51,11 @@ class API(Resource):
         # TODO: we need to check api performance tests quota here
         # if not ProjectQuota.check_quota(project_id=project_id, quota='performance_test_runs'):
         #     return {"Forbidden": "The number of performance test runs allowed in the project has been exceeded"}
+        test = PerformanceApiTest.query.filter(
+                PerformanceApiTest.test_uid == args.get("test_id")
+            ).first()
+        # TODO parse tests params
+        #test.test_parameters = args["test_params"]
         report = APIReport(name=args["test_name"],
                            project_id=project.id,
                            environment=args["environment"],
@@ -79,7 +84,8 @@ class API(Resource):
                            fourxx=0,
                            fivexx=0,
                            requests="",
-                           test_uid=args.get("test_id"))
+                           test_uid=args.get("test_id"),
+                           test_config=test.api_json())
         report.insert()
         statistic = Statistic.query.filter_by(project_id=project_id).first()
         setattr(statistic, 'performance_test_runs', Statistic.performance_test_runs + 1)

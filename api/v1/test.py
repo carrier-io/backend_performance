@@ -89,6 +89,9 @@ class API(Resource):
     def post(self, project_id: int, test_id: Union[int, str]):
         """ Run test with possible overridden params
         """
+        # TODO parse test params
+
+        # loads(params)
         config_only_flag = request.json.pop('type', False)
         execution_flag = request.json.pop('execution', True)
         # output = request.json.pop('output', 'cc')

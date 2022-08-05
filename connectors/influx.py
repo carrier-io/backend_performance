@@ -17,6 +17,7 @@ from datetime import datetime, timezone
 from tools import influx_tools
 from ...shared.tools.constants import str_to_timestamp, MAX_DOTS_ON_CHART
 from ..models.api_reports import APIReport
+from pylon.core.tools import web, log
 
 
 def get_project_id(build_id):
@@ -146,6 +147,52 @@ def get_backend_requests(build_id, test_name, lg_type, start_time, end_time, agg
     return timestamps, results, users
 
 
+def get_backend_requests_for_analytics(build_id, test_name, lg_type, start_time, end_time, aggregation, sampler,
+                         timestamps=None, users=None, scope=None, aggr='pct95', status='all'):
+    """
+    :param build_id: - could be obtained from control_tower during tests execution
+    :param test_name: - name of the test used as measurement in database
+    :param lg_type: - either jmeter or gatling as a DB name
+    :param start_time
+    :param end_time
+    :return:
+
+    """
+    scope_addon = ""
+    status_addon = ""
+    group_by = "request_name, "
+    project_id = get_project_id(build_id)
+    aggr = aggr.lower()
+
+    if scope and 'All' not in scope:
+        scope_addon = "and ("
+        for each in scope:
+            scope_addon += f"request_name='{each}' OR "
+        scope_addon = scope_addon[0: -4] + ")"
+
+    if status != 'all':
+        status_addon = f" and status='{status.upper()}'"
+
+    if not (timestamps and users):
+        timestamps, users = get_backend_users(build_id, lg_type, start_time, end_time, aggregation)
+    query = f"select time, percentile(\"{aggr}\", 95) as rt from {lg_type}_{project_id}..{test_name}_{aggregation} " \
+            f"where time>='{start_time}' and time<='{end_time}' {status_addon} and sampler_type='{sampler}' and " \
+            f"build_id='{build_id}' {scope_addon} group by {group_by}time({aggregation})"
+    res = influx_tools.get_client(project_id).query(query)
+    res = res.items()
+    data = []
+
+    for each in res:
+        req_name = each[0][1]["request_name"]
+        results = {req_name: {}}
+        for _ in timestamps:
+            results[req_name][_] = None
+        for _ in each[1]:
+            results[req_name][_['time']] = _['rt']
+        data.append(results)
+    return timestamps, data, users
+
+
 def get_backend_users(build_id, lg_type, start_time, end_time, aggregation):
     project_id = get_project_id(build_id)
     query = f"select sum(\"max\") from (select max(\"active\") from {lg_type}_{project_id}..\"users_{aggregation}\" " \
@@ -245,6 +292,39 @@ def get_tps(build_id, test_name, lg_type, start_time, end_time, aggregation, sam
     return timestamps, results, users
 
 
+def get_tps_for_analytics(build_id, test_name, lg_type, start_time, end_time, aggregation, sampler,
+                          timestamps=None, users=None, scope=None, status='all'):
+    project_id = get_project_id(build_id)
+    if not (timestamps and users):
+        timestamps, users = get_backend_users(build_id, lg_type, start_time, end_time, aggregation)
+    scope_addon = ""
+    status_addon = ""
+    if scope and 'All' not in scope:
+        scope_addon = "and ("
+        for each in scope:
+            scope_addon += f"request_name='{each}' OR "
+        scope_addon = scope_addon[0: -4] + ")"
+    if status != 'all':
+        status_addon = f" and status='{status.upper()}'"
+    responses_query = f"select time, sum(total) from {lg_type}_{project_id}..{test_name}_{aggregation}" \
+                      f" where time>='{start_time}' " \
+                      f"and time<='{end_time}' and sampler_type='{sampler}' {status_addon} and build_id='{build_id}' " \
+                      f"{scope_addon} group by request_name, time({aggregation})"
+    res = influx_tools.get_client(project_id).query(responses_query)
+    res = res.items()
+    data = []
+
+    for each in res:
+        req_name = each[0][1]["request_name"]
+        results = {req_name: {}}
+        for _ in timestamps:
+            results[req_name][_] = None
+        for _ in each[1]:
+            results[req_name][_['time']] = _['sum']
+        data.append(results)
+    return timestamps, data, users
+
+
 def average_responses(build_id, test_name, lg_type, start_time, end_time, aggregation, sampler, status='all'):
     project_id = get_project_id(build_id)
     timestamps, users = get_backend_users(build_id, lg_type, start_time, end_time, aggregation)
@@ -314,6 +394,35 @@ def get_errors(build_id, test_name, lg_type, start_time, end_time, aggregation, 
     return timestamps, results, users
 
 
+def get_errors_for_analytics(build_id, test_name, lg_type, start_time, end_time, aggregation, sampler,
+                             timestamps=None, users=None, scope=None):
+    project_id = get_project_id(build_id)
+    if not (timestamps and users):
+        timestamps, users = get_backend_users(build_id, lg_type, start_time, end_time, aggregation)
+    scope_addon = ""
+    if scope and 'All' not in scope:
+        scope_addon = "and ("
+        for each in scope:
+            scope_addon += f"request_name='{each}' OR "
+        scope_addon = scope_addon[0: -4] + ")"
+    error_query = f"select time, count(status) from {lg_type}_{project_id}..{test_name}_{aggregation} " \
+                  f"where time>='{start_time}' and time<='{end_time}' and sampler_type='{sampler}' and" \
+                  f" build_id='{build_id}' and status='KO' {scope_addon} group by request_name, time({aggregation})"
+    res = influx_tools.get_client(project_id).query(error_query)
+    res = res.items()
+    data = []
+
+    for each in res:
+        req_name = each[0][1]["request_name"]
+        results = {req_name: {}}
+        for _ in timestamps:
+            results[req_name][_] = None
+        for _ in each[1]:
+            results[req_name][_['time']] = _['count']
+        data.append(results)
+    return timestamps, data, users
+
+
 def get_response_codes(build_id, test_name, lg_type, start_time, end_time, aggregation, sampler,
                        timestamps=None, users=None, scope=None, aggr="2xx", status='all'):
     project_id = get_project_id(build_id)
@@ -336,6 +445,39 @@ def get_response_codes(build_id, test_name, lg_type, start_time, end_time, aggre
     for _ in res:
         results['rcodes'][_['time']] = _["sum"]
     return timestamps, results, users
+
+
+def get_response_codes_for_analytics(build_id, test_name, lg_type, start_time, end_time, aggregation, sampler,
+                                     timestamps=None, users=None, scope=None, aggr="2xx", status='all'):
+    project_id = get_project_id(build_id)
+    if not (timestamps and users):
+        timestamps, users = get_backend_users(build_id, lg_type, start_time, end_time, aggregation)
+    scope_addon = ""
+    status_addon = " "
+    if scope and 'All' not in scope:
+        scope_addon = "and ("
+        for each in scope:
+            scope_addon += f"request_name='{each}' OR "
+        scope_addon = scope_addon[0: -4] + ")"
+    if status != 'all':
+        status_addon = f" and status='{status.upper()}'"
+    rcode_query = f"select time, sum(\"{aggr}\") from {lg_type}_{project_id}..{test_name}_{aggregation}" \
+                  f" where build_id='{build_id}' " \
+                  f"and sampler_type='{sampler}' and time>='{start_time}' and time<='{end_time}'{status_addon} " \
+                  f"{scope_addon} group by request_name, time({aggregation})"
+    res = influx_tools.get_client(project_id).query(rcode_query)
+    res = res.items()
+    data = []
+
+    for each in res:
+        req_name = each[0][1]["request_name"]
+        results = {req_name: {}}
+        for _ in timestamps:
+            results[req_name][_] = None
+        for _ in each[1]:
+            results[req_name][_['time']] = _['sum']
+        data.append(results)
+    return timestamps, data, users
 
 
 def get_throughput_per_test(build_id, test_name, lg_type, sampler, scope, aggregator, status='all'):

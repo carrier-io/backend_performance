@@ -744,7 +744,7 @@ function getDataForAnalysis(metric, request_name) {
 $.get(
   '/api/v1/backend_performance/charts/requests/data',
   {
-    scope: request_name,
+    scope: [request_name],
     metric: metric,
     build_id: build_id,
     test_name: test_name,

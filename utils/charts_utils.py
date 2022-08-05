@@ -1,10 +1,11 @@
 from datetime import datetime, timezone
 from ..models.api_reports import APIReport
-from ..connectors.influx import (get_backend_requests, get_hits_tps, average_responses, get_build_data, get_tps,
-                                 get_hits, get_errors, get_response_codes, get_backend_users,
-                                 get_throughput_per_test, get_response_time_per_test)
+from ..connectors.influx import (get_backend_requests, get_hits_tps, average_responses, get_build_data,
+                                 get_tps_for_analytics, get_response_codes_for_analytics, get_backend_users,
+                                 get_throughput_per_test, get_response_time_per_test,
+                                 get_errors_for_analytics, get_backend_requests_for_analytics)
 from ..connectors.loki import get_results
-from .report_utils import calculate_proper_timeframe, chart_data, create_dataset, comparison_data
+from .report_utils import calculate_proper_timeframe, chart_data, create_dataset, comparison_data, _create_dataset
 from ...shared.tools.constants import str_to_timestamp
 from pylon.core.tools import web, log
 
@@ -76,44 +77,39 @@ def calculate_analytics_dataset(build_id, test_name, lg_type, start_time, end_ti
     data = None
     axe = 'count'
     if metric == "Throughput":
-        timestamps, data, _ = get_tps(build_id, test_name, lg_type, start_time, end_time, aggregation, sampler,
-                                      scope=scope, status=status)
-        data = data['responses']
-    # elif metric == "Hits":
-    #     timestamps, data, _ = get_hits(build_id, test_name, lg_type, start_time, end_time, aggregation, sampler,
-    #                                    scope=scope, status=status)
-    #     data = data['hits']
+        timestamps, data, _ = get_tps_for_analytics(build_id, test_name, lg_type, start_time, end_time, aggregation,
+                                                    sampler, scope=scope, status=status)
+
     elif metric == "Errors":
-        timestamps, data, _ = get_errors(build_id, test_name, lg_type, start_time, end_time, aggregation, sampler,
-                                         scope=scope)
-        data = data['errors']
+        timestamps, data, _ = get_errors_for_analytics(build_id, test_name, lg_type, start_time, end_time, aggregation,
+                                                       sampler, scope=scope)
     elif metric in ["Min", "Median", "Max", "pct90", "pct95", "pct99"]:
-        timestamps, data, _ = get_backend_requests(build_id, test_name, lg_type, start_time, end_time, aggregation,
-                                                   sampler, scope=scope, aggr=metric, status=status)
-        data = data['response']
+        timestamps, data, _ = get_backend_requests_for_analytics(build_id, test_name, lg_type, start_time, end_time,
+                                                                 aggregation, sampler, scope=scope, aggr=metric,
+                                                                 status=status)
         axe = 'time'
 
     elif "xx" in metric:
-        timestamps, data, _ = get_response_codes(build_id, test_name, lg_type, start_time, end_time, aggregation,
-                                                 sampler, scope=scope, aggr=metric, status=status)
-        data = data['rcodes']
+        timestamps, data, _ = get_response_codes_for_analytics(build_id, test_name, lg_type, start_time, end_time,
+                                                               aggregation, sampler, scope=scope, aggr=metric,
+                                                               status=status)
     return data, axe
 
 
 def get_data_from_influx(args):
     start_time, end_time, aggregation = _timeframe(args)
     metric = args.get('metric', '')
-    scope = args.get('scope', '')
+    scope = args.getlist("scope[]")
     timestamps, users = get_backend_users(args['build_id'], args['lg_type'],
                                           start_time, end_time, aggregation)
     axe = 'count'
     if metric == "Users":
-        return create_dataset(timestamps, users['users'], f"{scope}_{metric}", axe)
+        return create_dataset(timestamps, users['users'], scope, metric, axe)
     data, axe = calculate_analytics_dataset(args['build_id'], args['test_name'], args['lg_type'],
                                             start_time, end_time, aggregation, args['sampler'],
                                             scope, metric, args["status"])
     if data:
-        return create_dataset(timestamps, data, f"{scope}_{metric}", axe)
+        return _create_dataset(timestamps, data, scope, metric, axe)
     else:
         return {}
 

@@ -24,16 +24,15 @@ def colors(n):
         return [(0, 0, 0)]
 
 
-def create_dataset(timeline, data, label, axe):
+def create_dataset(timeline, data, scope, metric, axe):
     labels = []
     for _ in timeline:
         labels.append(datetime.strptime(_, "%Y-%m-%dT%H:%M:%SZ").strftime("%m-%d %H:%M:%S"))
-    r, g, b = colors(1)[0]
-    return {
-        "labels": labels,
-        "datasets": [
-            {
-                "label": label,
+    datasets = []
+    for each in scope:
+        r, g, b = colors(1)[0]
+        datasets.append({
+                "label": f"{each}_{metric}",
                 "fill": False,
                 "data": list(data.values()),
                 "yAxisID": axe,
@@ -42,8 +41,35 @@ def create_dataset(timeline, data, label, axe):
                 "spanGaps": True,
                 "backgroundColor": f"rgb({r}, {g}, {b})",
                 "borderColor": f"rgb({r}, {g}, {b})"
-            }
-        ]
+            })
+    return {
+        "labels": labels,
+        "datasets": datasets
+    }
+
+
+def _create_dataset(timeline, data, scope, metric, axe):
+    labels = []
+    for _ in timeline:
+        labels.append(datetime.strptime(_, "%Y-%m-%dT%H:%M:%SZ").strftime("%m-%d %H:%M:%S"))
+    datasets = []
+    for each in data:
+        r, g, b = colors(1)[0]
+        key = list(each.keys())[0]
+        datasets.append({
+                "label": f"{key}_{metric}",
+                "fill": False,
+                "data": list(each[key].values()),
+                "yAxisID": axe,
+                "borderWidth": 2,
+                "lineTension": 0,
+                "spanGaps": True,
+                "backgroundColor": f"rgb({r}, {g}, {b})",
+                "borderColor": f"rgb({r}, {g}, {b})"
+            })
+    return {
+        "labels": labels,
+        "datasets": datasets
     }
 
 

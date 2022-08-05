@@ -1,8 +1,8 @@
-from typing import Optional
+from typing import Optional, Union
 
 from tools import rpc_tools
 from ..models.api_reports import APIReport
-from pylon.core.tools import web
+from pylon.core.tools import web, log
 from pydantic import ValidationError
 
 from ..models.api_tests import PerformanceApiTest
@@ -23,24 +23,25 @@ class RPC:
     # @rpc_tools.wrap_exceptions(ValidationError)
     def parse_common_test_parameters(self, project_id: int, test_params: dict, **kwargs) -> dict:
         overrideable_only = kwargs.pop('overrideable_only', False)
-        project = self.context.rpc_manager.call.project_get_or_404(project_id=project_id)
         if overrideable_only:
             pd_object = TestOverrideable(
                 **test_params
             )
         else:
             pd_object = TestCommon(
-                project_id=project.id,
+                project_id=project_id,
                 **test_params
             )
         return pd_object.dict(**kwargs)
 
     @web.rpc('backend_performance_test_create_test_parameters', 'parse_test_parameters')
     @rpc_tools.wrap_exceptions(ValidationError)
-    def parse_test_parameters(self, data: list, **kwargs) -> dict:
-        validate_for_run = kwargs.pop('purpose', None) == 'run'
-        if validate_for_run:
+    def parse_test_parameters(self, data: Union[list, str], **kwargs) -> dict:
+        purpose = kwargs.pop('purpose', None)
+        if purpose == 'run':
             pd_object = PerformanceTestParamsRun(test_parameters=data)
+        elif purpose == 'control_tower':
+            pd_object = PerformanceTestParamsRun.from_control_tower(data)
         else:
             pd_object = PerformanceTestParamsCreate(test_parameters=data)
         return pd_object.dict(**kwargs)

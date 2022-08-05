@@ -58,7 +58,7 @@ class PerformanceTestParams(TestParamsBase):
     def from_control_tower_cmd(cls, data: str):
         patt = re.compile(r'-J((\S+)=(\S+))')
         parsed = list(
-            {'name': name, 'default': default}
+            {'name': name, 'default': default, 'description': 'Param from control tower'}
             for _, name, default in
             re.findall(patt, data)
         )

@@ -53,7 +53,7 @@ function updateChartUniversal (e, index, component_name) {
 
 const ResultSummary = {
     components: {
-        'dropdown-analytic': DropdownAnalytic,
+        'dropdown-analytic': AnalyticFilterDropdown,
     },
     props: ['analyticsData', 'instance_name'],
     data() {

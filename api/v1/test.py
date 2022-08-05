@@ -5,7 +5,7 @@ from flask import request
 from flask_restful import Resource
 
 from ...models.api_tests import PerformanceApiTest
-from ...models.pd.performance_test import PerformanceTestParam, PerformanceTestParamsRun
+from ...models.pd.performance_test import PerformanceTestParam, PerformanceTestParams
 from ...utils.utils import run_test, parse_test_data
 
 
@@ -118,7 +118,7 @@ class API(Resource):
 
         if purpose == 'control_tower':
             merged_test_parameters = test.all_test_parameters
-            merged_test_parameters.update(PerformanceTestParamsRun(
+            merged_test_parameters.update(PerformanceTestParams(
                 test_parameters=test_data.pop('test_parameters')
             ))
             test_data['test_parameters'] = merged_test_parameters.dict()['test_parameters']

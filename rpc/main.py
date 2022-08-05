@@ -41,7 +41,7 @@ class RPC:
         if purpose == 'run':
             pd_object = PerformanceTestParamsRun(test_parameters=data)
         elif purpose == 'control_tower':
-            pd_object = PerformanceTestParamsRun.from_control_tower(data)
+            pd_object = PerformanceTestParamsCreate.from_control_tower(data)
         else:
             pd_object = PerformanceTestParamsCreate(test_parameters=data)
         return pd_object.dict(**kwargs)

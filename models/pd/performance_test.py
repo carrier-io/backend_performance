@@ -48,14 +48,20 @@ class PerformanceTestParams(TestParamsBase):
         return self
 
     @classmethod
-    def from_control_tower(cls, data: str):
+    def from_control_tower(cls, data: dict):
+        return cls(test_parameters=[
+            {'name': k, 'default': v, 'description': 'Param from control tower'}
+            for k, v in data.items()
+        ])
+
+    @classmethod
+    def from_control_tower_cmd(cls, data: str):
         patt = re.compile(r'-J((\S+)=(\S+))')
         parsed = list(
-            {'name': name, 'default': default}
+            {'name': name, 'default': default, 'description': 'Param from control tower'}
             for _, name, default in
             re.findall(patt, data)
         )
-            # re.findall(patt, json.loads(data))
         return cls(test_parameters=parsed)
 
 

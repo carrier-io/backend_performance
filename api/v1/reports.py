@@ -59,7 +59,7 @@ class API(Resource):
         ).first()
         if 'test_params' in args:
             try:
-                test.test_parameters = PerformanceTestParamsRun.from_control_tower(
+                test.test_parameters = PerformanceTestParamsRun.from_control_tower_cmd(
                     args['test_params']
                 ).dict()['test_parameters']
                 test.filter_test_parameters_unsecret()

@@ -5,7 +5,7 @@ from flask import request
 from flask_restful import Resource
 
 from ...models.api_tests import PerformanceApiTest
-from ...models.pd.performance_test import PerformanceTestParam
+from ...models.pd.performance_test import PerformanceTestParam, PerformanceTestParamsRun
 from ...utils.utils import run_test, parse_test_data
 
 
@@ -29,7 +29,7 @@ class API(Resource):
             return {'cmd': test.docker_command}, 200
 
         if output == 'test_uid':
-            return {"config":  [{"test_id": test.test_uid}]}, 200  # format is ok?
+            return {"config": [{"test_id": test.test_uid}]}, 200  # format is ok?
 
         test = test.api_json()
         schedules = test.pop('schedules', [])
@@ -87,14 +87,13 @@ class API(Resource):
         return test.api_json(), 200
 
     def post(self, project_id: int, test_id: Union[int, str]):
-        """ Run test with possible overridden params
-        """
-        # TODO parse test params
-
-        # loads(params)
+        """ Run test with possible overridden params """
         config_only_flag = request.json.pop('type', False)
         execution_flag = request.json.pop('execution', True)
-        # output = request.json.pop('output', 'cc')
+        purpose = 'run'
+        if 'params' in request.json:
+            purpose = 'control_tower'
+            request.json['test_parameters'] = request.json.pop('params')
 
         test_data, errors = parse_test_data(
             project_id=project_id,
@@ -106,7 +105,7 @@ class API(Resource):
                 'exclude_unset': True,
             },
             test_create_rpc_kwargs={
-                'purpose': 'run'
+                'purpose': purpose
             }
         )
 
@@ -117,12 +116,20 @@ class API(Resource):
             PerformanceApiTest.get_api_filter(project_id, test_id)
         ).first()
 
+        if purpose == 'control_tower':
+            merged_test_parameters = test.all_test_parameters
+            merged_test_parameters.update(PerformanceTestParamsRun(
+                test_parameters=test_data.pop('test_parameters')
+            ))
+            test_data['test_parameters'] = merged_test_parameters.dict()['test_parameters']
+
         test.__dict__.update(test_data)
 
-        # if output == '_test':
-        #     return {
-        #        'test': test.to_json(),
-        #        'config': run_test(test, config_only=True, execution=execution_flag)
-        #     }, 200
+        if config_only_flag == '_test':
+            return {
+                       'test': test.to_json(),
+                       'config': run_test(test, config_only=True, execution=execution_flag),
+                       'api_json': test.api_json(),
+                   }, 200
         resp = run_test(test, config_only=config_only_flag, execution=execution_flag)
         return resp, resp.get('code', 200)

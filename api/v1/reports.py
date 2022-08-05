@@ -8,6 +8,8 @@ from urllib.parse import urlunparse, urlparse
 import requests
 from pylon.core.tools import log
 from flask import current_app, request, make_response
+
+from ...models.pd.performance_test import PerformanceTestParamsRun
 from ....projects.models.statistics import Statistic
 from ...models.api_baseline import APIBaseline
 from ...models.api_reports import APIReport
@@ -51,11 +53,19 @@ class API(Resource):
         # TODO: we need to check api performance tests quota here
         # if not ProjectQuota.check_quota(project_id=project_id, quota='performance_test_runs'):
         #     return {"Forbidden": "The number of performance test runs allowed in the project has been exceeded"}
+
         test = PerformanceApiTest.query.filter(
-                PerformanceApiTest.test_uid == args.get("test_id")
-            ).first()
-        # TODO parse tests params
-        #test.test_parameters = args["test_params"]
+            PerformanceApiTest.test_uid == args.get("test_id")
+        ).first()
+        if 'test_params' in args:
+            try:
+                test.test_parameters = PerformanceTestParamsRun.from_control_tower(
+                    args['test_params']
+                ).dict()['test_parameters']
+                test.filter_test_parameters_unsecret()
+            except Exception as e:
+                return f'Error parsing params from control tower: {e}', 400
+
         report = APIReport(name=args["test_name"],
                            project_id=project.id,
                            environment=args["environment"],

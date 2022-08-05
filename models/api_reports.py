@@ -72,5 +72,5 @@ class APIReport(db_tools.AbstractBaseMixin, db.Base):
             from .api_tests import PerformanceApiTest
             self.test_config = PerformanceApiTest.query.filter(
                 PerformanceApiTest.test_uid == self.test_uid
-            ).first().to_json()
+            ).first().api_json()
         super().insert()

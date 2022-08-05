@@ -1,8 +1,10 @@
+import json
 import string
 from typing import Optional, List, Iterable
 from uuid import uuid4
 from pydantic import BaseModel, validator, AnyUrl, parse_obj_as, root_validator, constr
 from pylon.core.tools import log
+import re
 
 from ...constants import JOB_CONTAINER_MAPPING
 from ...utils.utils import parse_source
@@ -31,6 +33,13 @@ class PerformanceTestParamRun(PerformanceTestParam):
 class PerformanceTestParams(TestParamsBase):
     test_parameters: List[PerformanceTestParam]
 
+    @validator('test_parameters')
+    def unique_names(cls, value: list):
+        import collections
+        duplicates = [item for item, count in collections.Counter(i.name for i in value).items() if count > 1]
+        assert not duplicates, f'Duplicated names not allowed: {duplicates}'
+        return value
+
     def exclude_params(self, exclude: Iterable):
         self.test_parameters = [
             p for p in self.test_parameters
@@ -38,16 +47,20 @@ class PerformanceTestParams(TestParamsBase):
         ]
         return self
 
+    @classmethod
+    def from_control_tower(cls, data: str):
+        patt = re.compile(r'-J((\S+)=(\S+))')
+        parsed = list(
+            {'name': name, 'default': default}
+            for _, name, default in
+            re.findall(patt, data)
+        )
+            # re.findall(patt, json.loads(data))
+        return cls(test_parameters=parsed)
+
 
 class PerformanceTestParamsCreate(PerformanceTestParams):
     test_parameters: List[PerformanceTestParamCreate]
-
-    @validator('test_parameters')
-    def unique_names(cls, value: list):
-        import collections
-        duplicates = [item for item, count in collections.Counter(i.name for i in value).items() if count > 1]
-        assert not duplicates, f'Duplicated names not allowed: {duplicates}'
-        return value
 
 
 class PerformanceTestParamsRun(PerformanceTestParamsCreate):

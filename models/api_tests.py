@@ -67,8 +67,8 @@ class PerformanceApiTest(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin
         return JOB_CONTAINER_MAPPING.get(self.runner, {}).get('influx_db')
 
     @property
-    def default_test_parameters(self) -> PerformanceTestParams:
-        _default_params = {
+    def default_params_mapping(self) -> dict:
+        return {
             "influx.db": self.influx_db,
             "influx.port": "{{secret.influx_port}}",
             "influx.host": "{{secret.influx_ip}}",
@@ -80,12 +80,13 @@ class PerformanceApiTest(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin
             "loki_host": "{{secret.loki_host}}",
             "loki_port": "{{secret.loki_port}}",
             "test_name": self.name
-            # "test_type": "default",
-            # "env_type": "not_specified"
         }
+
+    @property
+    def default_test_parameters(self) -> PerformanceTestParams:
         return PerformanceTestParams(test_parameters=[
             {'name': k, 'default': v, 'description': 'default parameter'}
-            for k, v in _default_params.items()
+            for k, v in self.default_params_mapping.items()
         ])
 
     @property
@@ -106,6 +107,13 @@ class PerformanceApiTest(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin
             test_id=self.test_uid
         )
 
+    def filter_test_parameters_unsecret(self) -> None:
+        def filter_func(item):
+            return item['default'] != secrets_tools.unsecret(
+                self.default_params_mapping.get(item['name']),
+                project_id=self.project_id
+            )
+        self.test_parameters = list(filter(filter_func, self.test_parameters))
 
     def add_schedule(self, schedule_data: dict, commit_immediately: bool = True):
         schedule_data['test_id'] = self.id
@@ -213,7 +221,7 @@ class PerformanceApiTest(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin
         return self.to_json(
             exclude_fields=tuple(
                 tp.name for tp in self.default_test_parameters.test_parameters
-                if tp.name != 'test_name'  # leve test_name here
+                if tp.name != 'test_name'  # leave test_name here
             ),
             keep_custom_test_parameters=True  # explicitly
         )

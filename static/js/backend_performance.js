@@ -928,7 +928,6 @@ const TestRunModal = {
             Object.assign(this.$data, {...rest, cpu_quota, memory_quota, env_vars,})
 
             // special fields
-            console.log('TEST PARAMS SET', test_parameters)
             this.test_parameters.set(test_parameters)
             try {
                 this.quality_gate.failed_thresholds_rate = integrations.reporters.quality_gate.failed_thresholds_rate

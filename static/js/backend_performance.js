@@ -68,7 +68,7 @@ var test_formatters = {
             // apiActions.run(row.id, row.name)
             console.log('test_run', row)
             const component_proxy = vueVm.registered_components.run_modal
-            component_proxy.set(row)
+            component_proxy.set({...row, test_parameters: [...JSON.parse(JSON.stringify(row.test_parameters))]})
         },
 
         "click .test_edit": function (e, value, row, index) {

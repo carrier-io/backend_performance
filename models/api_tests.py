@@ -14,7 +14,7 @@
 import json
 from collections import defaultdict
 from queue import Empty
-from typing import List, Union
+from typing import List, Union, Optional
 
 from pylon.core.tools import log
 from sqlalchemy import Column, Integer, String, JSON, ARRAY, and_
@@ -107,13 +107,16 @@ class PerformanceApiTest(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin
             test_id=self.test_uid
         )
 
-    def filter_test_parameters_unsecret(self) -> None:
+    def filtered_test_parameters_unsecret(self, test_parameters: Optional[dict] = None) -> list:
+        if not test_parameters:
+            test_parameters = self.test_parameters
+
         def filter_func(item):
             return item['default'] != secrets_tools.unsecret(
                 self.default_params_mapping.get(item['name']),
                 project_id=self.project_id
             )
-        self.test_parameters = list(filter(filter_func, self.test_parameters))
+        return list(filter(filter_func, test_parameters))
 
     def add_schedule(self, schedule_data: dict, commit_immediately: bool = True):
         schedule_data['test_id'] = self.id

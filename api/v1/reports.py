@@ -1,3 +1,4 @@
+from traceback import format_exc
 from sqlalchemy import and_
 from json import loads
 
@@ -14,10 +15,10 @@ from ....projects.models.statistics import Statistic
 from ...models.api_baseline import APIBaseline
 from ...models.api_reports import APIReport
 from ...models.api_tests import PerformanceApiTest
-# from ...utils.utils import get
 from ...connectors.influx import get_test_details, delete_test_data
 from tools import MinioClient, api_tools
 from influxdb.exceptions import InfluxDBClientError
+
 
 class API(Resource):
     url_params = [
@@ -54,48 +55,55 @@ class API(Resource):
         # if not ProjectQuota.check_quota(project_id=project_id, quota='performance_test_runs'):
         #     return {"Forbidden": "The number of performance test runs allowed in the project has been exceeded"}
 
-        test = PerformanceApiTest.query.filter(
-            PerformanceApiTest.test_uid == args.get("test_id")
-        ).first()
+        test_config = None
         if 'test_params' in args:
             try:
-                test.test_parameters = PerformanceTestParamsRun.from_control_tower_cmd(
-                    args['test_params']
-                ).dict()['test_parameters']
-                test.filter_test_parameters_unsecret()
+                test = PerformanceApiTest.query.filter(
+                    PerformanceApiTest.test_uid == args.get('test_id')
+                ).first()
+                # test._session.expunge(test) # maybe we'll need to detach object from orm
+                test.__dict__['test_parameters'] = test.filtered_test_parameters_unsecret(
+                    PerformanceTestParamsRun.from_control_tower_cmd(
+                        args['test_params']
+                    ).dict()['test_parameters']
+                )
             except Exception as e:
+                log.error('Error parsing params from control tower %s', format_exc())
                 return f'Error parsing params from control tower: {e}', 400
 
-        report = APIReport(name=args["test_name"],
-                           project_id=project.id,
-                           environment=args["environment"],
-                           type=args["type"],
-                           end_time="",
-                           start_time=args["start_time"],
-                           failures=0,
-                           total=0,
-                           thresholds_missed=0,
-                           throughput=0,
-                           vusers=args["vusers"],
-                           pct50=0,
-                           pct75=0,
-                           pct90=0,
-                           pct95=0,
-                           pct99=0,
-                           _max=0,
-                           _min=0,
-                           mean=0,
-                           duration=args["duration"],
-                           build_id=args["build_id"],
-                           lg_type=args["lg_type"],
-                           onexx=0,
-                           twoxx=0,
-                           threexx=0,
-                           fourxx=0,
-                           fivexx=0,
-                           requests="",
-                           test_uid=args.get("test_id"),
-                           test_config=test.api_json())
+        report = APIReport(
+            name=args["test_name"],
+            project_id=project.id,
+            environment=args["environment"],
+            type=args["type"],
+            end_time="",
+            start_time=args["start_time"],
+            failures=0,
+            total=0,
+            thresholds_missed=0,
+            throughput=0,
+            vusers=args["vusers"],
+            pct50=0,
+            pct75=0,
+            pct90=0,
+            pct95=0,
+            pct99=0,
+            _max=0,
+            _min=0,
+            mean=0,
+            duration=args["duration"],
+            build_id=args["build_id"],
+            lg_type=args["lg_type"],
+            onexx=0,
+            twoxx=0,
+            threexx=0,
+            fourxx=0,
+            fivexx=0,
+            requests="",
+            test_uid=args.get("test_id")
+        )
+        if test_config:
+            report.test_config = test_config
         report.insert()
         statistic = Statistic.query.filter_by(project_id=project_id).first()
         setattr(statistic, 'performance_test_runs', Statistic.performance_test_runs + 1)

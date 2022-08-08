@@ -68,7 +68,7 @@ var test_formatters = {
             // apiActions.run(row.id, row.name)
             console.log('test_run', row)
             const component_proxy = vueVm.registered_components.run_modal
-            component_proxy.set(row)
+            component_proxy.set({...row, test_parameters: [...JSON.parse(JSON.stringify(row.test_parameters))]})
         },
 
         "click .test_edit": function (e, value, row, index) {
@@ -928,6 +928,7 @@ const TestRunModal = {
             Object.assign(this.$data, {...rest, cpu_quota, memory_quota, env_vars,})
 
             // special fields
+            console.log('TEST PARAMS SET', test_parameters)
             this.test_parameters.set(test_parameters)
             try {
                 this.quality_gate.failed_thresholds_rate = integrations.reporters.quality_gate.failed_thresholds_rate

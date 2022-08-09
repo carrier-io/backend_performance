@@ -2,6 +2,9 @@
 <script src="{{ url_for('design-system.static', filename='assets/vendor/nouislider/nouislider.js') }}"></script>
 <script src="{{ url_for('design-system.static', filename='assets/vendor/nouislider/wNumb.min.js') }}"></script>
 <script src="{{ url_for('backend_performance.static', filename='js/performanceBackend.js') }}"></script>
+<script src="{{ url_for('backend_performance.static', filename='js/components/AnalyticFilterDropdown.js') }}"></script>
+<script src="{{ url_for('backend_performance.static', filename='js/components/AnalyticFilterBlock.js') }}"></script>
+<script src="{{ url_for('backend_performance.static', filename='js/components/AnalyticFilter.js') }}"></script>
 <script src="https://unpkg.com/bootstrap-table@1.15.5/dist/bootstrap-table.min.js"></script>
 <script src="{{ url_for('backend_performance.static', filename='js/logs_updater.js') }}"></script>
 <script src="{{ url_for('backend_performance.static', filename='js/in_progress.js') }}"></script>
@@ -14,7 +17,6 @@
         loadRequestData('/api/v1/backend_performance/charts/requests/summary', "Response time, ms");
         fillErrorTable();
         fillSummaryTable();
-       // $('#RT').trigger( "click" )
         $("#analytics").hide();
         const perfomanceTimePicker = noUiSlider.create($("#vuh-perfomance-time-picker")[0], {
             range: {

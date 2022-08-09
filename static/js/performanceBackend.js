@@ -492,6 +492,7 @@ function loadRequestData(url, y_label) {
     if (!$("#preset").is(":visible")) {
         $("#preset").show();
         $("#analytics").hide();
+        $("#chartjs-custom-legend-analytic").hide();
         if (analyticsLine != null) {
             analyticsLine.destroy();
         }
@@ -528,6 +529,7 @@ function displayAnalytics() {
     $("#preset").hide();
     analyticsCanvas();
     $("#analytics").show();
+    $("#chartjs-custom-legend-analytic").show();
     if(window.presetLine!=null){
         window.presetLine.destroy();
     }
@@ -607,17 +609,51 @@ updateChart = function(e, datasetIndex) {
     ci.update();
 };
 
+function updateChartAnalytic(e, datasetIndex) {
+    var index = datasetIndex;
+    var ci = e.view.analyticsLine;
+    var curr = ci.data.datasets[index]._meta;
+    curr = Object.values(curr)[0]
+    curr.hidden = !curr.hidden
+    ci.update();
+};
+
+function turnOnAllLine() {
+    window.analyticsLine.data.datasets.forEach((item, index) => {
+        let curr = item._meta;
+        curr = Object.values(curr)[0];
+        curr.hidden = false;
+    })
+    window.analyticsLine.update();
+}
 function analyticsCanvas() {
     console.log("analyticsCanvas ******************")
     var analyticsContext=document.getElementById("chart-analytics").getContext("2d");
-    analyticsLine = Chart.Line(analyticsContext, {
+    window.analyticsLine = Chart.Line(analyticsContext, {
         data: analyticsData,
         options: {
             responsive: true,
             hoverMode: 'index',
             stacked: false,
+            legendCallback: (chart) => {
+                return chart.data.datasets.map((item, index) => {
+                    return `
+                        <div class="d-flex mb-3 float-left mr-3">
+                            <label class="mb-0 w-100 d-flex align-items-center custom-checkbox custom-checkbox__multicolor legend-item">
+                                <input class="mx-2 custom__checkbox"
+                                    onclick="updateChartAnalytic(event, ${chart.legend.legendItems[index].datasetIndex})"
+                                    id="${chart.legend.legendItems[index].datasetIndex}"
+                                    type="checkbox"
+                                    checked="true"
+                                    style="--cbx-color: ${item.backgroundColor}"/>
+                                <span class="legend-span">${item.label}</span>
+                            </label>
+                        </div>
+                            `
+                }).join("")
+            },
             legend: {
-                display: true,
+                display: false,
                 position: 'bottom',
                 labels: {
                     fontSize: 10,
@@ -740,11 +776,31 @@ function fillErrorTable() {
     })
 }
 
+const filtersBlock = new Map();
+
+function recalculateAnalytics() {
+    const objRequest = new Map()
+    filtersBlock.forEach(items => {
+        items.forEach(requestName => {
+            const metric = requestName.split('_').pop();
+            const transaction = requestName.split('_').slice(0, -1).join('_');
+            if(objRequest.get(metric)) {
+                objRequest.set(metric, [...objRequest.get(metric), transaction])
+            } else {
+                objRequest.set(metric, [transaction])
+            }
+        })
+    })
+    objRequest.forEach((requestArray, metric) => {
+        getDataForAnalysis(metric, requestArray)
+    })
+}
+
 function getDataForAnalysis(metric, request_name) {
 $.get(
   '/api/v1/backend_performance/charts/requests/data',
   {
-    scope: [request_name],
+    scope: request_name,
     metric: metric,
     build_id: build_id,
     test_name: test_name,
@@ -754,18 +810,24 @@ $.get(
     status: statusType,
     start_time: $("#start_time").html(),
     end_time: $("#end_time").html(),
-    low_value: $("#input-slider-range-value-low").html(),
-    high_value: $("#input-slider-range-value-high").html()
+    low_value,
+    high_value,
   },
   function( data ) {
-    if (analyticsLine.data.labels.length == 0 || analyticsLine.data.labels.length != data.labels.length)
+    if (analyticsLine.data.labels.length === 0 || analyticsLine.data.labels.length !== data.labels.length)
     {
         analyticsData = data;
         analyticsCanvas();
     } else {
-        analyticsLine.data.datasets.push(data.datasets[0]);
+        const uniqueDatasets = data.datasets.filter(item => {
+            const isValueNotExist = analyticsLine.data.datasets.some(currentItem => currentItem.label === item.label)
+            if(!isValueNotExist) return item
+        })
+        analyticsLine.data.datasets.push(...uniqueDatasets);
         analyticsLine.update();
     }
+    turnOnAllLine();
+    document.getElementById('chartjs-custom-legend-analytic').innerHTML = analyticsLine.generateLegend();
   }
  );
 }
@@ -784,20 +846,6 @@ function resizeChart() {
     });
     fillErrorTable();
 }
-
-function recalculateAnalytics() {
-    var iterator = document.evaluate("//div[@id='analytics']//input[@type='checkbox']", document, null, XPathResult.UNORDERED_NODE_ITERATOR_TYPE, null );
-    var el = iterator.iterateNext();
-    var arr = []
-    while (el) {
-        if (el.checked) {
-            arr.push(el)
-        }
-        el = iterator.iterateNext();
-    }
-    arr.forEach(el => el.onchange());
-}
-
 
 function detailFormatter(index, row) {
     var html = []
@@ -938,4 +986,10 @@ function updateChartAndErrorsTable(interval_id) {
             clearInterval(interval_id);
         }
     });
+}
+
+function clearAnalyticChart() {
+    analyticsLine.data.datasets = [];
+    analyticsLine.update();
+    document.getElementById('chartjs-custom-legend-analytic').innerHTML = '';
 }

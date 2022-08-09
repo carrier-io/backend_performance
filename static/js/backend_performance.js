@@ -98,29 +98,6 @@ var test_formatters = {
     }
 }
 
-var threshold_formatters = {
-    actions(value, row, index) {
-        var id = row['id'];
-        return `
-        <div class="d-flex justify-content-end">
-            <button type="button" class="btn btn-24 btn-action"><i class="fas fa-cog"></i></button>
-            <button type="button" class="btn btn-24 btn-action"><i class="fas fa-trash-alt"></i></button>
-        </div>
-        `
-    },
-    rules(value, row, index) {
-        let comparisonMap = new Map([
-            ["gte", ">="],
-            ["lte", "<="],
-            ["lt", "<"],
-            ["gt", ">"],
-            ["eq", "=="]
-        ]);
-        comparison = comparisonMap.get(row.comparison)
-        return row.aggregation + "(" + row.target + ") " + comparison
-    }
-}
-
 var report_formatters = {
     reportsStatusFormatter(value, row, index) {
         switch (value.status.toLowerCase()) {

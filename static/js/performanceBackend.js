@@ -576,16 +576,16 @@ function selectOrUnselectRequests() {
         $('.custom__checkbox').each(function(i, ch) {
             if (ch.id != "all_checkbox") {
                 $('#' + ch.id).prop('checked', true);
-                updateHiddenProperty(false);
             }
         });
+        updateHiddenProperty(false);
     } else {
         $('.custom__checkbox').each(function(i, ch) {
             if (ch.id != "all_checkbox") {
                 $('#' + ch.id).prop('checked', false);
-                updateHiddenProperty(true);
             }
         });
+        updateHiddenProperty(true);
     }
 }
 

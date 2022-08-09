@@ -2,7 +2,7 @@ const AnalyticFilterBlock = {
     components: {
         'analytic-filter-dropdown': AnalyticFilterDropdown,
     },
-    props: ['analyticsData'],
+    props: ['analyticsData', 'blockIndex'],
     data() {
         return {
             transactionItems: null,
@@ -13,7 +13,6 @@ const AnalyticFilterBlock = {
         }
     },
     mounted() {
-        debugger
         this.transactionItems = Object.keys(this.analyticsData).filter(item => {
             if (item !== '' && item !== "All") return item
         });
@@ -28,8 +27,17 @@ const AnalyticFilterBlock = {
             this.selectedMetrics = [ ...payload];
         },
         handlerSubmit() {
+            let blockItems = [];
             this.selectedMetrics.forEach(metric => {
-                getDataForAnalysis(metric, this.selectedTransactions);
+                blockItems.push(...this.selectedTransactions.map(transaction => `${transaction}_${metric}`));
+            })
+            if(filtersBlock.get(this.blockIndex)) {
+                analyticsLine.data.datasets = analyticsLine.data.datasets
+                    .filter(item => !filtersBlock.get(this.blockIndex).includes(item.label))
+            }
+            filtersBlock.set(this.blockIndex, blockItems)
+            this.selectedMetrics.forEach(metric => {
+                getDataForAnalysis(metric, this.selectedTransactions, this.blockIndex);
             })
         }
     },

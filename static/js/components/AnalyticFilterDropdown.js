@@ -60,6 +60,7 @@ const AnalyticFilterDropdown = {
                     el.checked = false;
                 })
             }
+            this.$emit('select-items', this.selectedItems);
         },
         setClickedItem(title, { target: { checked }}) {
             this.selectedItems = checked ?

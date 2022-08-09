@@ -217,14 +217,11 @@
     <div class="position-relative">
         <div id="preset">
             <div class="d-flex mt-3">
-                <div class="chart flex-grow-1 d-flex flex-column justify-content-between">
-                    <div class="flex-grow-1">
-                        <canvas id="chart-requests" class="chart-canvas chartjs-render-monitor"
-                            style="display: block; height: 450px; width: 100%;"></canvas>
-                    </div>
-                    <div style="height: 50px"></div>
+                <div class="chart flex-grow-1">
+                    <canvas id="chart-requests"
+                        style="display: block; height: 450px; width: 100%;"></canvas>
                 </div>
-                <div class="card" style="width:280px; margin-left: 28px">
+                <div class="card" style="width:280px; height: 500px; margin-left: 28px">
                     <div class="d-flex flex-column p-3">
                         <label
                                 class="mb-0 w-100 d-flex align-items-center custom-checkbox custom-checkbox__multicolor"
@@ -247,12 +244,9 @@
         </div>
         <div id="analytics">
             <div class="d-flex mt-3">
-                <div class="chart flex-grow-1 d-flex flex-column justify-content-between">
-                    <div class="flex-grow-1">
-                        <canvas id="chart-analytics" class="chart-canvas chartjs-render-monitor"
-                            style="display: block; height: 450px; width: 100%;"></canvas>
-                    </div>
-                    <div style="height: 50px"></div>
+                <div class="chart flex-grow-1">
+                    <canvas id="chart-analytics"
+                        style="display: block; height: 450px; width: 100%;"></canvas>
                 </div>
                 <analytic-filter
                         :analytics-data='{{ analytics_control | tojson }}'
@@ -260,9 +254,8 @@
                         instance_name="analytic-filter">
                 </analytic-filter>
             </div>
-            <div id="chartjs-custom-legend-analytic" style="margin-top: 65px" class="d-grid grid-column-7"></div>
         </div>
-        <div class="row pr-4 pl-2 position-absolute w-100" style="bottom: 40px; left: 0">
+        <div class="row pl-2 pb-4 w-100">
             <div class="col">
                 <label class="w-100 mb-0 font-h5 font-semibold">
                     Time picker
@@ -274,6 +267,7 @@
                 </div>
             </div>
         </div>
+        <div id="chartjs-custom-legend-analytic" class="d-grid grid-column-7"></div>
     </div>
 </div>
 

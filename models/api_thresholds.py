@@ -8,7 +8,6 @@ class APIThresholds(db_tools.AbstractBaseMixin, db.Base):
     id = Column(Integer, primary_key=True)
     project_id = Column(Integer, unique=False, nullable=False)
     test = Column(String, unique=False, nullable=False)
-    test_id = Column(Integer, unique=False, nullable=False)
     environment = Column(String, unique=False, nullable=False)
     scope = Column(String, unique=False, nullable=False)
     target = Column(String, unique=False, nullable=False)

@@ -12,6 +12,7 @@ from ...models.pd.thresholds import ThresholdPD
 class API(Resource):
     url_params = [
         '<int:project_id>',
+        '<int:project_id>/<int:threshold_id>',
     ]
 
     def __init__(self, module):
@@ -35,15 +36,8 @@ class API(Resource):
             pd_obj = ThresholdPD(project_id=project_id, **request.json)
         except ValidationError as e:
             return e.errors(), 400
-        th = APIThresholds(**pd_obj.dict()).insert()
-        # APIThresholds(project_id=project.id,
-        #               test=args["test"],
-        #               scope=args["scope"],
-        #               environment=args["env"],
-        #               target=args["target"],
-        #               value=args["value"],
-        #               aggregation=args["aggregation"],
-        #               comparison=args["comparison"]).insert()
+        th = APIThresholds(**pd_obj.dict())
+        th.insert()
         return th.to_json(), 201
 
     def delete(self, project_id: int):
@@ -62,3 +56,17 @@ class API(Resource):
         ).delete()
         APIThresholds.commit()
         return {'ids': delete_ids}, 204
+
+    def put(self, project_id: int, threshold_id: int):
+        project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
+        try:
+            pd_obj = ThresholdPD(project_id=project_id, **request.json)
+        except ValidationError as e:
+            return e.errors(), 400
+        th_query = APIThresholds.query.filter(
+            APIThresholds.project_id == project_id,
+            APIThresholds.id == threshold_id
+        )
+        th_query.update(pd_obj.dict())
+        APIThresholds.commit()
+        return th_query.one().to_json(), 200

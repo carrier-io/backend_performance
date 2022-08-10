@@ -7,8 +7,7 @@ from ..api_reports import APIReport
 
 class ThresholdPD(BaseModel):
     project_id: int
-    test: Optional[str]
-    test_id: int
+    test: str
     environment: str
     scope: str
     target: str
@@ -16,19 +15,16 @@ class ThresholdPD(BaseModel):
     comparison: str
     value: float
 
-    @validator('test_id')
-    def validate_test_exists(cls, value, values):
-        test_id, test_name = PerformanceApiTest.query.with_entities(
-            PerformanceApiTest.id,
-            PerformanceApiTest.name
-        ).filter(
-            PerformanceApiTest.id == value
-        ).first()
-        assert test_name == values.get('test'), 'Test name is corrupted'
-        return test_id
+    @validator('test')
+    def validate_test_exists(cls, value: str, values: dict):
+        assert PerformanceApiTest.query.filter(
+            PerformanceApiTest.project_id == values['project_id'],
+            PerformanceApiTest.name == value
+        ).first(), f'Test with name {value} does not exist'
+        return value
 
     @validator('environment')
-    def validate_env_exists(cls, value, values):
+    def validate_env_exists(cls, value: str, values: dict):
         assert APIReport.query.filter(
             APIReport.environment == value,
             APIReport.project_id == values['project_id']
@@ -36,7 +32,7 @@ class ThresholdPD(BaseModel):
         return value
 
     @validator('scope')
-    def validate_scope_exists(cls, value, values):
+    def validate_scope_exists(cls, value: str, values: dict):
         if value in ['all', 'every']:
             return value
 
@@ -47,16 +43,16 @@ class ThresholdPD(BaseModel):
         return value
 
     @validator('target')
-    def validate_target(cls, value):
+    def validate_target(cls, value: str):
         assert value in {'throughput', 'error_rate', 'response_time'}, f'Target {value} is not supported'
         return value
 
     @validator('aggregation')
-    def validate_aggregation(cls, value):
+    def validate_aggregation(cls, value: str):
         assert value in {'max', 'min', 'avg', 'pct95', 'pct50'}, f'Aggregation {value} is not supported'
         return value
 
     @validator('comparison')
-    def validate_comparison(cls, value):
+    def validate_comparison(cls, value: str):
         assert value in {'gte', 'lte', 'lt', 'gt', 'eq'}, f'Comparison {value} is not supported'
         return value

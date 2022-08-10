@@ -7,15 +7,12 @@ const ThresholdModal = {
     mounted() {
         $(this.$el).on('hide.bs.modal', this.clear)
         $(this.$el).on('show.bs.modal', () => {
-            // if (this.mode === 'create') {
-                this.test_options = vueVm.registered_components[
-                    this.$props.tests_table_component_name
-                ]?.table_action('getData').reduce((accum, item) => {
-                    !this.forced_test_options.includes(item.name) && accum.push(item.name)
-                    return accum
-                }, [])
-                // this.$nextTick(() => $(this.$el).find('.selectpicker').selectpicker('refresh'))
-            // }
+            this.test_options = vueVm.registered_components[
+                this.$props.tests_table_component_name
+            ]?.table_action('getData').reduce((accum, item) => {
+                !this.forced_test_options.includes(item.name) && accum.push(item.name)
+                return accum
+            }, [])
         })
     },
     template: `
@@ -34,6 +31,7 @@ const ThresholdModal = {
                             Cancel
                         </button>
                         <button type="button" class="btn btn-basic"
+                            :disabled="is_fetching"
                             @click="() => mode === 'update' ? handle_update_threshold() : handle_create_threshold()"
                         >
                             [[ mode === 'update' ? 'Update' : 'Save' ]]
@@ -54,7 +52,7 @@ const ThresholdModal = {
                                 <option v-for="test in forced_test_options" :value="test">[[ test ]]</option>
                                 <option v-for="test in test_options" :value="test">[[ test ]]</option>
                             </select>
-
+                            <div class="invalid-feedback" style="display: block;">[[ errors.test ]]</div>
                         </div>
                     </div>
 
@@ -69,6 +67,7 @@ const ThresholdModal = {
                                 <option v-for="item in forced_env_options" :value="item">[[ item ]]</option>
                                 <option v-for="item in env_options" :value="item">[[ item ]]</option>
                             </select>
+                            <div class="invalid-feedback" style="display: block;">[[ errors.environment ]]</div>
                         </div>
                     </div>
 
@@ -87,12 +86,13 @@ const ThresholdModal = {
                                 <option v-for="sc in forced_scope_options" :value="sc">[[ sc ]]</option>
                                 <option v-for="sc in scope_options" :value="sc">[[ sc ]]</option>
                             </select>
+                            <div class="invalid-feedback" style="display: block;">[[ errors.scope ]]</div>
                         </div>
                     </div>
 
                     <div class="row">
                         <div class="d-flex flex-column w-100">
-                            <h5 class="pt-2"> Target </h5>
+                            <h5 class="pt-2">Target</h5>
                             <p>
                                 <h13>Metric you want to be measured against.</h13>
                             </p>
@@ -103,6 +103,7 @@ const ThresholdModal = {
                                 <option value="error_rate">Error rate</option>
                                 <option value="response_time">Response time</option>
                             </select>
+                            <div class="invalid-feedback" style="display: block;">[[ errors.target ]]</div>
                         </div>
                     </div>
 
@@ -121,6 +122,7 @@ const ThresholdModal = {
                                 <option value="pct95">Percentile 95</option>
                                 <option value="pct50">Percentile 50</option>
                             </select>
+                            <div class="invalid-feedback" style="display: block;">[[ errors.aggregation ]]</div>
                         </div>
                     </div>
 
@@ -139,6 +141,7 @@ const ThresholdModal = {
                                 <option value="gt">&gt;</option>
                                 <option value="eq">==</option>
                             </select>
+                            <div class="invalid-feedback" style="display: block;">[[ errors.comparison ]]</div>
                         </div>
                     </div>
 
@@ -148,6 +151,7 @@ const ThresholdModal = {
                             <input type="number" class="form-control form-control-alternative"
                                 v-model="value"
                             >
+                            <div class="invalid-feedback" style="display: block;">[[ errors.value ]]</div>
                         </div>
                     </div>
                 </div>
@@ -195,10 +199,14 @@ const ThresholdModal = {
                 scope_options: [],
                 forced_scope_options: [],
                 id: null,
-                mode: 'create'
+                mode: 'create',
+                errors: {},
+                is_fetching: false
             }
         },
-        update_pickers() {$(this.$el).find('.selectpicker').selectpicker('redner').selectpicker('refresh'); console.log('pickers updated')},
+        update_pickers() {
+            $(this.$el).find('.selectpicker').selectpicker('redner').selectpicker('refresh')
+        },
         async handle_change_test() {
             this.environment = undefined
             this.forced_test_options = []
@@ -234,7 +242,9 @@ const ThresholdModal = {
             }
         },
         async handle_create_threshold() {
+            this.errors = {}
             const {test, environment, scope, target, aggregation, comparison, value} = this
+            this.is_fetching = true
             const resp = await fetch(`/api/v1/backend_performance/thresholds/${getSelectedProjectId()}`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -245,12 +255,29 @@ const ThresholdModal = {
                 $(this.$el).modal('hide')
             } else {
                 showNotify('ERROR', 'Error creating threshold')
+                this.setError(await resp.json())
             }
+            this.is_fetching = false
         },
         async handle_update_threshold() {
-            console.warn('Update to be done')
+            this.errors = {}
+            const {test, environment, scope, target, aggregation, comparison, value, id} = this
+            this.is_fetching = true
+            const resp = await fetch(`/api/v1/backend_performance/thresholds/${getSelectedProjectId()}/${id}`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({test, environment, scope, target, aggregation, comparison, value, id}),
+            })
+            if (resp.ok) {
+                vueVm.registered_components[this.$props.thresholds_table_component_name]?.table_action('refresh')
+                $(this.$el).modal('hide')
+            } else {
+                showNotify('ERROR', 'Error updating threshold')
+                this.setError(await resp.json())
+            }
+            this.is_fetching = false
         },
-        set(data, show=true) {
+        set(data, show = true) {
             this.clear()
             this.mode = 'update'
             const {aggregation, comparison, environment, scope, target, test, value, id} = data
@@ -268,7 +295,11 @@ const ThresholdModal = {
         },
         clear() {
             Object.assign(this.$data, this.initial_state())
-
+        },
+        setError(errors) {
+            errors.forEach(i => {
+                this.errors[i.loc[0]] = i.msg
+            })
         }
     }
 
@@ -276,59 +307,6 @@ const ThresholdModal = {
 
 register_component('ThresholdModal', ThresholdModal)
 
-// function updateEnvPicker(_callback) {
-//     $.get(`/api/v1/backend_performance/environments/${getSelectedProjectId()}`, {
-//             name: $("#testName").val()
-//         },
-//         function (data) {
-//             $("#envName").empty();
-//             data.forEach(item => {
-//                 $("#envName").append(`<option value="${item}">${item}</option>`);
-//             });
-//             $("#envName").selectpicker('refresh').trigger('change');
-//             if (_callback !== undefined) {
-//                 _callback();
-//             }
-//         });
-// }
-
-// function updateScopePicker() {
-//     $.get(`/api/v1/backend_performance/requests/${getSelectedProjectId()}`, {
-//             name: $("#testName").val(),
-//             env: $("#envName").val()
-//         },
-//         function (data) {
-//             $("#scope").empty();
-//             $("#scope").append(`<option value="all">all</option>`);
-//             $("#scope").append(`<option value="every">every</option>`);
-//             data.forEach(item => {
-//                 $("#scope").append(`<option value="${item}">${item}</option>`);
-//             });
-//             $("#scope").selectpicker('refresh').trigger('change');
-//         });
-// }
-
-// function insertThreshold() {
-//     $.ajax({
-//         url: `/api/v1/backend_performance/thresholds/${getSelectedProjectId()}`,
-//         type: "POST",
-//         data: JSON.stringify({
-//             test: $("#testName").val(),
-//             env: $("#envName").val(),
-//             scope: $("#scope").val(),
-//             target: $("#target").val(),
-//             aggregation: $("#aggregation").val(),
-//             comparison: $("#comparison").val(),
-//             value: parseInt($("#th_value").val())
-//         }),
-//         contentType: "application/json",
-//         dataType: "json",
-//         success: function () {
-//             $("#threshold-list").bootstrapTable('refresh');
-//             $("#createThresholdModal").modal('hide');
-//         }
-//     });
-// }
 
 const threshold_delete = ids => {
     const url = `/api/v1/backend_performance/thresholds/${getSelectedProjectId()}?` + $.param({"id[]": ids})
@@ -337,53 +315,6 @@ const threshold_delete = ids => {
     }).then(response => response.ok && vueVm.registered_components.table_thresholds?.table_action('refresh'))
 }
 
-// function showEditThreshold(index) {
-//     $("#createThresholdModal").modal('toggle');
-//     $("#modal_title").html("Edit Threshold");
-//     $("#add_threshold").html("Edit");
-//     setTimeout(updateModalData, 500, index);
-// }
-
-// function updateModalData(index) {
-//     var data = $("#threshold-list").bootstrapTable('getRowByUniqueId', index);
-//     $("#testName").selectpicker('val', data['test']);
-//     updateEnvPicker(() => {
-//         $("#envName").selectpicker('val', data['environment']);
-//     });
-//     $("#scope").selectpicker('val', data['scope']);
-//     $("#target").selectpicker('val', data['target']);
-//     $("#aggregation").selectpicker('val', data['aggregation']);
-//     $("#comparison").selectpicker('val', data['comparison']);
-//     $("#th_value").val(data['value']);
-//     $("#add_threshold").attr('onclick', `editThreshold("${index}")`);
-// }
-
-// function deleteThreshold(index, callback) {
-//     var data = $("#threshold-list").bootstrapTable('getRowByUniqueId', index);
-//     var request_params = $.param({
-//         test: data['test'],
-//         env: data['environment'],
-//         scope: data['scope'],
-//         target: data['target'],
-//         aggregation: data['aggregation'],
-//         comparison: data['comparison']
-//     });
-//     $.ajax({
-//         url: `/api/v1/backend_performance/thresholds/${getSelectedProjectId()}?` + request_params,
-//         type: "DELETE",
-//         contentType: 'application/json',
-//         success: function () {
-//             $("#threshold-list").bootstrapTable('refresh');
-//             if (callback !== undefined) {
-//                 callback()
-//             }
-//         }
-//     })
-// }
-
-// function editThreshold(index) {
-//     deleteThreshold(index, insertThreshold);
-// }
 
 var threshold_formatters = {
     actions(value, row, index) {
@@ -417,37 +348,10 @@ var threshold_formatters = {
     }
 }
 
-// function ruleFormatter(value, row, index) {
-//     let comparisonMap = new Map([
-//         ["gte", ">="],
-//         ["lte", "<="],
-//         ["lt", "<"],
-//         ["gt", ">"],
-//         ["eq", "=="]
-//     ]);
-//     comparison = comparisonMap.get(row.comparison)
-//     return row.aggregation + "(" + row.target + ") " + comparison
-// }
-//
-// function thresholdsActionFormatter(value, row, index) {
-//     var id = row['id'];
-//     return `
-//     <div class="d-flex justify-content-end">
-//         <button type="button" class="btn btn-24 btn-action" onclick="showEditThreshold('${id}')"><i class="fas fa-cog"></i></button>
-//         <button type="button" class="btn btn-24 btn-action" onclick="deleteThreshold('` + id + `')"><i class="fas fa-trash-alt"></i></button>
-//     </div>
-//     `
-// }
-
-// $(document).on('vue_init', () => {
-    // $(document).ready(function () {
-        // updateEnvPicker();
-
-        // $('#createThresholdModal').on('hide.bs.modal', function (e) {
-        //     $("#modal_title").html("Create Threshold");
-        //     $("#add_threshold").html("Save");
-        //     $("#add_threshold").attr('onclick', `insertThreshold()`);
-        //     $("#th_value").val("");
-        // });
-    // });
-// })
+$(() => {
+    $('#delete_thresholds').on('click', () => {
+        const table_proxy = vueVm.registered_components.table_thresholds
+        const ids = table_proxy?.table_action('getSelections').map(i => i.id).join(',')
+        ids && threshold_delete(ids) && table_proxy?.table_action('refresh')
+    })
+})

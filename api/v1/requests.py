@@ -1,7 +1,8 @@
-from flask import request, make_response
+from flask import request
 from flask_restful import Resource
+from pylon.core.tools import log
+
 from ...models.api_reports import APIReport
-from sqlalchemy import and_
 
 
 class API(Resource):
@@ -17,14 +18,12 @@ class API(Resource):
         project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
         requests_data = set()
         query_result = APIReport.query.with_entities(APIReport.requests).filter(
-            and_(
-                APIReport.name == args.get("name"),
-                APIReport.environment == args.get("env"),
-                APIReport.project_id == project.id
-            )
-        ).order_by(APIReport.id.asc()).all()
+            APIReport.name == args.get('name'),
+            APIReport.environment == args.get('environment'),
+            APIReport.project_id == project.id
+        ).all()
         for i in query_result:
-            requests_data.update(set(i[0].split(";")))
+            requests_data.update(set(i[0].split(';')))
         try:
             requests_data.remove('All')
         except KeyError:

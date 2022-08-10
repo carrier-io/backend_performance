@@ -13,8 +13,14 @@
     <template #actions>
         <div class="d-flex justify-content-end">
             <button type="button" class="btn btn-32 btn-secondary" data-toggle="modal"
-                    data-target="#threshold_modal"><i class="fas fa-plus"></i></button>
-            <button type="button" class="btn btn-32 btn-secondary"><i class="fas fa-trash-alt"></i></button>
+                    data-target="#threshold_modal">
+                <i class="fas fa-plus"></i>
+            </button>
+            <button type="button" class="btn btn-32 btn-secondary"
+                    id="delete_thresholds"
+            >
+                <i class="fas fa-trash-alt"></i>
+            </button>
         </div>
     </template>
     <template #table_headers>

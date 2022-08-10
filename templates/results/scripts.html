@@ -13,11 +13,31 @@
     let low_value = 0;
     let high_value = 100;
     $(document).ready(function() {
+
+        async function getTestStatus() {
+            const projectId = {{ test_data.project_id }}
+            const testId = {{ test_data.id }}
+            const response = await fetch(`/api/v1/backend_performance/reports/${projectId}/?report_id=${testId}`)
+            const {test_status: { percentage }} = await response.json();
+            checkTestStatus(percentage)
+        }
+        function checkTestStatus(percentage) {
+            if(percentage === 100) {
+                $('#AN').removeClass('disabled');
+                $('#analytic-loader').hide()
+            } else {
+                $('#AN').addClass('disabled')
+                $('#analytic-loader').show()
+                setTimeout(getTestStatus, 5000)
+            }
+        }
+
+
+        getTestStatus()
         setParams();
         loadRequestData('/api/v1/backend_performance/charts/requests/summary', "Response time, ms");
         fillErrorTable();
         fillSummaryTable();
-        $("#analytics").hide();
         const perfomanceTimePicker = noUiSlider.create($("#vuh-perfomance-time-picker")[0], {
             range: {
                 'min': 0,

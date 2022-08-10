@@ -52,6 +52,7 @@ class Slot:  # pylint: disable=E1101,R0903
             return self.descriptor.render_template(
                 'results/scripts.html',
                 source_data=source_data,
+                test_data=test_data,
                 analytics_control=analytics_control,
             )
 

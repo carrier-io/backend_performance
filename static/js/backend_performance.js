@@ -337,54 +337,62 @@ const TestCreateModal = {
                     <div class="row">
                         <div class="col">
                             <div class="form-group">
-                                <h9>Test Name</h9>
+                                <p class="font-h5 font-semibold">Test Name</p>
                                 <p>
                                     <h13>Enter a name that describes the purpose of your test.</h13>
                                 </p>
-                                <input type="text" class="form-control form-control-alternative"
-                                       placeholder="Test Name"
-                                       :disabled="mode !== 'create'"
-                                       v-model='name'
-                                       :class="{ 'is-invalid': errors?.name , 'disabled': mode !== 'create'}"
-                                   >
-                                   <div class="invalid-feedback">[[ get_error_msg('name') ]]</div>
+                                <div class="custom-input mb-3 mt-1" 
+                                    :class="{'invalid-input': errors?.name}">
+                                    <input type="text"
+                                        placeholder="Test Name"
+                                        :disabled="mode !== 'create'"
+                                        v-model='name'
+                                        :class="{ 'disabled': mode !== 'create'}"
+                                    >
+                                    <span class="input_error-msg">[[ get_error_msg('name') ]]</span>
+                                </div>
                             </div>
                             <div class="d-flex">
                                 <div class="flex-fill">
                                     <div class="form-group">
-                                        <h9>Test Type</h9>
+                                        <p class="font-h5 font-semibold">Test Type</p>
                                         <p>
                                             <h13>Tag to group tests by type</h13>
                                         </p>
-                                        <input type="text" class="form-control form-control-alternative"
-                                               placeholder="Test Type"
-                                               v-model='test_type'
-                                               :class="{ 'is-invalid': errors?.test_type }"
-                                               >
-                                               <div class="invalid-feedback">[[ get_error_msg('test_type') ]]</div>
+                                        <div class="custom-input mb-3 mt-1"
+                                            :class="{ 'invalid-input': errors?.test_type }">
+                                            <input type="text"
+                                                placeholder="Test Type"
+                                                v-model='test_type'
+                                            >
+                                            <span class="input_error-msg">[[ get_error_msg('test_type') ]]</span>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="flex-fill">
                                     <div class="form-group">
-                                        <h9>Environment</h9>
+                                        <p class="font-h5 font-semibold">Environment</p>
                                         <p>
                                             <h13>Tag to group tests by env</h13>
                                         </p>
-                                        <input type="text" class="form-control form-control-alternative"
-                                               placeholder="Test Environment"
-                                               v-model='env_type'
-                                               :class="{ 'is-invalid': errors?.env_type }"
-                                               >
-                                           <div class="invalid-feedback">[[ get_error_msg('env_type') ]]</div>
+                                        <div class="custom-input mb-3 mt-1"
+                                            :class="{ 'invalid-input': errors?.env_type }">
+                                            <input type="text"
+                                                placeholder="Test Environment"
+                                                v-model='env_type'
+                                                >
+                                            <span class="input_error-msg">[[ get_error_msg('env_type') ]]</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                             <div class="form-group" >
-                                <h9>Test runner</h9>
+                                <p class="font-h5 font-semibold">Test runner</p>
                                 <p>
                                     <h13>Choose the runner for the test.</h13>
                                 </p>
-                                <select class="selectpicker bootstrap-select__b mt-1" data-style="btn" 
+                                <div class="custom-input w-100-imp">
+                                    <select class="selectpicker bootstrap-select__b mt-1" data-style="btn" 
                                     v-model="runner"
                                     :class="{ 'is-invalid': errors?.runner }"
                                 >
@@ -395,6 +403,9 @@ const TestCreateModal = {
                                         </option>
                                     </optgroup>
                                 </select>
+                                </div>
+        
+                                
                                 <div class="invalid-feedback">[[ get_error_msg('runner') ]]</div>
                                 <label class="mb-0 mt-1 w-100 d-flex align-items-center custom-checkbox"
                                     v-if="is_gatling_selected && active_source_tab === 'artifact'"
@@ -413,7 +424,7 @@ const TestCreateModal = {
                             
                             <div class="form-group mt-3">
                                 <div class="form-group">
-                                    <h9>Entrypoint</h9>
+                                    <p class="font-h5 font-semibold">Entrypoint</p>
                                     <p>
                                         <h13>File for jMeter and class for gatling</h13>
                                     </p>

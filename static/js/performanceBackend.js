@@ -993,3 +993,13 @@ function clearAnalyticChart() {
     analyticsLine.update();
     document.getElementById('chartjs-custom-legend-analytic').innerHTML = '';
 }
+
+function handleAnalytic(e) {
+    let isDisabled = false;
+    e.target.classList.forEach(item => {
+        if(item === 'disabled') {
+            isDisabled = true
+        }
+    })
+    if(!isDisabled) displayAnalytics()
+}

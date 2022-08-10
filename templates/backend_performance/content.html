@@ -68,36 +68,7 @@
             </Table-Card>
         </div>
         <div class="flex-item-2">
-            <Table-Card
-                    @register="register"
-                    instance_name="table_thresholds"
-
-                    header='Thresholds'
-                    :table_attributes="{
-                        'data-url': '/api/v1/backend_performance/thresholds/{{ tools.session_project.get() }}',
-                        'data-page-size': 5,
-                        id: 'threshold-list'
-                    }"
-                    container_classes="h-100"
-            >
-                <template #actions>
-                    <div class="d-flex justify-content-end">
-                        <button type="button" class="btn btn-32 btn-secondary" data-toggle="modal"
-                                data-target="#createThresholdModal"><i class="fas fa-plus"></i></button>
-                        <button type="button" class="btn btn-32 btn-secondary"><i class="fas fa-trash-alt"></i></button>
-                    </div>
-                </template>
-                <template #table_headers>
-                    <th scope="col" data-checkbox="true"></th>
-                    <th data-visible="false" data-field="id">index</th>
-                    <th scope="col" data-sortable="true" data-field="test">Test</th>
-                    <th scope="col" data-sortable="true" data-field="environment">Env</th>
-                    <th scope="col" data-sortable="true" data-field="scope">Scope</th>
-                    <th scope="col" data-sortable="true" data-formatter=ruleFormatter>Rule</th>
-                    <th scope="col" data-sortable="true" data-field="value">Value</th>
-                    <th scope="col" data-formatter=thresholdsActionFormatter>Actions</th>
-                </template>
-            </Table-Card>
+            {% include 'backend_performance:backend_performance/thresholds.html' %}
         </div>
     </div>
 
@@ -147,7 +118,6 @@
         {% include 'backend_performance:backend_performance/create.html' %}
         {% include 'backend_performance:backend_performance/runtest.html' %}
     {% endwith %}
-    {% include 'backend_performance:thresholds.html' %}
     <Docker-Command-Modal
         @register="register"
         instance_name="docker_command"

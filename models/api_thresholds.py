@@ -10,7 +10,7 @@ class APIThresholds(db_tools.AbstractBaseMixin, db.Base):
     test = Column(String, unique=False, nullable=False)
     environment = Column(String, unique=False, nullable=False)
     scope = Column(String, unique=False, nullable=False)
-    value = Column(Float, unique=False, nullable=False)
     target = Column(String, unique=False, nullable=False)
     aggregation = Column(String, unique=False, nullable=False)
     comparison = Column(String, unique=False, nullable=False)
+    value = Column(Float, unique=False, nullable=False)

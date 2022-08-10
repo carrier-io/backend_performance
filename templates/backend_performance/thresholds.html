@@ -1,0 +1,45 @@
+<Table-Card
+        @register="register"
+        instance_name="table_thresholds"
+
+        header='Thresholds'
+        :table_attributes="{
+                        'data-url': '/api/v1/backend_performance/thresholds/{{ tools.session_project.get() }}',
+                        'data-page-size': 5,
+                        id: 'threshold-list'
+                    }"
+        container_classes="h-100"
+>
+    <template #actions>
+        <div class="d-flex justify-content-end">
+            <button type="button" class="btn btn-32 btn-secondary" data-toggle="modal"
+                    data-target="#threshold_modal">
+                <i class="fas fa-plus"></i>
+            </button>
+            <button type="button" class="btn btn-32 btn-secondary"
+                    id="delete_thresholds"
+            >
+                <i class="fas fa-trash-alt"></i>
+            </button>
+        </div>
+    </template>
+    <template #table_headers>
+        <th scope="col" data-checkbox="true"></th>
+        <th data-visible="false" data-field="id">index</th>
+        <th scope="col" data-sortable="true" data-field="test">Test</th>
+        <th scope="col" data-sortable="true" data-field="environment">Env</th>
+        <th scope="col" data-sortable="true" data-field="scope">Scope</th>
+        <th scope="col" data-sortable="true" data-formatter=threshold_formatters.rules>Rule</th>
+        <th scope="col" data-sortable="true" data-field="value">Value</th>
+        <th scope="col" data-formatter=threshold_formatters.actions data-events="threshold_formatters.action_events">Actions</th>
+    </template>
+</Table-Card>
+<Threshold-Modal
+        @register="register"
+        instance_name="threshold_modal"
+
+        modal_id="threshold_modal"
+        tests_table_component_name="table_tests"
+        thresholds_table_component_name="table_thresholds"
+>
+</Threshold-Modal>

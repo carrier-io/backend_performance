@@ -18,10 +18,6 @@ const PerformanceLogsApp = {
       this.websocket_api_url = `/api/v1/backend_performance/loki_url/${this.project_id}/?report_id=${this.report_id}`
       this.init_websocket()
     },
-    // updated() {
-    //     var item = $("#logs-body");
-    //     item.scrollTop(item.prop("scrollHeight"));
-    // },
     computed: {
         reversedLogs: function () {
             return this.logs.reverse()
@@ -92,8 +88,8 @@ const PerformanceLogsApp = {
                 '#94E5B0',
             ]
 
-            data.streams.forEach(stream_item => {
-                stream_item.values.forEach(message_item => {
+            data.streams.forEach((stream_item, streamIndex) => {
+                stream_item.values.forEach((message_item, messageIndex) => {
                     const d = new Date(Number(message_item[0])/1000000)
                     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
                     const timestamp = d.toLocaleString("en-GB", {timeZone: tz})
@@ -110,8 +106,9 @@ const PerformanceLogsApp = {
                         const message = message_item[1]
                         const log_level = stream_item.stream.level
                         const coloredText = `${coloredTag}<td><span class="colored-log colored-log__${log_level}">${log_level}</span></td>`
-                        const row = `<tr><td>${timestamp}</td>${coloredText}<td>${message}</td><br>`
+                        const row = `<tr><td>${timestamp}</td>${coloredText}<td class="log-message__${streamIndex}-${messageIndex}"></td></tr>`
                         $('#tableLogs').append(row)
+                        $(`.log-message__${streamIndex}-${messageIndex}`).append(`<plaintext>${message}`)
                     }
                     const elem = document.querySelector('.container-logs');
                     elem.scrollTop = elem.scrollHeight;
@@ -127,8 +124,6 @@ const PerformanceLogsApp = {
                 if (this.state === 'connected' || attempt > this.connection_retries) clearInterval(intrvl)
                 attempt ++
             }, this.connection_retry_timeout)
-            // setTimeout(websocket_connect, 1 * 1000);
-            //    clearInterval(websocket_connect)
         },
         on_websocket_error(message) {
             this.state = 'error'
@@ -138,8 +133,4 @@ const PerformanceLogsApp = {
     }
 }
 
-// Vue.createApp({
-//     components: LogsApp
-// }).mount('#logs')
-//vueApp.component('performancelogsapp', PerformanceLogsApp)
 register_component('performancelogsapp', PerformanceLogsApp)

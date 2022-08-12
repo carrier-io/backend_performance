@@ -7,7 +7,7 @@ from flask import request
 
 from tools import api_tools
 from ...models.api_tests import PerformanceApiTest
-from ...models.pd.performance_test import PerformanceTestParam
+from ...models.pd.test_parameters import PerformanceTestParam
 from ...utils.utils import run_test, parse_test_data, compile_tests
 
 

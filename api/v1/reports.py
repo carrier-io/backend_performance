@@ -10,7 +10,7 @@ import requests
 from pylon.core.tools import log
 from flask import current_app, request, make_response
 
-from ...models.pd.performance_test import PerformanceTestParamsRun
+from ...models.pd.test_parameters import PerformanceTestParamsRun
 from ....projects.models.statistics import Statistic
 from ...models.api_baseline import APIBaseline
 from ...models.api_reports import APIReport

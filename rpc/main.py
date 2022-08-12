@@ -6,8 +6,8 @@ from pylon.core.tools import web, log
 from pydantic import ValidationError
 
 from ..models.api_tests import PerformanceApiTest
-from ..models.pd.performance_test import TestCommon, PerformanceTestParams, TestOverrideable, \
-    PerformanceTestParamsCreate, PerformanceTestParamsRun
+from ..models.pd.performance_test import TestCommon, TestOverrideable
+from ..models.pd.test_parameters import PerformanceTestParams, PerformanceTestParamsCreate, PerformanceTestParamsRun
 from ..models.pd.quality_gate import QualityGate
 from ..utils.utils import run_test
 

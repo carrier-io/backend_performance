@@ -24,6 +24,7 @@ from .init_db import init_db
 
 from tools import theme, shared
 
+
 class Module(module.ModuleModel):
     """ Task module """
 

@@ -13,7 +13,7 @@ from ..utils.utils import run_test
 
 
 class RPC:
-    @web.rpc('backend_results_or_404')
+    @web.rpc('backend_results_or_404', 'results_or_404')
     @rpc_tools.wrap_exceptions(RuntimeError)
     def backend_results_or_404(self, run_id):
         return APIReport.query.get_or_404(run_id)
@@ -36,7 +36,7 @@ class RPC:
 
     @web.rpc('backend_performance_test_create_test_parameters', 'parse_test_parameters')
     @rpc_tools.wrap_exceptions(ValidationError)
-    def parse_test_parameters(self, data: Union[list, str], **kwargs) -> dict:
+    def parse_test_parameters(self, data: Union[list, dict], **kwargs) -> dict:
         purpose = kwargs.pop('purpose', None)
         if purpose == 'run':
             pd_object = PerformanceTestParamsRun(test_parameters=data)

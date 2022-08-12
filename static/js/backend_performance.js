@@ -124,7 +124,7 @@ var report_formatters = {
         }
     },
     createLinkToTest(value, row, index) {
-        return `<a class="test form-control-label" href="./results?result_id=${row.id}" role="button">${row.name}</a>`
+        return `<a class="test form-control-label font-h5" href="./results?result_id=${row.id}" role="button">${row.name}</a>`
     }
 }
 

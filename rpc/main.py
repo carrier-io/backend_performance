@@ -73,7 +73,7 @@ class RPC:
         pd_object = QualityGate(**data)
         return pd_object.dict(**pd_kwargs)
 
-    @web.rpc('execution_json_config_quality_gate')
+    @web.rpc('backend_performance_execution_json_config_quality_gate')
     @rpc_tools.wrap_exceptions(RuntimeError)
     def make_execution_json_config(self, integration_id: int) -> dict:
         """ Prepare execution_json for this integration """

@@ -166,7 +166,7 @@ class PerformanceApiTest(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin
             for integration_name, integration_data in integration.items():
                 try:
                     extended_data = self.rpc.call_function_with_timeout(
-                        func=f'execution_json_config_{integration_name}',
+                        func=f'backend_performance_execution_json_config_{integration_name}',
                         timeout=3,
                         integration_id=integration_data.get('id'),
                     )

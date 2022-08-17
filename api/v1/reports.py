@@ -11,7 +11,7 @@ from pylon.core.tools import log
 from flask import current_app, request, make_response
 
 from ...models.pd.test_parameters import PerformanceTestParamsRun
-from ....projects.models.statistics import Statistic
+# from ....projects.models.statistics import Statistic
 from ...models.api_baseline import APIBaseline
 from ...models.api_reports import APIReport
 from ...models.api_tests import PerformanceApiTest
@@ -105,9 +105,10 @@ class API(Resource):
         if test_config:
             report.test_config = test_config
         report.insert()
-        statistic = Statistic.query.filter_by(project_id=project_id).first()
-        setattr(statistic, 'performance_test_runs', Statistic.performance_test_runs + 1)
-        statistic.commit()
+        # statistic = Statistic.query.filter_by(project_id=project_id).first()
+        # setattr(statistic, 'performance_test_runs', Statistic.performance_test_runs + 1)
+        # statistic.commit()
+        self.module.context.rpc_manager.call.increment_statistics(project_id, 'performance_test_runs')
         return report.to_json()
 
     def put(self, project_id: int):

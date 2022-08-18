@@ -677,7 +677,7 @@ const TestCreateModal = {
                 }, {})
 
             } catch (e) {
-                alertCreateTest.add(e, 'danger-overlay')
+                alertCreateTest.add(e, 'danger-overlay', true, 5000)
             }
         },
         initial_state() {
@@ -996,7 +996,7 @@ const TestRunModal = {
                 }, {})
 
             } catch (e) {
-                alertCreateTest.add(e, 'danger-overlay')
+                alertCreateTest.add(e, 'danger-overlay', true, 5000)
             }
         },
     },

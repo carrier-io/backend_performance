@@ -66,7 +66,7 @@
 <script src="{{ url_for('backend_performance.static', filename='js/quality_gate.js') }}"></script>
 <script>
     $(document).on('vue_init', () => {
-        const nav_links = $('#source_card_config a.nav-link')
+        const nav_links = $('#source_card_config a')
         nav_links.removeClass('disabled')
         SourceCard.Manager('source_card_config').set({{ source_data | default({}) | tojson }})
         nav_links.addClass('disabled')

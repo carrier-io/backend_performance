@@ -11,6 +11,7 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
+
 import json
 from collections import defaultdict
 from queue import Empty
@@ -23,8 +24,7 @@ from tools import db_tools, db, rpc_tools, secrets_tools
 from tools import constants as c
 from .pd.execution_json import ExecutionParams, CcEnvVars
 from ..constants import JOB_CONTAINER_MAPPING
-from ..utils.utils import parse_source
-from .pd.performance_test import PerformanceTestParams
+from .pd.test_parameters import PerformanceTestParams
 
 
 class PerformanceApiTest(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin):
@@ -166,7 +166,7 @@ class PerformanceApiTest(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin
             for integration_name, integration_data in integration.items():
                 try:
                     extended_data = self.rpc.call_function_with_timeout(
-                        func=f'execution_json_config_{integration_name}',
+                        func=f'backend_performance_execution_json_config_{integration_name}',
                         timeout=3,
                         integration_id=integration_data.get('id'),
                     )
@@ -197,7 +197,7 @@ class PerformanceApiTest(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin
             "job_type": self.job_type,
             "concurrency": self.parallel_runners,
             "channel": self.location,
-            **parse_source(self.source).execution_json,
+            **self.rpc.call.parse_source(self.source).execution_json,
             'integrations': self.integrations
         }
 

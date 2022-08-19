@@ -5,7 +5,7 @@ from flask import request
 from flask_restful import Resource
 
 from ...models.api_tests import PerformanceApiTest
-from ...models.pd.performance_test import PerformanceTestParam, PerformanceTestParams
+from ...models.pd.test_parameters import PerformanceTestParam, PerformanceTestParams
 from ...utils.utils import run_test, parse_test_data
 
 

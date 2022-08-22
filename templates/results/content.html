@@ -102,9 +102,12 @@
                                 <td class="text-gray-500">TEST TYPE</td>
                                 <td>{{ test_data["type"] }}</td>
                                 <td class="text-gray-500">RESPONSE CODES</td>
-                                <td>1xx: {{ test_data["onexx"] }} 2xx: {{ test_data["twoxx"] }} 3xx:
-                                    {{ test_data["threexx"] }} 4xx: {{ test_data["fourxx"] }} 5xx:
-                                    {{ test_data["fivexx"] }}
+                                <td>
+                                    1xx: <span class="compact-format">{{ test_data["onexx"] }}</span>
+                                    2xx: <span class="compact-format">{{ test_data["twoxx"] }}</span>
+                                    3xx: <span class="compact-format">{{ test_data["threexx"] }}</span>
+                                    4xx: <span class="compact-format">{{ test_data["fourxx"] }}</span>
+                                    5xx: <span class="compact-format">{{ test_data["fivexx"] }}</span>
                                 </td>
                             </tr>
                             <tr>

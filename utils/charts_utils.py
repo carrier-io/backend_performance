@@ -8,12 +8,12 @@ from ..connectors.loki import get_results
 from .report_utils import calculate_proper_timeframe, chart_data, create_dataset, comparison_data, _create_dataset
 from pylon.core.tools import log
 
-from tools import contsants as c
+from tools import constants as c
 
 
-def _timeframe(args, time_as_ts=False):
+def _timeframe(args: dict, time_as_ts: bool = False):
     log.info(f"args {args}")
-    end_time = args['end_time']
+    end_time = args.get('end_time')
     high_value = args.get('high_value', 100)
     if not end_time:
         end_time = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%fZ")

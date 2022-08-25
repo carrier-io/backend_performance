@@ -128,7 +128,6 @@ def get_backend_requests(build_id, test_name, lg_type, start_time, end_time, agg
             f"from {lg_type}_{project_id}..{test_name}_{aggregation} " \
             f"where time>='{start_time}' and time<='{end_time}' {status_addon} and sampler_type='{sampler}' and " \
             f"build_id='{build_id}' {scope_addon} group by {group_by}time({aggregation})"
-    log.info('INFLUX query: %s', query)
     res = influx_tools.get_client(project_id).query(query)[f"{test_name}_{aggregation}"]
     results = {}
     if group_by:

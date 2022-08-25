@@ -15,9 +15,9 @@
 from datetime import datetime, timezone
 
 from tools import influx_tools
-from ...shared.tools.constants import str_to_timestamp, MAX_DOTS_ON_CHART
+from tools import constants as c
 from ..models.api_reports import APIReport
-from pylon.core.tools import web, log
+from pylon.core.tools import log
 
 
 def get_project_id(build_id):
@@ -80,7 +80,7 @@ def get_test_details(project_id, build_id, test_name, lg_type):
     client = influx_tools.get_client(project_id)
     test["start_time"] = list(client.query(q_start_time)["users"])[0]["time"]
     test["end_time"] = list(client.query(q_end_time)["users"])[0]["time"]
-    test["duration"] = round(str_to_timestamp(test["end_time"]) - str_to_timestamp(test["start_time"]), 1)
+    test["duration"] = round(c.str_to_timestamp(test["end_time"]) - c.str_to_timestamp(test["start_time"]), 1)
     test["vusers"] = list(client.query(q_total_users)["api_comparison"])[0]["value"]
     test["environment"] = list(client.query(q_env)["api_comparison"])[0]["value"]
     test["type"] = list(client.query(q_type)["api_comparison"])[0]["value"]
@@ -124,7 +124,8 @@ def get_backend_requests(build_id, test_name, lg_type, start_time, end_time, agg
 
     if not (timestamps and users):
         timestamps, users = get_backend_users(build_id, lg_type, start_time, end_time, aggregation)
-    query = f"select time, {group_by}percentile(\"{aggr}\", 95) as rt from {lg_type}_{project_id}..{test_name}_{aggregation} " \
+    query = f"select time, {group_by}percentile(\"{aggr}\", 95) as rt " \
+            f"from {lg_type}_{project_id}..{test_name}_{aggregation} " \
             f"where time>='{start_time}' and time<='{end_time}' {status_addon} and sampler_type='{sampler}' and " \
             f"build_id='{build_id}' {scope_addon} group by {group_by}time({aggregation})"
     res = influx_tools.get_client(project_id).query(query)[f"{test_name}_{aggregation}"]
@@ -539,7 +540,7 @@ def calculate_auto_aggregation(build_id, test_name, lg_type, start_time, end_tim
                 f"where time>='{start_time}' and time<='{end_time}' and build_id='{build_id}' group by time({aggr}))"
         result = list(client.query(query)[f"{test_name}_{aggr}"])
         if result:
-            if int(result[0]["sum"]) > MAX_DOTS_ON_CHART and aggregation != "10m":
+            if int(result[0]["sum"]) > c.MAX_DOTS_ON_CHART and aggregation != "10m":
                 aggregation = aggr_list[i + 1]
             if int(result[0]["sum"]) == 0 and aggregation != "1s":
                 aggregation = "30s"

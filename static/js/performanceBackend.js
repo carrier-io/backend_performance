@@ -972,6 +972,16 @@ function updateChartAndErrorsTable(interval_id) {
     });
 }
 
+function handleAnalytic(e) {
+    let isDisabled = false;
+    e.target.classList.forEach(item => {
+        if(item === 'disabled') {
+            isDisabled = true
+        }
+    })
+    if(!isDisabled) displayAnalytics()
+}
+
 function clearAnalyticChart() {
     analyticsLine.data.datasets = [];
     analyticsLine.update();

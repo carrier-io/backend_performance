@@ -4,7 +4,6 @@
 <meta property="test_name" content="{{ test_data['name'] }}"/>
 <meta property="environment" content="{{ test_data['environment'] }}"/>
 
-<!--<div class="container" id="test_results">-->
 <div class="card card-12 pb-4">
     <div class="card-header">
         <div class="row">
@@ -92,29 +91,50 @@
         <div class="row" id="processing-table">
             <div class="col">
                 <div class="card card-sm-table">
-                    <div class="card-body">
+                    <div class="card-body d-flex justify-content-between">
+                        <table class="table-card-result">
+                            <tr>
+                                <td class="text-gray-500 font-h6 font-semibold">Status</td>
+                                <td class="font-h5">{{ test_data['test_status']['status'] }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-gray-500 font-h6 font-semibold">DURATION</td>
+                                <td class="font-h5">{{ test_data["duration"] }}</td>
+                            </tr>
+                        </table>
                         <table>
                             <tr>
-                                <td class="text-gray-500">Status</td>
-                                <td>{{ test_data['test_status']['status'] }}</td>
-                                <td class="text-gray-500">STARTED</td>
-                                <td id="start_time">{{ test_data["start_time"] }}</td>
-                                <td class="text-gray-500">TEST TYPE</td>
-                                <td>{{ test_data["type"] }}</td>
-                                <td class="text-gray-500">RESPONSE CODES</td>
-                                <td>1xx: {{ test_data["onexx"] }} 2xx: {{ test_data["twoxx"] }} 3xx:
-                                    {{ test_data["threexx"] }} 4xx: {{ test_data["fourxx"] }} 5xx:
-                                    {{ test_data["fivexx"] }}
+                                <td class="text-gray-500 font-h6 font-semibold">STARTED</td>
+                                <td class="font-h5" id="start_time">{{ test_data["start_time"] }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-gray-500 font-h6 font-semibold">ENDED</td>
+                                <td class="font-h5" id="end_time">{{ test_data["end_time"] }}</td>
+                            </tr>
+                        </table>
+                        <table>
+                            <tr>
+                                <td class="text-gray-500 font-h6 font-semibold">TEST TYPE</td>
+                                <td class="font-h5">{{ test_data["type"] }}</td>
+                            </tr>
+                            <tr>
+                                <td class="text-gray-500 font-h6 font-semibold">Environment</td>
+                                <td class="font-h5">{{ test_data["environment"] }}</td>
+                            </tr>
+                        </table>
+                        <table>
+                            <tr>
+                                <td class="text-gray-500 font-h6 font-semibold">RESPONSE CODES</td>
+                                <td>
+                                    1xx: <span class="compact-format">{{ test_data["onexx"] }}</span>
+                                    2xx: <span class="compact-format">{{ test_data["twoxx"] }}</span>
+                                    3xx: <span class="compact-format">{{ test_data["threexx"] }}</span>
+                                    4xx: <span class="compact-format">{{ test_data["fourxx"] }}</span>
+                                    5xx: <span class="compact-format">{{ test_data["fivexx"] }}</span>
                                 </td>
                             </tr>
                             <tr>
-                                <td class="text-gray-500">DURATION</td>
-                                <td>{{ test_data["duration"] }}</td>
-                                <td class="text-gray-500">ENDED</td>
-                                <td id="end_time">{{ test_data["end_time"] }}</td>
-                                <td class="text-gray-500">Environment</td>
-                                <td>{{ test_data["environment"] }}</td>
-                                <td class="text-gray-500">tags</td>
+                                <td class="text-gray-500 font-h6 font-semibold">tags</td>
                                 <td>
                                     {% for tag in test_data["tags"] %}
                                     <span class="badge badge-primary">{{ tag }}</span>
@@ -138,7 +158,7 @@
     </div>
 </div>
 
-<div class="card card-12 p-28 mt-3">
+<div class="card card-12 p-28 mt-3" id="chart-observer">
     <div class="d-flex justify-content-between pb-4">
         <h1 class="font-h2">Requests summary</h1>
         <div class="d-flex align-items-center">
@@ -220,7 +240,11 @@
     <div class="position-relative">
         <div id="preset">
             <div class="d-flex mt-3">
-                <div class="chart flex-grow-1">
+                <div class="chart flex-grow-1" style="position: relative">
+                    <div id="chart-loader"
+                        class="layout-spinner">
+                        <i class="spinner-loader__32x32 spinner-centered"></i>
+                    </div>
                     <canvas id="chart-requests"
                         style="display: block; height: 450px; width: 100%;"></canvas>
                 </div>
@@ -357,8 +381,6 @@
 
 {% endif %}
 
-
-<!--</div>-->
 {% with test_config = test_data['test_config'] %}
     {% include 'backend_performance:results/config_modal.html' %}
 {% endwith %}

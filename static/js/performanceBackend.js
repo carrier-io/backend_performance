@@ -135,27 +135,9 @@ function backendLgFormatter(value, row, index) {
     }
 }
 
-function thresholdsActionFormatter(value, row, index) {
-    var id = row['id'];
-    return `
-    <div class="d-flex justify-content-end">
-        <button type="button" class="btn btn-24 btn-action" onclick="showEditThreshold('${id}')"><i class="fas fa-cog"></i></button>
-        <button type="button" class="btn btn-24 btn-action" onclick="deleteThreshold('` + id + `')"><i class="fas fa-trash-alt"></i></button>
-    </div>
-    `
-}
 
-function ruleFormatter(value, row, index) {
-    let comparisonMap = new Map([
-        ["gte", ">="],
-        ["lte", "<="],
-        ["lt", "<"],
-        ["gt", ">"],
-        ["eq", "=="]
-    ]);
-    comparison = comparisonMap.get(row.comparison)
-    return row.aggregation + "(" + row.target + ") " + comparison
-}
+
+
 
 function createLinkToTest(value, row, index) {
     //    const searchParams = new URLSearchParams(location.search);
@@ -167,16 +149,16 @@ function createLinkToTest(value, row, index) {
     return `<a class="test form-control-label" href="./results?result_id=${row.id}" role="button">${row.name}</a>`
 }
 
-function backendTestActionFormatter(value, row, index) {
-    return `
-    <div class="d-flex justify-content-end">
-        <button type="button" class="btn btn-24 btn-action" onclick="runTestModal('${row.id}')" data-toggle="tooltip" data-placement="top" title="Run Test"><i class="fas fa-play"></i></button>
-        <button type="button" class="btn btn-24 btn-action" onclick="editTest('${row.id}')"><i class="fas fa-cog"></i></button>
-        <button type="button" class="btn btn-24 btn-action"><i class="fas fa-share-alt"></i></button>
-        <button type="button" class="btn btn-24 btn-action" onclick="deleteTests('${row.id}')"><i class="fas fa-trash-alt"></i></button>
-    </div>
-    `
-}
+// function backendTestActionFormatter(value, row, index) {
+//     return `
+//     <div class="d-flex justify-content-end">
+//         <button type="button" class="btn btn-24 btn-action" onclick="runTestModal('${row.id}')" data-toggle="tooltip" data-placement="top" title="Run Test"><i class="fas fa-play"></i></button>
+//         <button type="button" class="btn btn-24 btn-action" onclick="editTest('${row.id}')"><i class="fas fa-cog"></i></button>
+//         <button type="button" class="btn btn-24 btn-action"><i class="fas fa-share-alt"></i></button>
+//         <button type="button" class="btn btn-24 btn-action" onclick="deleteTests('${row.id}')"><i class="fas fa-trash-alt"></i></button>
+//     </div>
+//     `
+// }
 
 function reportsStatusFormatter(value, row, index) {
     switch (value.toLowerCase()) {
@@ -217,24 +199,24 @@ $("#tests-list").on("post-body.bs.table", function(data) {
     $('[data-toggle="tooltip"]').tooltip()
 })
 
-function cellStyle(value, row, index) {
-    return {
-        css: {
-            "min-width": "165px"
-        }
-    }
-}
+// function cellStyle(value, row, index) {
+//     return {
+//         css: {
+//             "min-width": "165px"
+//         }
+//     }
+// }
 
-function nameStyle(value, row, index) {
-    return {
-        css: {
-            "max-width": "140px",
-            "overflow": "hidden",
-            "text-overflow": "ellipsis",
-            "white-space": "nowrap"
-        }
-    }
-}
+// function nameStyle(value, row, index) {
+//     return {
+//         css: {
+//             "max-width": "140px",
+//             "overflow": "hidden",
+//             "text-overflow": "ellipsis",
+//             "white-space": "nowrap"
+//         }
+//     }
+// }
 
 function runTestModal(test_id) {
     $("#runTestModal").modal('show');
@@ -489,6 +471,7 @@ function fillSummaryTable() {
 }
 
 function loadRequestData(url, y_label) {
+    $('#chart-loader').show();
     if (!$("#preset").is(":visible")) {
         $("#preset").show();
         $("#analytics").hide();
@@ -519,6 +502,7 @@ function loadRequestData(url, y_label) {
                 window.presetLine.destroy();
             }
             drawCanvas(y_label, lineChartData);
+            $('#chart-loader').hide();
             document.getElementById('chartjs-custom-legend').innerHTML = window.presetLine.generateLegend();
         }
     );
@@ -857,10 +841,10 @@ function detailFormatter(index, row) {
     return html.join('')
 }
 
-function showConfig() {
-    //TODO
-    console.log("show test config")
-}
+// function showConfig() {
+//     //TODO
+//     console.log("show test config")
+// }
 
 function rerunTest() {
     //TODO
@@ -988,12 +972,6 @@ function updateChartAndErrorsTable(interval_id) {
     });
 }
 
-function clearAnalyticChart() {
-    analyticsLine.data.datasets = [];
-    analyticsLine.update();
-    document.getElementById('chartjs-custom-legend-analytic').innerHTML = '';
-}
-
 function handleAnalytic(e) {
     let isDisabled = false;
     e.target.classList.forEach(item => {
@@ -1002,4 +980,10 @@ function handleAnalytic(e) {
         }
     })
     if(!isDisabled) displayAnalytics()
+}
+
+function clearAnalyticChart() {
+    analyticsLine.data.datasets = [];
+    analyticsLine.update();
+    document.getElementById('chartjs-custom-legend-analytic').innerHTML = '';
 }

@@ -1,7 +1,7 @@
 from pydantic import BaseModel, validator, AnyUrl, parse_obj_as, root_validator, constr
 from typing import Optional
 
-from .performance_test import PerformanceTestParams
+from .test_parameters import PerformanceTestParams
 
 
 class ExecutionParams(PerformanceTestParams):
@@ -40,8 +40,6 @@ class ExecutionParams(PerformanceTestParams):
 
     @validator('cmd', always=True)
     def validate_cmd(cls, value: str, values: dict):
-        from pylon.core.tools import log
-        log.warning(values.keys())
         if values['job_type'] == 'perfmeter':
             value = f"-n -t {values['entrypoint']}"
             for i in values['test_parameters']:

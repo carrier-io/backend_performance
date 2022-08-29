@@ -44,8 +44,8 @@ class Slot:  # pylint: disable=E1101,R0903
         result_id = payload.request.args.get('result_id')
         source_data = {}
         if result_id:
-            source_data = APIReport.query.get_or_404(result_id).to_json()['test_config'].get('source')
             test_data = APIReport.query.get_or_404(result_id).to_json()
+            source_data = test_data['test_config'].get('source')
             analytics_control = render_analytics_control(test_data["requests"])
 
         with context.app.app_context():

@@ -206,16 +206,4 @@ def parse_test_data(project_id: int, request_data: dict,
     return test_data, errors
 
 
-def parse_source(value: dict):
-    from ..models.pd.sources import SourceGitHTTPS, SourceGitSSH, SourceArtifact, SourceLocal
-    _validation_map = {
-        'git_ssh': SourceGitSSH,
-        'git_https': SourceGitHTTPS,
-        'artifact': SourceArtifact,
-        'local': SourceLocal
-    }
-    try:
-        model = _validation_map[value['name']]
-    except KeyError:
-        raise ValueError(f'Unsupported source: {value.get("name")}')
-    return parse_obj_as(model, value)
+

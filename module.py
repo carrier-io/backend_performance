@@ -24,6 +24,7 @@ from .init_db import init_db
 
 from tools import theme, shared
 
+
 class Module(module.ModuleModel):
     """ Task module """
 
@@ -42,12 +43,16 @@ class Module(module.ModuleModel):
 
         self.descriptor.init_blueprint()
 
-        theme.register_section(
-            "performance",
-            "Performance",
-            kind="holder",
-            location="left",
-        )
+        try:
+            theme.register_section(
+                "performance",
+                "Performance",
+                kind="holder",
+                location="left",
+            )
+        except:
+            ...
+
         theme.register_subsection(
             "performance", "backend",
             "Backend",

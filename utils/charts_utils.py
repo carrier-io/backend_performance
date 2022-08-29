@@ -6,13 +6,14 @@ from ..connectors.influx import (get_backend_requests, get_hits_tps, average_res
                                  get_errors_for_analytics, get_backend_requests_for_analytics)
 from ..connectors.loki import get_results
 from .report_utils import calculate_proper_timeframe, chart_data, create_dataset, comparison_data, _create_dataset
-from ...shared.tools.constants import str_to_timestamp
-from pylon.core.tools import web, log
+from pylon.core.tools import log
+
+from tools import constants as c
 
 
-def _timeframe(args, time_as_ts=False):
+def _timeframe(args: dict, time_as_ts: bool = False):
     log.info(f"args {args}")
-    end_time = args['end_time']
+    end_time = args.get('end_time')
     high_value = args.get('high_value', 100)
     if not end_time:
         end_time = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
@@ -40,7 +41,7 @@ def get_tests_metadata(tests):
     labels = []
 
     for each in tests_meta:
-        ts = datetime.fromtimestamp(str_to_timestamp(each.start_time),
+        ts = datetime.fromtimestamp(c.str_to_timestamp(each.start_time),
                                     tz=timezone.utc).strftime("%m-%d %H:%M:%S")
         labels.append(ts)
         users_data[ts] = each.vusers

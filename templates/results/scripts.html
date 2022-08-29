@@ -32,6 +32,29 @@
             }
         }
 
+        function createObserver() {
+            const options = {
+                root: null,
+                rootMargin: '0px',
+                threshold: 0
+            }
+            let callback = (entries, observer) => {
+                entries.forEach((entry) => {
+                    if (entry.intersectionRatio === 0) {
+                        $(entry.target).css("height", $(entry.target).height())
+                        $(entry.target).children().css("display", "none")
+                    } else {
+                        $(entry.target).css("height", "")
+                        $(entry.target).children().css("display", "block")
+                    }
+                })
+            }
+            return new IntersectionObserver(callback, options);
+        }
+        const observer = createObserver();
+
+        const targetChart = document.querySelector('#chart-observer');
+        observer.observe(targetChart);
 
         getTestStatus()
         setParams();
@@ -66,7 +89,7 @@
 <script src="{{ url_for('backend_performance.static', filename='js/quality_gate.js') }}"></script>
 <script>
     $(document).on('vue_init', () => {
-        const nav_links = $('#source_card_config a.nav-link')
+        const nav_links = $('#source_card_config a')
         nav_links.removeClass('disabled')
         SourceCard.Manager('source_card_config').set({{ source_data | default({}) | tojson }})
         nav_links.addClass('disabled')

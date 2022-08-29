@@ -471,6 +471,7 @@ function fillSummaryTable() {
 }
 
 function loadRequestData(url, y_label) {
+    $('#chart-loader').show();
     if (!$("#preset").is(":visible")) {
         $("#preset").show();
         $("#analytics").hide();
@@ -501,6 +502,7 @@ function loadRequestData(url, y_label) {
                 window.presetLine.destroy();
             }
             drawCanvas(y_label, lineChartData);
+            $('#chart-loader').hide();
             document.getElementById('chartjs-custom-legend').innerHTML = window.presetLine.generateLegend();
         }
     );
@@ -970,12 +972,6 @@ function updateChartAndErrorsTable(interval_id) {
     });
 }
 
-function clearAnalyticChart() {
-    analyticsLine.data.datasets = [];
-    analyticsLine.update();
-    document.getElementById('chartjs-custom-legend-analytic').innerHTML = '';
-}
-
 function handleAnalytic(e) {
     let isDisabled = false;
     e.target.classList.forEach(item => {
@@ -984,4 +980,10 @@ function handleAnalytic(e) {
         }
     })
     if(!isDisabled) displayAnalytics()
+}
+
+function clearAnalyticChart() {
+    analyticsLine.data.datasets = [];
+    analyticsLine.update();
+    document.getElementById('chartjs-custom-legend-analytic').innerHTML = '';
 }

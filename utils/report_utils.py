@@ -1,27 +1,8 @@
-import random
-from datetime import datetime, timezone
-from ...shared.tools.constants import str_to_timestamp
+from datetime import datetime
 from ..connectors.influx import calculate_auto_aggregation
 
-
-def colors(n):
-    try:
-        ret = []
-        r = int(random.random() * 256)
-        g = int(random.random() * 256)
-        b = int(random.random() * 256)
-        step = 256 / n
-        for i in range(n):
-            r += step
-            g += step
-            b += step
-            r = int(r) % 256
-            g = int(g) % 256
-            b = int(b) % 256
-            ret.append((r, g, b))
-        return ret
-    except ZeroDivisionError:
-        return [(0, 0, 0)]
+from tools import constants as c
+from tools import data_tools
 
 
 def create_dataset(timeline, data, scope, metric, axe):
@@ -29,8 +10,8 @@ def create_dataset(timeline, data, scope, metric, axe):
     for _ in timeline:
         labels.append(datetime.strptime(_, "%Y-%m-%dT%H:%M:%SZ").strftime("%m-%d %H:%M:%S"))
     datasets = []
-    for each in scope:
-        r, g, b = colors(1)[0]
+    colors = data_tools.charts.color_gen(len(scope))
+    for each, color in zip(scope, colors):
         datasets.append({
                 "label": f"{each}_{metric}",
                 "fill": False,
@@ -39,8 +20,8 @@ def create_dataset(timeline, data, scope, metric, axe):
                 "borderWidth": 2,
                 "lineTension": 0,
                 "spanGaps": True,
-                "backgroundColor": f"rgb({r}, {g}, {b})",
-                "borderColor": f"rgb({r}, {g}, {b})"
+                "backgroundColor": "rgb({}, {}, {})".format(*color),
+                "borderColor": "rgb({}, {}, {})".format(*color)
             })
     return {
         "labels": labels,
@@ -53,8 +34,8 @@ def _create_dataset(timeline, data, scope, metric, axe):
     for _ in timeline:
         labels.append(datetime.strptime(_, "%Y-%m-%dT%H:%M:%SZ").strftime("%m-%d %H:%M:%S"))
     datasets = []
-    for each in data:
-        r, g, b = colors(1)[0]
+    colors = data_tools.charts.color_gen(len(data))
+    for each, color in zip(data, colors):
         key = list(each.keys())[0]
         datasets.append({
                 "label": f"{key}_{metric}",
@@ -64,8 +45,8 @@ def _create_dataset(timeline, data, scope, metric, axe):
                 "borderWidth": 2,
                 "lineTension": 0,
                 "spanGaps": True,
-                "backgroundColor": f"rgb({r}, {g}, {b})",
-                "borderColor": f"rgb({r}, {g}, {b})"
+                "backgroundColor": "rgb({}, {}, {})".format(*color),
+                "borderColor": "rgb({}, {}, {})".format(*color)
             })
     return {
         "labels": labels,
@@ -79,12 +60,10 @@ def comparison_data(timeline, data):
         labels.append(datetime.strptime(_, "%Y-%m-%dT%H:%M:%SZ").strftime("%m-%d %H:%M:%S"))
     chart_data = {
         "labels": labels,
-        "datasets": [
-        ]
+        "datasets": []
     }
-    col = colors(len(data.keys()))
-    for record in data:
-        color = col.pop()
+    colors = data_tools.charts.color_gen(len(data))
+    for record, color in zip(data, colors):
         dataset = {
             "label": record,
             "fill": False,
@@ -93,8 +72,8 @@ def comparison_data(timeline, data):
             "borderWidth": 2,
             "lineTension": 0,
             "spanGaps": True,
-            "backgroundColor": f"rgb({color[0]}, {color[1]}, {color[2]})",
-            "borderColor": f"rgb({color[0]}, {color[1]}, {color[2]})"
+            "backgroundColor": "rgb({}, {}, {})".format(*color),
+            "borderColor": "rgb({}, {}, {})".format(*color)
         }
         chart_data["datasets"].append(dataset)
     return chart_data
@@ -117,19 +96,18 @@ def chart_data(timeline, users, other, yAxis="response_time"):
                                   "yAxisID": "active_users", "pointRadius": 0,
                                   "borderColor": "rgb(94,114,228)",
                                   "borderWidth": 2, "lineTension": 0.1, "spanGaps": True})
-    colors_array = colors(len(other.keys()))
-    for each in other:
-        color = colors_array.pop()
+    colors = data_tools.charts.color_gen(len(other.keys()))
+    for each, color in zip(other, colors):
         dataset = {
             "label": each,
             "fill": False,
-            "backgroundColor": f"rgb({color[0]}, {color[1]}, {color[2]})",
             "yAxisID": yAxis,
             "borderWidth": 1,
             "lineTension": 0.2,
             "pointRadius": 1,
             "spanGaps": True,
-            "borderColor": f"rgb({color[0]}, {color[1]}, {color[2]})",
+            "backgroundColor": "rgb({}, {}, {})".format(*color),
+            "borderColor": "rgb({}, {}, {})".format(*color),
             "data": []
         }
         for _ in timeline:
@@ -169,8 +147,8 @@ def render_analytics_control(requests):
 
 def calculate_proper_timeframe(build_id, test_name, lg_type, low_value, high_value, start_time, end_time,
                                aggregation, time_as_ts=False):
-    start_time = str_to_timestamp(start_time)
-    end_time = str_to_timestamp(end_time)
+    start_time = c.str_to_timestamp(start_time)
+    end_time = c.str_to_timestamp(end_time)
     interval = end_time - start_time
     start_shift = interval * (float(low_value) / 100.0)
     end_shift = interval * (float(high_value) / 100.0)

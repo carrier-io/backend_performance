@@ -4,27 +4,31 @@
 <meta property="test_name" content="{{ test_data['name'] }}"/>
 <meta property="environment" content="{{ test_data['environment'] }}"/>
 
+
+{% include 'backend_performance:results/engine_health.html' %}
+{% if True %}
 <div class="card card-12 pb-4">
     <div class="card-header">
         <div class="row">
             <div class="col-4">
                 <h3><a id="back-button" href="/-/performance/backend"><i
-                        class="fas fa-arrow-left"></i></a> {{test_data["name"] }} (back)</h3>
+                        class="fas fa-arrow-left"></i></a> {{ test_data["name"] }} (back)</h3>
             </div>
             <div class="col-8">
                 <div class="d-flex justify-content-end">
                     {% if test_data['test_status']['status'].lower() in ['finished', 'error', 'failed',
                     'success'] %}
-                    <button type="button" class="btn btn-secondary" onclick="reRunTest()"
-                            data-toggle="tooltip" data-placement="top" title="Rerun Test"><i class="fas fa-play"></i>
-                    </button>
-                    <button hidden type="button" class="btn btn-secondary mx-2" onclick="downloadReport()"
-                            data-toggle="tooltip" data-placement="top" title="Download report"><i
-                            class="fas fa-file-download"></i></button>
-                    <button class="btn btn-secondary mx-2" id="set_baseline" onclick="setBaseline()"
-                            data-toggle="tooltip" data-placement="top" title="Set current report as baseline">
-                        Set as baseline
-                    </button>
+                        <button type="button" class="btn btn-secondary" onclick="reRunTest()"
+                                data-toggle="tooltip" data-placement="top" title="Rerun Test"><i
+                                class="fas fa-play"></i>
+                        </button>
+                        <button hidden type="button" class="btn btn-secondary mx-2" onclick="downloadReport()"
+                                data-toggle="tooltip" data-placement="top" title="Download report"><i
+                                class="fas fa-file-download"></i></button>
+                        <button class="btn btn-secondary mx-2" id="set_baseline" onclick="setBaseline()"
+                                data-toggle="tooltip" data-placement="top" title="Set current report as baseline">
+                            Set as baseline
+                        </button>
                     {% endif %}
                     <button hidden class="btn btn-secondary mx-2" id="not_worse_than" onclick="setThresholds()"
                             data-toggle="tooltip" data-placement="top" title="Set current report as thresholds">
@@ -38,9 +42,9 @@
                     </button>
                     {% if test_data['test_status']['status'].lower() not in ['finished', 'error', 'failed',
                     'success'] %}
-                    <button class="btn btn-danger mx-2" id="stop-test" onclick="stopTest()">
-                        Stop test
-                    </button>
+                        <button class="btn btn-danger mx-2" id="stop-test" onclick="stopTest()">
+                            Stop test
+                        </button>
                     {% endif %}
                 </div>
             </div>
@@ -48,11 +52,11 @@
     </div>
     <div class="card-body" id="progressbar-body">
         {% if test_data['test_status']['status'].lower() not in ['finished', 'error', 'failed', 'success'] %}
-        <performancetestprogress
-                :test_status='{{ test_data.test_status | tojson }}'
-                :project_id="{{ test_data.project_id }}"
-                :test_id="{{ test_data.id }}"
-        ></performancetestprogress>
+            <performancetestprogress
+                    :test_status='{{ test_data.test_status | tojson }}'
+                    :project_id="{{ test_data.project_id }}"
+                    :test_id="{{ test_data.id }}"
+            ></performancetestprogress>
         {% endif %}
     </div>
     <div class="card-body" id="backend-small-cards">
@@ -137,7 +141,7 @@
                                 <td class="text-gray-500 font-h6 font-semibold">tags</td>
                                 <td>
                                     {% for tag in test_data["tags"] %}
-                                    <span class="badge badge-primary">{{ tag }}</span>
+                                        <span class="badge badge-primary">{{ tag }}</span>
                                     {% endfor %}
                                 </td>
                             </tr>
@@ -164,18 +168,18 @@
         <div class="d-flex align-items-center">
 
             {% if test_data['test_status']['status'].lower() not in ['finished', 'error', 'failed', 'success'] %}
-            <div class="complex-list">
-                <select class="selectpicker dropdown-menu__simple" data-style="btn"
-                        id="auto_update"
-                        onchange="auto_update()">
-                    <option value="60000">1 min</option>
-                    <option value="180000">3 min</option>
-                    <option value="300000">5 min</option>
-                    <option value="600000">10 min</option>
-                    <option value="1800000">30 min</option>
-                    <option value="0" selected>off</option>
-                </select>
-            </div>
+                <div class="complex-list">
+                    <select class="selectpicker dropdown-menu__simple" data-style="btn"
+                            id="auto_update"
+                            onchange="auto_update()">
+                        <option value="60000">1 min</option>
+                        <option value="180000">3 min</option>
+                        <option value="300000">5 min</option>
+                        <option value="600000">10 min</option>
+                        <option value="1800000">30 min</option>
+                        <option value="0" selected>off</option>
+                    </select>
+                </div>
             {% endif %}
             <div class="complex-list">
                 <select class="selectpicker dropdown-menu__simple" data-style="btn"
@@ -192,8 +196,8 @@
             </div>
             <div class="complex-list">
                 <select class="selectpicker dropdown-menu__simple" data-style="btn"
-                    id="status"
-                    onchange="switchStatus()">
+                        id="status"
+                        onchange="switchStatus()">
                     <option>all</option>
                     <option>ok</option>
                     <option>ko</option>
@@ -211,25 +215,26 @@
             <ul class="custom-tabs nav nav-pills mr-3" id="pills-tab" role="tablist">
                 <li class="nav-item" role="presentation">
                     <a id="RT" class="font-h5 font-uppercase active"
-                    onclick="loadRequestData('/api/v1/backend_performance/charts/requests/summary', 'Response time, ms')"
-                    data-toggle="pill">Responses</a>
+                       onclick="loadRequestData('/api/v1/backend_performance/charts/requests/summary', 'Response time, ms')"
+                       data-toggle="pill">Responses</a>
                 </li>
                 <li class="nav-item active" role="presentation">
                     <a id="AR" class="font-h5 font-uppercase"
-                   onclick="loadRequestData('/api/v1/backend_performance/charts/requests/average', 'Response time, ms')"
-                   data-toggle="pill">Average Response</a>
+                       onclick="loadRequestData('/api/v1/backend_performance/charts/requests/average', 'Response time, ms')"
+                       data-toggle="pill">Average Response</a>
                 </li>
                 <li class="nav-item" role="presentation">
                     <a id="HT" class="font-h5 font-uppercase"
-                    onclick="loadRequestData('/api/v1/backend_performance/charts/requests/hits', 'Hits/Requests per second')"
-                    data-toggle="pill">TPS</a>
+                       onclick="loadRequestData('/api/v1/backend_performance/charts/requests/hits', 'Hits/Requests per second')"
+                       data-toggle="pill">TPS</a>
                 </li>
                 <li class="nav-item" role="presentation" id="analytic-tab" disable>
                     <a id="AN" class="font-h5 font-uppercase"
-                        style="position: relative; padding-right: 20px"
-                        onclick="handleAnalytic(event)"
-                        data-toggle="pill">Analytics
-                        <i id="analytic-loader" class="spinner-loader" style="position: absolute; top: 8px; right: 0"></i>
+                       style="position: relative; padding-right: 20px"
+                       onclick="handleAnalytic(event)"
+                       data-toggle="pill">Analytics
+                        <i id="analytic-loader" class="spinner-loader"
+                           style="position: absolute; top: 8px; right: 0"></i>
                     </a>
                 </li>
             </ul>
@@ -242,11 +247,11 @@
             <div class="d-flex mt-3">
                 <div class="chart flex-grow-1" style="position: relative">
                     <div id="chart-loader"
-                        class="layout-spinner">
+                         class="layout-spinner">
                         <i class="spinner-loader__32x32 spinner-centered"></i>
                     </div>
                     <canvas id="chart-requests"
-                        style="display: block; height: 450px; width: 100%;"></canvas>
+                            style="display: block; height: 450px; width: 100%;"></canvas>
                 </div>
                 <div class="card" style="width:280px; height: 500px; margin-left: 28px">
                     <div class="d-flex flex-column p-3">
@@ -273,7 +278,7 @@
             <div class="d-flex mt-3">
                 <div class="chart flex-grow-1">
                     <canvas id="chart-analytics"
-                        style="display: block; height: 450px; width: 100%;"></canvas>
+                            style="display: block; height: 450px; width: 100%;"></canvas>
                 </div>
                 <analytic-filter
                         :analytics-data='{{ analytics_control | tojson }}'
@@ -299,38 +304,38 @@
 </div>
 
 {% if test_data['test_status']['status'].lower() in ['finished', 'error', 'failed', 'success'] %}
-<div class="card card-12 pb-4 card-table">
-    <div class="card-header">
-        <div class="row">
-            <div class="col-4">
-                <h3 class="text-gray mb-0">Summary</h3>
+    <div class="card card-12 pb-4 card-table">
+        <div class="card-header">
+            <div class="row">
+                <div class="col-4">
+                    <h3 class="text-gray mb-0">Summary</h3>
+                </div>
             </div>
         </div>
+        <div class="card-body">
+            <table class="table table-border"
+                   id="summary_table"
+                   data-toggle="table"
+                   data-page-size=10
+                   data-pagination="true"
+                   data-pagination-parts='["pageInfoShort", "pageList"]'>
+                <thead class="thead-light">
+                <tr>
+                    <th scope="col" data-sortable="true" data-field="request_name">Name</th>
+                    <th scope="col" data-sortable="true" data-field="total">Ttl req, count</th>
+                    <th scope="col" data-sortable="true" data-field="throughput">Thrghpt, req/sec</th>
+                    <th scope="col" data-sortable="true" data-field="ko">Errors, count</th>
+                    <th scope="col" data-sortable="true" data-field="min">Min, ms</th>
+                    <th scope="col" data-sortable="true" data-field="mean">Median, ms</th>
+                    <th scope="col" data-sortable="true" data-field="pct95">Pct95, ms</th>
+                    <th scope="col" data-sortable="true" data-field="max">Max, ms</th>
+                </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
     </div>
-    <div class="card-body">
-        <table class="table table-border"
-               id="summary_table"
-               data-toggle="table"
-               data-page-size=10
-               data-pagination="true"
-               data-pagination-parts='["pageInfoShort", "pageList"]'>
-            <thead class="thead-light">
-            <tr>
-                <th scope="col" data-sortable="true" data-field="request_name">Name</th>
-                <th scope="col" data-sortable="true" data-field="total">Ttl req, count</th>
-                <th scope="col" data-sortable="true" data-field="throughput">Thrghpt, req/sec</th>
-                <th scope="col" data-sortable="true" data-field="ko">Errors, count</th>
-                <th scope="col" data-sortable="true" data-field="min">Min, ms</th>
-                <th scope="col" data-sortable="true" data-field="mean">Median, ms</th>
-                <th scope="col" data-sortable="true" data-field="pct95">Pct95, ms</th>
-                <th scope="col" data-sortable="true" data-field="max">Max, ms</th>
-            </tr>
-            </thead>
-            <tbody>
-            </tbody>
-        </table>
-    </div>
-</div>
 {% endif %}
 
 <div class="card card-12 pb-4 card-table">
@@ -366,21 +371,19 @@
     </div>
 </div>
 {% if test_data['test_status']['status'].lower() in ['finished', 'error', 'failed', 'success'] %}
-{% with result_id=test_data.id %}
-{% include 'backend_performance:results/artifacts_table.html' %}
-{% endwith %}
-
+    {% with result_id=test_data.id %}
+        {% include 'backend_performance:results/artifacts_table.html' %}
+    {% endwith %}
 {% else %}
-
-<performancelogsapp
-        :project_id="{{ test_data.project_id }}"
-        :report_id="{{ test_data.id }}"
-        instance_name="perf_logs"
-        @register="register"
-></performancelogsapp>
-
+    <performancelogsapp
+            :project_id="{{ test_data.project_id }}"
+            :report_id="{{ test_data.id }}"
+            instance_name="perf_logs"
+            @register="register"
+    ></performancelogsapp>
 {% endif %}
 
 {% with test_config = test_data['test_config'] %}
     {% include 'backend_performance:results/config_modal.html' %}
 {% endwith %}
+{% endif %}

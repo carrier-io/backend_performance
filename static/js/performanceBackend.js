@@ -1,5 +1,5 @@
 // var analyticsData;
-var interval_id;
+// var interval_id;
 
 // function drawCanvas(y_label, chartData) {
 //     const presetsContext = document.getElementById("chart-requests").getContext("2d");
@@ -79,84 +79,68 @@ var interval_id;
 //     });
 // }
 
-function setParams() {
-    build_id = document.querySelector("[property~=build_id][content]").content;
-    testId = document.querySelector("[property~=test_id][content]").content;
-    lg_type = document.querySelector("[property~=lg_type][content]").content;
-    test_name = document.querySelector("[property~=test_name][content]").content;
-    environment = document.querySelector("[property~=environment][content]").content;
-    samplerType = $("#sampler").val().toUpperCase();
-    statusType = $("#status").val().toLowerCase();
-    aggregator = $("#aggregator").val().toLowerCase();
-}
+// function setParams() {
+//     build_id = document.querySelector("[property~=build_id][content]").content;
+//     testId = document.querySelector("[property~=test_id][content]").content;
+//     lg_type = document.querySelector("[property~=lg_type][content]").content;
+//     test_name = document.querySelector("[property~=test_name][content]").content;
+//     environment = document.querySelector("[property~=environment][content]").content;
+//     samplerType = $("#sampler").val().toUpperCase();
+//     statusType = $("#status").val().toLowerCase();
+//     aggregator = $("#aggregator").val().toLowerCase();
+// }
 
 
-function fillSummaryTable() {
-    $.get(
-        '/api/v1/backend_performance/charts/requests/table', {
-            build_id: build_id,
-            test_name: test_name,
-            lg_type: lg_type,
-            sampler: samplerType,
-            status: statusType,
-            start_time: $("#start_time").html(),
-            end_time: $("#end_time").html(),
-            low_value,
-            high_value,
-        },
-        function(data) {
-            data.forEach((item) => {
-                $('#summary_table').bootstrapTable('append', item)
-            })
-        });
-}
+// function fillSummaryTable() {
+//
+// }
 
-function loadRequestData(url, y_label) {
-    $('#chart-loader').show();
-    if (!$("#preset").is(":visible")) {
-        $("#preset").show();
-        $("#analytics").hide();
-        $("#chartjs-custom-legend-analytic").hide();
-        if (analyticsLine != null) {
-            analyticsLine.destroy();
-        }
-    }
-    // if ($("#end_time").html() != "") {
-    //     $("#PP").hide();
-    // }
-    $.get(
-        url, {
-            build_id: build_id,
-            test_name: test_name,
-            lg_type: lg_type,
-            sampler: samplerType,
-            aggregator: aggregator,
-            status: statusType,
-            start_time: $("#start_time").html(),
-            end_time: $("#end_time").html(),
-            low_value,
-            high_value,
-        },
-        function(data) {
-            if (window.presetLine === undefined) {
-                window.presetLine = get_responses_chart('chart-requests', y_label, data)
-            } else {
-                window.presetLine.data = data
-                window.presetLine.update()
-            }
-            // if (window.presetLine != null) {
-            //     // window.presetLine.destroy();
-            // } else {
-            //     //
-            // }
-            // drawCanvas(y_label, data);
-
-            $('#chart-loader').hide();
-            // document.getElementById('chartjs-custom-legend').innerHTML = window.presetLine.generateLegend();
-            // document.getElementById('chartjs-custom-legend').innerHTML = Chart.defaults.plugins.legend.labels.generateLabels(window.presetLine)
-        }
-    );
-}
+// function loadRequestData(url, y_label) {
+//     $('#chart-loader').show();
+//     if (!$("#preset").is(":visible")) {
+//         $("#preset").show();
+//         $("#analytics").hide();
+//         $("#chartjs-custom-legend-analytic").hide();
+//         if (analyticsLine != null) {
+//             analyticsLine.destroy();
+//         }
+//     }
+//     // if ($("#end_time").html() != "") {
+//     //     $("#PP").hide();
+//     // }
+//     $.get(
+//         url, {
+//             build_id: build_id,
+//             test_name: test_name,
+//             lg_type: lg_type,
+//             sampler: samplerType,
+//             aggregator: aggregator,
+//             status: statusType,
+//             start_time: $("#start_time").html(),
+//             end_time: $("#end_time").html(),
+//             low_value,
+//             high_value,
+//         },
+//         function(data) {
+//             if (window.presetLine === undefined) {
+//                 window.presetLine = get_responses_chart('chart-requests', y_label, data)
+//             } else {
+//                 window.presetLine.data = data
+//                 window.presetLine.update()
+//             }
+//             // if (window.presetLine != null) {
+//             //     // window.presetLine.destroy();
+//             // } else {
+//             //     //
+//             // }
+//             // drawCanvas(y_label, data);
+//
+//             $('#chart-loader').hide();
+//             // document.getElementById('chartjs-custom-legend').innerHTML = window.presetLine.generateLegend();
+//             // document.getElementById('chartjs-custom-legend').innerHTML = Chart.defaults.plugins.legend.labels.generateLabels(window.presetLine)
+//         }
+//     );
+// }
 
 function displayAnalytics() {
     console.log("displayAnalytics ***************")
@@ -181,7 +165,7 @@ function getData(scope, request_name) {
 }
 
 function findAndRemoveDataSet(dataset_name){
-    for (var i=0; i<analyticsLine.data.datasets.length; i++) {
+    for (let i=0; i<analyticsLine.data.datasets.length; i++) {
         if (analyticsLine.data.datasets[i].label === dataset_name) {
             analyticsLine.data.datasets.splice(i, 1);
             analyticsLine.update();
@@ -190,32 +174,19 @@ function findAndRemoveDataSet(dataset_name){
     }
 }
 
-function switchSampler() {
-    samplerType = $("#sampler").val().toUpperCase();
-    resizeChart();
-}
 
-function switchStatus() {
-    statusType = $("#status").val().toLowerCase();
-    resizeChart();
-}
-
-function switchAggregator() {
-    aggregator = $("#aggregator").val();
-    resizeChart();
-}
 
 function selectOrUnselectRequests() {
     if ($('#all_checkbox').is(":checked")) {
         $('.custom__checkbox').each(function(i, ch) {
-            if (ch.id != "all_checkbox") {
+            if (ch.id !== "all_checkbox") {
                 $('#' + ch.id).prop('checked', true);
             }
         });
         updateHiddenProperty(false);
     } else {
         $('.custom__checkbox').each(function(i, ch) {
-            if (ch.id != "all_checkbox") {
+            if (ch.id !== "all_checkbox") {
                 $('#' + ch.id).prop('checked', false);
             }
         });
@@ -224,13 +195,12 @@ function selectOrUnselectRequests() {
 }
 
 function updateHiddenProperty(hidden) {
-    const ci = window.presetLine;
-    for (let index = 1; index < ci.data.datasets.length; ++index) {
-        var curr = ci.data.datasets[index]._meta;
+    for (let index = 1; index < window.presetLine.data.datasets.length; ++index) {
+        var curr = window.presetLine.data.datasets[index]._meta;
         curr = Object.values(curr)[0]
         curr.hidden = hidden
     }
-    ci.update();
+    window.presetLine.update();
 }
 
 const updateChart = (e, datasetIndex) => {
@@ -328,14 +298,14 @@ function analyticsCanvas(data) {
 
 
 
-function fillErrorTable() {
-    var start_time = $("#start_time").html()
-    var end_time = $("#end_time").html()
-    test_name = document.querySelector("[property~=test_name][content]").content;
-    $('#errors').bootstrapTable('refreshOptions', {
-        url: `/api/v1/backend_performance/charts/errors/table?test_name=${test_name}&start_time=${start_time}&end_time=${end_time}&low_value=${low_value}&high_value=${high_value}`
-    })
-}
+// function fillErrorTable() {
+//     var start_time = $("#start_time").html()
+//     var end_time = $("#end_time").html()
+//     test_name = document.querySelector("[property~=test_name][content]").content;
+//     $('#errors').bootstrapTable('refreshOptions', {
+//         url: `/api/v1/backend_performance/charts/errors/table?test_name=${test_name}&start_time=${start_time}&end_time=${end_time}&low_value=${low_value}&high_value=${high_value}`
+//     })
+// }
 
 const filtersBlock = new Map();
 
@@ -394,46 +364,46 @@ $.get(
  );
 }
 
-function resizeChart() {
-    if ($("#analytics").is(":visible")) {
-        // analyticsData = null;
-        analyticsLine.destroy();
-        analyticsCanvas(null);
-        recalculateAnalytics();
-    }
-    ["RT", "AR", "HT", "AN"].forEach(item => {
-        if ($(`#${item}`).hasClass("active")) {
-            $(`#${item}`).trigger("click");
-        }
-    });
-    fillErrorTable();
-}
+// function resizeChart() {
+//     if ($("#analytics").is(":visible")) {
+//         // analyticsData = null;
+//         analyticsLine.destroy();
+//         analyticsCanvas(null);
+//         recalculateAnalytics();
+//     }
+//     ["RT", "AR", "HT", "AN"].forEach(item => {
+//         if ($(`#${item}`).hasClass("active")) {
+//             $(`#${item}`).trigger("click");
+//         }
+//     });
+//     fillErrorTable();
+// }
 
-function detailFormatter(index, row) {
-    const html = []
-    html.push('<p><b>Method:</b> ' + row['Method'] + '</p>')
-    html.push('<p><b>Request Params:</b> ' + row['Request params'] + '</p>')
-    html.push('<p><b>Headers:</b> ' + row['Headers'] + '</p>')
-    html.push('<p><b>Response body:</b></p>')
-    html.push('<textarea disabled style="width: 100%">' + row['Response body'] + '</textarea>')
-    return html.join('')
-}
+// function detailFormatter(index, row) {
+//     const html = []
+//     html.push('<p><b>Method:</b> ' + row['Method'] + '</p>')
+//     html.push('<p><b>Request Params:</b> ' + row['Request params'] + '</p>')
+//     html.push('<p><b>Headers:</b> ' + row['Headers'] + '</p>')
+//     html.push('<p><b>Response body:</b></p>')
+//     html.push('<textarea disabled style="width: 100%">' + row['Response body'] + '</textarea>')
+//     return html.join('')
+// }
 
 
-function setBaseline() {
-    const data = {
-        test_name: test_name,
-        env: environment,
-        build_id: build_id
-    };
-
-    $.ajax({
-        url: `/api/v1/backend_performance/baseline/${getSelectedProjectId()}`,
-        type: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify(data)
-    });
-}
+// function setBaseline() {
+//     const data = {
+//         test_name: test_name,
+//         env: environment,
+//         build_id: build_id
+//     };
+//
+//     $.ajax({
+//         url: `/api/v1/backend_performance/baseline/${getSelectedProjectId()}`,
+//         type: 'POST',
+//         contentType: 'application/json',
+//         data: JSON.stringify(data)
+//     });
+// }
 
 function compareWithBaseline() {
     console.log("here")
@@ -501,55 +471,55 @@ function stopTest() {
     });
 }
 
-function auto_update() {
-    var interval = parseInt($('#auto_update').val())
-    if (interval_id != null || interval == 0) {
-        clearInterval(interval_id);
-    }
-    if (interval != 0) {
-        interval_id = setInterval(function() {
-            updateChartAndErrorsTable(interval_id);
-        }, interval);
-    }
-}
+// function auto_update() {
+//     var interval = parseInt($('#auto_update').val())
+//     if (interval_id != null || interval == 0) {
+//         clearInterval(interval_id);
+//     }
+//     if (interval != 0) {
+//         interval_id = setInterval(function() {
+//             updateChartAndErrorsTable(interval_id);
+//         }, interval);
+//     }
+// }
 
-function updateChartAndErrorsTable(interval_id) {
-    if ($("#sampler").val() == null) {
-        samplerType = "Request"
-    } else {
-        samplerType = $("#sampler").val().toUpperCase();
-    }
+// function updateChartAndErrorsTable(interval_id) {
+//     if ($("#sampler").val() == null) {
+//         samplerType = "Request"
+//     } else {
+//         samplerType = $("#sampler").val().toUpperCase();
+//     }
+//
+//     statusType = $("#status").val().toLowerCase();
+//     aggregator = $("#aggregator").val().toLowerCase();
+//
+//     $.get(
+//     `/api/v1/backend_performance/report_status/${getSelectedProjectId()}/${testId}`,
+//     function(data) {
+//         var status = data["message"]
+//         if (!['finished', 'error', 'failed', 'success'].includes(status.toLowerCase())) {
+//             const sections = ['#RT', '#AR', '#HT', "#AN"];
+//             sections.forEach(element => {
+//                 if ($(element).hasClass("active")) {
+//                     $(element).trigger( "click" )
+//                 }
+//             });
+//             fillErrorTable();
+//         } else {
+//             clearInterval(interval_id);
+//         }
+//     });
+// }
 
-    statusType = $("#status").val().toLowerCase();
-    aggregator = $("#aggregator").val().toLowerCase();
-
-    $.get(
-    `/api/v1/backend_performance/report_status/${getSelectedProjectId()}/${testId}`,
-    function(data) {
-        var status = data["message"]
-        if (!['finished', 'error', 'failed', 'success'].includes(status.toLowerCase())) {
-            const sections = ['#RT', '#AR', '#HT', "#AN"];
-            sections.forEach(element => {
-                if ($(element).hasClass("active")) {
-                    $(element).trigger( "click" )
-                }
-            });
-            fillErrorTable();
-        } else {
-            clearInterval(interval_id);
-        }
-    });
-}
-
-function handleAnalytic(e) {
-    let isDisabled = false;
-    e.target.classList.forEach(item => {
-        if(item === 'disabled') {
-            isDisabled = true
-        }
-    })
-    if(!isDisabled) displayAnalytics()
-}
+// function handleAnalytic(e) {
+//     let isDisabled = false;
+//     e.target.classList.forEach(item => {
+//         if(item === 'disabled') {
+//             isDisabled = true
+//         }
+//     })
+//     if(!isDisabled) displayAnalytics()
+// }
 
 function clearAnalyticChart() {
     analyticsLine.data.datasets = [];

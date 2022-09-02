@@ -22,78 +22,25 @@
 {{ template_slot('integrations_backend_performance_scripts') | safe }}
 <script src="{{ url_for('backend_performance.static', filename='js/quality_gate.js') }}"></script>
 
-<script>
-    let low_value = 0;
-    let high_value = 100;
-    $(document).ready(function() {
-
-        async function getTestStatus() {
-            const projectId = {{ test_data.project_id }}
-            const testId = {{ test_data.id }}
-            const response = await fetch(`/api/v1/backend_performance/reports/${projectId}/?report_id=${testId}`)
-            const {test_status: { percentage }} = await response.json();
-            checkTestStatus(percentage)
-        }
-        function checkTestStatus(percentage) {
-            if(percentage === 100) {
-                $('#AN').removeClass('disabled');
-                $('#analytic-loader').hide()
-            } else {
-                $('#AN').addClass('disabled')
-                $('#analytic-loader').show()
-                setTimeout(getTestStatus, 5000)
-            }
-        }
-
-        function createObserver() {
-            const options = {
-                root: null,
-                rootMargin: '0px',
-                threshold: 0
-            }
-            let callback = (entries, observer) => {
-                entries.forEach((entry) => {
-                    if (entry.intersectionRatio === 0) {
-                        $(entry.target).css("height", $(entry.target).height())
-                        $(entry.target).children().css("display", "none")
-                    } else {
-                        $(entry.target).css("height", "")
-                        $(entry.target).children().css("display", "block")
-                    }
-                })
-            }
-            return new IntersectionObserver(callback, options);
-        }
-        const observer = createObserver();
-
-        const targetChart = document.querySelector('#chart-observer');
-        observer.observe(targetChart);
-
-        getTestStatus()
-        setParams();
-        loadRequestData('/api/v1/backend_performance/charts/requests/summary', "Response time, ms");
-        fillErrorTable();
-        fillSummaryTable();
-        const perfomanceTimePicker = noUiSlider.create($("#vuh-perfomance-time-picker")[0], {
-            range: {
-                'min': 0,
-                'max': 100
-            },
-            start: [low_value, high_value],
-            connect: true,
-            format: wNumb({
-                decimals: 0
-            }),
-        })
-        perfomanceTimePicker.on('set', function(values) {
-            low_value = values[0]
-            high_value = values[1]
-            resizeChart();
-        });
-    });
-</script>
+{#<meta property="build_id" content=""/>#}
+{#<meta property="test_id" content=""/>#}
+{#<meta property="lg_type" content=""/>#}
+{#<meta property="test_name" content=""/>#}
+{#<meta property="environment" content=""/>#}
 
 
+{#<script>#}
+{#    const test_data = {#}
+{#        build_id: '{{ test_data['build_id'] | tojson }}',#}
+{#        testId: '{{ test_data['id'] | tojson }}',#}
+{#        lg_type: '{{ test_data['lg_type'] | tojson }}',#}
+{#        test_name: '{{ test_data['name'] | tojson }}',#}
+{#        environment: '{{ test_data['environment'] | tojson }}',#}
+{#        samplerType: $("#sampler").val().toUpperCase();#}
+{#        statusType: $("#status").val().toLowerCase();#}
+{#        aggregator: $("#aggregator").val().toLowerCase();#}
+{#    }#}
+{#</script>#}
 
 <script>
     $(document).on('vue_init', () => {

@@ -290,6 +290,9 @@ const SummaryController = {
             } else {
                 // todo: handle fetch error
             }
+        },
+        handle_download(event) {
+            console.log('todo handle download')
         }
     },
     template: `<slot :master="this"></slot>`

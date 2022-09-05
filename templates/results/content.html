@@ -286,23 +286,14 @@
                                         style="display: block; height: 450px; width: 100%;"></canvas>
                             </div>
                             <div class="card" style="width:280px; height: 500px; margin-left: 28px">
-                                <div class="d-flex flex-column p-3">
-                                    <label
-                                            class="mb-0 w-100 d-flex align-items-center custom-checkbox custom-checkbox__multicolor"
-                                            for="all_checkbox">
-                                        <input
-                                                class="mx-2 custom__checkbox"
-                                                checked="true" id="all_checkbox" onclick="selectOrUnselectRequests()"
-                                                style="--cbx-color: var(--basic);"
-                                                type="checkbox">
-                                        <span class="w-100 d-inline-block">Select/Unselect all</span>
-                                    </label>
-                                </div>
-                                <hr class="my-0">
-                                <div id="chartjs-custom-legend"
-                                     class="custom-chart-legend d-flex flex-column px-3 py-3"
-                                     style="height: 400px; overflow: scroll;"
-                                ></div>
+
+
+                                    <Chart-Legend
+                                        @register="register"
+                                        instance_name="requests_chart_legend"
+                                        :chart_object_name="master.current_chart"
+                                    ></Chart-Legend>
+
                             </div>
                         </div>
                     </div>
@@ -332,11 +323,6 @@
                         </div>
                     </div>
                     <div id="chartjs-custom-legend-analytic" class="d-grid grid-column-7">
-                        <Chart-Legend
-                                @register="register"
-                                instance_name="requests_chart_legend"
-                                :chart_object_name="master.current_chart"
-                        ></Chart-Legend>
                     </div>
                 </div>
             </div>

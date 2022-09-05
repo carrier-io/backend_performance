@@ -10,10 +10,9 @@ const LegendItem = {
         <div class="d-flex mb-3">
             <label class="mb-0 w-100 d-flex align-items-center custom-checkbox custom-checkbox__multicolor">
                 <input type="checkbox" class="mx-2 custom__checkbox" 
-                    :checked="true"
-                    :id="datasetIndex"
+                    :checked="!hidden"
                     :style="{'--cbx-color': fillStyle}"
-                    @change="$emit('change', this)"
+                    @change="$emit('change', this.datasetIndex)"
                  />
                  <span class="custom-chart-legend-span"></span>
                  [[ text ]]
@@ -29,6 +28,7 @@ const ChartLegend = {
     props: ['chart_object_name'],
     data() {
         return {
+            all_selected: true,
             labels: []
         }
     },
@@ -38,15 +38,39 @@ const ChartLegend = {
     watch: {
         async chart_object_name(new_value) {
             await this.load_chart()
+        },
+        all_selected(new_value) {
+            this.labels.forEach(i => {
+                i.hidden = !new_value
+                this.handle_chart_changes(i)
+            })
+            this.chart_object.update()
         }
     },
     template: `
-        <LegendItem
-            v-for="i in labels"
-            v-bind="i"
-            :key="i.datasetIndex"
-            @change="handle_legend_item_change"
-        ></LegendItem>
+        <div class="d-flex flex-column p-3">
+            <label class="mb-0 w-100 d-flex align-items-center custom-checkbox custom-checkbox__multicolor">
+                <input class="mx-2 custom__checkbox"
+                    type="checkbox"
+                    style="--cbx-color: var(--basic);"
+                    v-model="all_selected"
+                >
+                <span class="w-100 d-inline-block">Select/Unselect all</span>
+            </label>
+        </div>
+        <hr class="my-0">
+        <div id="chartjs-custom-legend"
+            class="custom-chart-legend d-flex flex-column px-3 py-3"
+            style="height: 400px; overflow: scroll;"
+        >
+            <LegendItem
+                v-for="i in labels"
+                :key="i.datasetIndex"
+                v-bind="i"
+                @change="handle_legend_item_change"
+            ></LegendItem>
+        </div>
+        
     `,
     methods: {
         async load_chart() {
@@ -55,7 +79,14 @@ const ChartLegend = {
             this.chart_object = window[this.chart_object_name]
             this.labels = Chart.defaults.plugins.legend.labels.generateLabels(this.chart_object)
         },
-        handle_legend_item_change(item) {
+        handle_legend_item_change(item_index) {
+            const item = this.labels[item_index]
+            item.hidden = !item.hidden
+
+            this.handle_chart_changes(item)
+            this.chart_object.update()
+        },
+        handle_chart_changes(item) {
             // https://www.chartjs.org/docs/latest/samples/legend/html.html
             const {type} = this.chart_object.config
             if (type === 'pie' || type === 'doughnut') {
@@ -64,10 +95,10 @@ const ChartLegend = {
             } else {
                 this.chart_object.setDatasetVisibility(
                     item.datasetIndex,
-                    !this.chart_object.isDatasetVisible(item.datasetIndex)
+                    !item.hidden
+                    // !this.chart_object.isDatasetVisible(item.datasetIndex)
                 )
             }
-            this.chart_object.update()
         }
     },
 }

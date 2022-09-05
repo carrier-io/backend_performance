@@ -194,14 +194,14 @@ function selectOrUnselectRequests() {
     }
 }
 
-function updateHiddenProperty(hidden) {
-    for (let index = 1; index < window.presetLine.data.datasets.length; ++index) {
-        var curr = window.presetLine.data.datasets[index]._meta;
-        curr = Object.values(curr)[0]
-        curr.hidden = hidden
-    }
-    window.presetLine.update();
-}
+// function updateHiddenProperty(hidden) {
+//     for (let index = 1; index < window.presetLine.data.datasets.length; ++index) {
+//         var curr = window.presetLine.data.datasets[index]._meta;
+//         curr = Object.values(curr)[0]
+//         curr.hidden = hidden
+//     }
+//     window.presetLine.update();
+// }
 
 // const updateChart = (e, datasetIndex) => {
 //     $('#all_checkbox').prop('checked', false)
@@ -266,30 +266,30 @@ function analyticsCanvas(data) {
             title:{
                 display: false,
             },
-            scales: {
-                yAxes: [{
-                    type: "linear", // only linear but allow scale type registration. This allows extensions to exist solely for log scale for instance
-                    display: true,
-                    position: "left",
-                    scaleLabel: {
-                        display: true,
-                        labelString: "Response Time, ms"
-                    },
-                    id: "time",
-                }, {
-                    type: "linear", // only linear but allow scale type registration. This allows extensions to exist solely for log scale for instance
-                    display: true,
-                    position: "right",
-                    scaleLabel: {
-                        display: true,
-                        labelString: "Count"
-                    },
-                    id: "count",
-                    gridLines: {
-                        drawOnChartArea: false, // only want the grid lines for one axis to show up
-                    },
-                }],
-            }
+            // scales: {
+            //     yAxes: [{
+            //         type: "linear", // only linear but allow scale type registration. This allows extensions to exist solely for log scale for instance
+            //         display: true,
+            //         position: "left",
+            //         scaleLabel: {
+            //             display: true,
+            //             labelString: "Response Time, ms"
+            //         },
+            //         id: "time",
+            //     }, {
+            //         type: "linear", // only linear but allow scale type registration. This allows extensions to exist solely for log scale for instance
+            //         display: true,
+            //         position: "right",
+            //         scaleLabel: {
+            //             display: true,
+            //             labelString: "Count"
+            //         },
+            //         id: "count",
+            //         gridLines: {
+            //             drawOnChartArea: false, // only want the grid lines for one axis to show up
+            //         },
+            //     }],
+            // }
         }
     });
 }

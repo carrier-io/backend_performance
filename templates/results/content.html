@@ -328,7 +328,13 @@
                             </div>
                         </div>
                     </div>
-                    <div id="chartjs-custom-legend-analytic" class="d-grid grid-column-7"></div>
+                    <div id="chartjs-custom-legend-analytic" class="d-grid grid-column-7">
+                        <Chart-Legend
+                                @register="register"
+                                instance_name="requests_chart_legend"
+                                :chart_object_name="master.current_chart"
+                        ></Chart-Legend>
+                    </div>
                 </div>
             </div>
         </template>

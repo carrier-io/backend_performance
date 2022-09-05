@@ -203,14 +203,14 @@ function updateHiddenProperty(hidden) {
     window.presetLine.update();
 }
 
-const updateChart = (e, datasetIndex) => {
-    $('#all_checkbox').prop('checked', false)
-    // var index = datasetIndex;
-    // var ci = e.view.presetLine;
-    const curr = Object.values(e.view.presetLine.data.datasets[datasetIndex]._meta)[0]
-    curr.hidden = !curr.hidden
-    e.view.presetLine.update();
-}
+// const updateChart = (e, datasetIndex) => {
+//     $('#all_checkbox').prop('checked', false)
+//     // var index = datasetIndex;
+//     // var ci = e.view.presetLine;
+//     const curr = Object.values(e.view.presetLine.data.datasets[datasetIndex]._meta)[0]
+//     curr.hidden = !curr.hidden
+//     e.view.presetLine.update();
+// }
 
 function updateChartAnalytic(e, datasetIndex) {
     const curr = Object.values(e.view.analyticsLine.data.datasets[datasetIndex]._meta)[0]

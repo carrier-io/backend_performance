@@ -1,5 +1,7 @@
 // let low_value = 0
 // let high_value = 100
+
+window.presetLine = undefined  // this is requests/transactions chart
 const result_test_id = new URLSearchParams(location.search).get('result_id')
 
 const reRunTest = () => {
@@ -55,7 +57,8 @@ const SummaryController = {
             update_interval: 0,
             auto_update_id: null,
             status_percentage: 0,
-            active_tab_id: undefined
+            active_tab_id: undefined,
+            current_chart: 'presetLine'
         }
     },
     async mounted() {
@@ -323,16 +326,3 @@ $(document).on('vue_init', () => {
     disable_inputs()
     $('#show_config_btn').on('click', disable_inputs)
 })
-
-// init sequence
-$(document).on('vue_init', () => {
-    $(() => {
-
-        // getTestStatus()
-        // setParams();
-        // loadRequestData('/api/v1/backend_performance/charts/requests/summary', "Response time, ms");
-        // fillErrorTable();
-
-    })
-})
-

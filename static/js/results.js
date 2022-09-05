@@ -116,6 +116,7 @@ const SummaryController = {
         async active_tab_id(new_value) {
             console.log('watch active tab', new_value)
             await this.handle_tab_load(new_value)
+            await vueVm.registered_components.requests_chart_legend?.load_chart()
         }
     },
     methods: {
@@ -185,13 +186,13 @@ const SummaryController = {
                         const resp = await fetch(`/api/v1/backend_performance/report_status/${getSelectedProjectId()}/${testId}`)
                         if (resp.ok) {
                             const {message} = await resp.json()
-                            // var status = data["message"]
                             if (!['finished', 'error', 'failed', 'success'].includes(message.toLowerCase())) {
-                                const sections = ['#RT', '#AR', '#HT', "#AN"]
-                                sections.forEach(element => {
-                                    const $element = $(element)
-                                    $element.hasClass("active") && $element.trigger("click")
-                                });
+                                // const sections = ['#RT', '#AR', '#HT', "#AN"]
+                                // sections.forEach(element => {
+                                //     const $element = $(element)
+                                //     $element.hasClass("active") && $element.trigger("click")
+                                // });
+                                await this.handle_tab_load(this.active_tab_id)
                                 this.fillErrorTable()
                             } else {
                                 clearInterval(this.auto_update_id)

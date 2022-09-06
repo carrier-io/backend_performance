@@ -1,7 +1,21 @@
 
-
-{% include 'backend_performance:results/engine_health.html' %}
-{% if True %}
+<Summary-Controller
+            @register="register"
+            instance_name="summary"
+            :samplers='{{ test_data['samplers'] | tojson }}'
+            :start_time='{{ test_data['start_time'] | tojson }}'
+            :end_time='{{ test_data['end_time'] | tojson }}'
+            :test_name='{{ test_data['name'] | tojson }}'
+            :initial_status_percentage='{{ test_data['test_status'].get('percentage', 0) | tojson }}'
+            :lg_type='{{ test_data['lg_type'] | tojson }}'
+            :build_id='{{ test_data['build_id'] | tojson }}'
+    >
+        <template #default="{master}">
+            [[ master ]]
+            {% include 'backend_performance:results/engine_health.html' %}
+        </template>
+</Summary-Controller>
+{% if False %}
     <div class="card card-12 pb-4">
         <div class="card-header">
             <div class="row">
@@ -283,14 +297,11 @@
                                         style="display: block; height: 450px; width: 100%;"></canvas>
                             </div>
                             <div class="card" style="width:280px; height: 500px; margin-left: 28px">
-
-
-                                    <Chart-Legend
-                                        @register="register"
-                                        instance_name="requests_chart_legend"
-                                        :chart_object_name="master.current_chart"
-                                    ></Chart-Legend>
-
+                                <Chart-Legend
+                                    @register="register"
+                                    instance_name="requests_chart_legend"
+                                    :chart_object_name="master.current_chart"
+                                ></Chart-Legend>
                             </div>
                         </div>
                     </div>

@@ -1,3 +1,9 @@
 #pills-tab > li {
     cursor: pointer;
 }
+
+.engine_health_card {
+    position: relative;
+    height: 200px;
+    width: 80%;
+}

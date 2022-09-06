@@ -1,6 +1,7 @@
 {#<script src="{{ url_for('design-system.static', filename='assets/vendor/chart.js/dist/Chart.min.js') }}"></script>#}
 {#<script src="{{ url_for('design-system.static', filename='assets/vendor/chart.js/dist/Chart.extension.js') }}"></script>#}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.js" integrity="sha512-d6nObkPJgV791iTGuBoVC9Aa2iecqzJRE0Jiqvk85BhLHAPhWqkuBiQb1xz2jvuHNqHLYoN3ymPfpiB1o+Zgpw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 <script src="{{ url_for('backend_performance.static', filename='js/engine_health.js') }}"></script>
 <script src="{{ url_for('backend_performance.static', filename='js/chart_legend.js') }}"></script>
 <script src="{{ url_for('backend_performance.static', filename='js/responses_chart.js') }}"></script>
@@ -51,3 +52,5 @@
         IntegrationSection.Manager().set({{ integrations_data | default({}) | tojson }})
     })
 </script>
+
+

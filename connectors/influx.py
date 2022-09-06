@@ -20,11 +20,13 @@ from ..models.api_reports import APIReport
 from pylon.core.tools import log
 
 
-def get_project_id(build_id):
-    return APIReport.query.filter_by(build_id=build_id).first().to_json()["project_id"]
+def get_project_id(build_id: str) -> int:
+    # return APIReport.query.filter_by(build_id=build_id).first().to_json()["project_id"]
+    resp = APIReport.query.with_entities(APIReport.project_id).filter(APIReport.build_id == build_id).first()
+    return resp[0]
 
 
-def get_aggregated_test_results(test, build_id):
+def get_aggregated_test_results(test, build_id: str):
     project_id = get_project_id(build_id)
     query = f"SELECT * from api_comparison where simulation='{test}' and build_id='{build_id}'"
     return list(influx_tools.get_client(project_id, f'comparison_{project_id}').query(query))
@@ -552,3 +554,51 @@ def get_sampler_types(project_id, build_id, test_name, lg_type):
     q_samplers = f"show tag values on {lg_type}_{project_id} with key=sampler_type where build_id='{build_id}'"
     client = influx_tools.get_client(project_id)
     return [each["value"] for each in list(client.query(q_samplers)[f"{test_name}_1s"])]
+
+
+# def get_engine_health(build_id, host, start_time, end_time, aggregation):
+def get_engine_health_cpu(influx_client=None, **kwargs):
+    kwargs['host'] = 'perfmeter_valid_big_Lg_9042_3537'
+    query = '''
+        SELECT mean(usage_idle) as "idle", mean(usage_user) as "user", mean(usage_system) as "system", 
+        mean(usage_softirq) as "softirq", mean(usage_steal) as "steal", mean(usage_nice) as "nice", 
+        mean(usage_irq) as "irq", mean(usage_iowait) as "iowait", mean(usage_guest) as "guest", 
+        mean(usage_guest_nice) as "guest_nice"  
+        FROM "cpu" 
+        WHERE "host" =~ /({host})$/ 
+        AND cpu = 'cpu-total' 
+        AND time >= '{start_time}'
+        AND time <= '{end_time}'
+        GROUP BY time({aggregation}), host
+    '''.format(**kwargs)
+
+    if influx_client:
+        result = influx_client.query(query)
+    else:
+        project_id = get_project_id(kwargs['build_id'])
+        client = influx_client or influx_tools.get_client(project_id, f'telegraf_{project_id}')
+        result = client.query(query)
+
+    return list(result.get_points())
+
+
+def get_engine_health_memory(influx_client=None, **kwargs):
+    kwargs['host'] = 'perfmeter_valid_big_Lg_9042_3537'
+    query = '''
+        SELECT mean(total) as "total", mean(used) as "used", mean(cached) as "cached", 
+        mean(free) as "free", mean(buffered) as "buffered"  
+        FROM "mem" 
+        WHERE "host" =~ /({host})$/
+        AND time >= '{start_time}'
+        AND time <= '{end_time}'
+        GROUP BY time({aggregation}), host
+        ORDER BY asc
+    '''.format(**kwargs)
+
+    if influx_client:
+        result = influx_client.query(query)
+    else:
+        project_id = get_project_id(kwargs['build_id'])
+        client = influx_client or influx_tools.get_client(project_id, f'telegraf_{project_id}')
+        result = client.query(query)
+    return list(result.get_points())

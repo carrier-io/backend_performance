@@ -1,8 +1,10 @@
+from functools import partial
+
 from flask import request
 from flask_restful import Resource
 
 from ...utils.charts_utils import requests_summary, requests_hits, avg_responses, summary_table, \
-    get_data_from_influx, get_issues
+    get_data_from_influx, get_issues, engine_health
 
 
 class API(Resource):
@@ -20,6 +22,11 @@ class API(Resource):
         },
         "errors": {
             "table": get_issues
+        },
+        "engine_health": {
+            "cpu": partial(engine_health, part='cpu'),
+            "memory": partial(engine_health, part='memory'),
+            "all": engine_health,
         }
     }
 

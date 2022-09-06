@@ -3,15 +3,16 @@ from ..models.api_reports import APIReport
 from ..connectors.influx import (get_backend_requests, get_hits_tps, average_responses, get_build_data,
                                  get_tps_for_analytics, get_response_codes_for_analytics, get_backend_users,
                                  get_throughput_per_test, get_response_time_per_test,
-                                 get_errors_for_analytics, get_backend_requests_for_analytics)
+                                 get_errors_for_analytics, get_backend_requests_for_analytics,
+                                 get_engine_health_cpu, get_project_id, get_engine_health_memory)
 from ..connectors.loki import get_results
 from .report_utils import calculate_proper_timeframe, chart_data, create_dataset, comparison_data, _create_dataset
 from pylon.core.tools import log
 
-from tools import constants as c
+from tools import constants as c, influx_tools
 
 
-def _timeframe(args: dict, time_as_ts: bool = False):
+def _timeframe(args: dict, time_as_ts: bool = False) -> tuple:
     log.info(f"args {args}")
     end_time = args.get('end_time')
     high_value = args.get('high_value', 100)
@@ -202,3 +203,118 @@ def create_benchmark_dataset(args):
 
     labels = [""] + sorted(list(labels)) + [""]
     return {"data": chart_data(labels, [], data, "data"), "label": y_axis}
+
+
+def engine_health(args: dict, part: str = 'all') -> dict:
+    part_mapping = {
+        'cpu': engine_health_cpu,
+        'memory': engine_health_memory,
+    }
+    d = dict(args)
+    start_time, end_time, aggregation = _timeframe(d)
+    d.update({
+        'start_time': start_time,
+        'end_time': end_time,
+        'aggregation': aggregation,
+    })
+    func = part_mapping.get(part)
+    if not func:  # e.g. part == 'all'
+        project_id = get_project_id(args['build_id'])
+        d['influx_client'] = influx_tools.get_client(project_id, f'telegraf_{project_id}')
+        return {k: v(**d) for k, v in part_mapping.items()}
+    return func(**d)
+
+
+def engine_health_cpu(**kwargs) -> dict:
+    health_data = get_engine_health_cpu(**kwargs)
+    datasets = []
+    labels = list(map(lambda x: x['time'], health_data))
+    structure = {
+        'idle': {
+            'borderColor': 'green',
+        },
+        'system': {
+            'borderColor': 'aqua',
+        },
+        'user': {
+            'borderColor': 'yellow',
+        },
+        'softirq': {
+            'borderColor': 'orange',
+        },
+        'iowait': {
+            'borderColor': 'purple',
+        },
+        'steal': {
+            'borderColor': 'red',
+        },
+        'nice': {
+            'borderColor': 'navy',
+        },
+        'irq': {
+            'borderColor': 'fuchsia',
+        },
+        'guest': {
+            'borderColor': 'blue',
+        },
+        'guest_nice': {
+            'borderColor': 'lime',
+        }
+    }
+    for section, options in structure.items():
+        dataset = {
+            'data': list(map(lambda x: x[section], health_data)),
+            'label': section,
+            'borderWidth': 2,
+            'fill': False,
+            'lineTension': 0.1,
+            'pointRadius': 0,
+            'spanGaps': True
+        }
+        dataset.update(options)
+        datasets.append(dataset)
+
+    return {
+        'datasets': datasets,
+        'labels': labels
+    }
+
+
+def engine_health_memory(**kwargs) -> dict:
+    health_data = get_engine_health_memory(**kwargs)
+    datasets = []
+    labels = list(map(lambda x: x['time'], health_data))
+    structure = {
+        'total': {
+            'borderColor': 'green',
+        },
+        'used': {
+            'borderColor': 'yellow',
+        },
+        'cached': {
+            'borderColor': 'aqua',
+        },
+        'free': {
+            'borderColor': 'orange',
+        },
+        'buffered': {
+            'borderColor': 'red',
+        },
+    }
+    for section, options in structure.items():
+        dataset = {
+            'data': list(map(lambda x: x[section], health_data)),
+            'label': section,
+            'borderWidth': 2,
+            'fill': False,
+            'lineTension': 0.1,
+            'pointRadius': 0,
+            'spanGaps': True
+        }
+        dataset.update(options)
+        datasets.append(dataset)
+
+    return {
+        'datasets': datasets,
+        'labels': labels
+    }

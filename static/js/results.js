@@ -39,6 +39,21 @@ const setBaseline = async () => {
     })
 }
 
+const stopTest = async () => {
+    const resp = await fetch(`/api/v1/backend_performance/report_status/${getSelectedProjectId()}/${result_test_id}`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: {
+            "test_status": {
+                "status": "Canceled",
+                "percentage": 100,
+                "description": "Test was canceled"
+            }
+        }
+    })
+    resp.ok ? location.reload() : console.warn('stop test failed', resp)
+}
+
 
 const SummaryController = {
     props: ['samplers', 'start_time', 'end_time', 'test_name', 'initial_status_percentage', 'lg_type', 'build_id'],
@@ -114,7 +129,6 @@ const SummaryController = {
     },
     watch: {
         async active_tab_id(new_value) {
-            console.log('watch active tab', new_value)
             await this.handle_tab_load(new_value)
             await vueVm.registered_components.requests_chart_legend?.load_chart()
         }
@@ -148,7 +162,6 @@ const SummaryController = {
         },
         async handle_slider_change(values) {
             [this.slider.low, this.slider.high] = values
-            // this.resizeChart()
             await this.handle_tab_load(this.active_tab_id)
             this.fill_error_table()
         },
@@ -175,25 +188,12 @@ const SummaryController = {
             }
             if (this.update_interval > 0) {
                 this.auto_update_id = setInterval(async () => {
-                        // if ($("#sampler").val() == null) {
-                        //     samplerType = "Request"
-                        // } else {
-                        //     samplerType = $("#sampler").val().toUpperCase();
-                        // }
-
-                        // statusType = $("#status").val().toLowerCase();
-                        // aggregator = $("#aggregator").val().toLowerCase();
-                        const resp = await fetch(`/api/v1/backend_performance/report_status/${getSelectedProjectId()}/${testId}`)
+                        const resp = await fetch(`/api/v1/backend_performance/report_status/${getSelectedProjectId()}/${result_test_id}`)
                         if (resp.ok) {
                             const {message} = await resp.json()
                             if (!['finished', 'error', 'failed', 'success'].includes(message.toLowerCase())) {
-                                // const sections = ['#RT', '#AR', '#HT', "#AN"]
-                                // sections.forEach(element => {
-                                //     const $element = $(element)
-                                //     $element.hasClass("active") && $element.trigger("click")
-                                // });
                                 await this.handle_tab_load(this.active_tab_id)
-                                this.fillErrorTable()
+                                this.fill_error_table()
                             } else {
                                 clearInterval(this.auto_update_id)
                                 this.auto_update_id = null
@@ -232,20 +232,6 @@ const SummaryController = {
                 $('#AN').removeClass('disabled');
                 $('#analytic-loader').hide()
             }
-        },
-        resizeChart() {
-            if ($("#analytics").is(":visible")) {
-                // analyticsData = null;
-                analyticsLine.destroy();
-                analyticsCanvas(null);
-                recalculateAnalytics();
-            }
-            // ["RT", "AR", "HT", "AN"].forEach(item => {
-            //     const $item = $(`#${item}`)
-            //     $item.hasClass("active") && $item.trigger("click")
-            // });
-            // fillErrorTable();
-            // this.fill_error_table()
         },
         async load_request_data(url, y_label) {
             $('#chart-loader').show();

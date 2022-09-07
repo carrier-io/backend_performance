@@ -75,27 +75,91 @@ const formatBytes = (bytes, decimals = 2) => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
+window.engine_health = {
+    reload: () => {
+        const params = window.engine_health.get_params()
+        Object.values(window.engine_health.charts).forEach(async i => {
+            const resp = await fetch(i.url + params)
+            if (resp.ok) {
+                i.chart.data = await resp.json()
+                i.chart.options.scales.x.min = new Date(params.get('start_time')).valueOf()
+                i.chart.options.scales.x.max = new Date(params.get('end_time')).valueOf()
+                i.chart.update()
+            } // todo: handle resp not ok
+        })
+    },
+    get_params: () => {
+        const {
+            build_id,
+            test_name,
+            lg_type,
+            sampler_type,
+            start_time,
+            end_time,
+            aggregator,
+            slider
+        } = vueVm.registered_components.summary
+        return new URLSearchParams({
+            build_id,
+            test_name,
+            lg_type,
+            sampler: sampler_type,
+            start_time,
+            end_time,
+            aggregator,
+            low_value: slider.low,
+            high_value: slider.high
+        })
+    },
+    charts: {}
+}
+
+
 $(document).on('vue_init', async () => {
-    window.engine_health = {}
-    const {
-        start_time,
-        end_time,
-        aggregator,
-        test_name,
-        build_id
-    } = vueVm.registered_components.summary
-    const s_params = new URLSearchParams({
-        start_time,
-        end_time,
-        aggregator,
-        test_name,
-        build_id
-    })
-    const resp_cpu = await fetch('/api/v1/backend_performance/charts/engine_health/cpu?' + s_params)
-    if (resp_cpu.ok) {
-        window.engine_health.cpu = new Chart('engine_health_cpu', {
+    window.engine_health.charts.load = {
+    chart: new Chart('engine_health_load', {
+        type: 'line',
+        // parsing: false,
+        normalized: true,
+        responsive: true,
+        options: {
+            scales: {
+                y: {
+                    min: 0,
+                    // max: 100,
+                    type: 'linear',
+                    ticks: {
+                        count: 6,
+                        padding: 28
+                    }
+                },
+                x: {
+                    type: 'time',
+                    grid: {
+                        display: false
+                    },
+                    display: false
+                }
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'bottom'
+                },
+                title: {
+                    display: true,
+                    text: 'LOAD',
+                    align: 'start',
+                    fullSize: false
+                },
+            },
+        },
+    }),
+    url: '/api/v1/backend_performance/charts/engine_health/load?'
+}
+    window.engine_health.charts.cpu = {
+        chart: new Chart('engine_health_cpu', {
             type: 'line',
-            data: await resp_cpu.json(),
             // parsing: false,
             normalized: true,
             responsive: true,
@@ -104,28 +168,28 @@ $(document).on('vue_init', async () => {
                     y: {
                         min: 0,
                         max: 100,
+                        // suggestedMax: 100,
                         type: 'linear',
                         ticks: {
                             count: 6,
                             callback: (value, index, ticks) => {
                                 return `${value}%`
                             },
-                            padding: 14
+                            padding: 15
                         },
                     },
                     x: {
-                        min: new Date('2022-09-05T17:13:50.199000Z').valueOf(),
-                        max: new Date('2022-09-05T17:32:50.195000Z').valueOf(),
                         type: 'time',
                         grid: {
                             display: false
-                        }
+                        },
+                        display: false
                     }
                 },
                 plugins: {
                     legend: {
-                        display: false,
-                        position: 'right'
+                        display: true,
+                        position: 'bottom'
                     },
                     title: {
                         display: true,
@@ -135,93 +199,12 @@ $(document).on('vue_init', async () => {
                     },
                 },
             },
-        })
-        window.engine_health.disk = new Chart('engine_health_disk', {
-            type: 'line',
-            data: [],
-            // parsing: false,
-            normalized: true,
-            responsive: true,
-            options: {
-                scales: {
-                    y: {
-                        min: 0,
-                        max: 100,
-                        type: 'linear',
-                        ticks: {
-                            count: 6,
-                            padding: 19
-                        }
-                    },
-                    x: {
-                        min: new Date('2022-09-05T17:13:50.199000Z').valueOf(),
-                        max: new Date('2022-09-05T17:32:50.195000Z').valueOf(),
-                        type: 'time',
-                        grid: {
-                            display: false
-                        }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        display: false,
-                        position: 'right'
-                    },
-                    title: {
-                        display: true,
-                        text: 'DISK',
-                        align: 'start',
-                        fullSize: false
-                    },
-                },
-            },
-        })
-        window.engine_health.network = new Chart('engine_health_network', {
-            type: 'line',
-            data: [],
-            // parsing: false,
-            normalized: true,
-            responsive: true,
-            options: {
-                scales: {
-                    y: {
-                        min: 0,
-                        max: 100,
-                        type: 'linear',
-                        ticks: {
-                            count: 6,
-                            padding: 19
-                        }
-                    },
-                    x: {
-                        min: new Date('2022-09-05T17:13:50.199000Z').valueOf(),
-                        max: new Date('2022-09-05T17:32:50.195000Z').valueOf(),
-                        type: 'time',
-                        grid: {
-                            display: false
-                        }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        display: false,
-                        position: 'right'
-                    },
-                    title: {
-                        display: true,
-                        text: 'NETWORK',
-                        align: 'start',
-                        fullSize: false
-                    },
-                },
-            },
-        })
+        }),
+        url: '/api/v1/backend_performance/charts/engine_health/cpu?'
     }
-    const resp_memory = await fetch('/api/v1/backend_performance/charts/engine_health/memory?' + s_params)
-    if (resp_cpu.ok) {
-        window.engine_health.memory = new Chart('engine_health_memory', {
+    window.engine_health.charts.memory = {
+        chart: new Chart('engine_health_memory', {
             type: 'line',
-            data: await resp_memory.json(),
             normalized: true,
             responsive: true,
             options: {
@@ -238,8 +221,6 @@ $(document).on('vue_init', async () => {
                         }
                     },
                     x: {
-                        min: new Date('2022-09-05T17:13:50.199000Z').valueOf(),
-                        max: new Date('2022-09-05T17:32:50.195000Z').valueOf(),
                         type: 'time',
                         grid: {
                             display: false
@@ -248,8 +229,8 @@ $(document).on('vue_init', async () => {
                 },
                 plugins: {
                     legend: {
-                        display: false,
-                        position: 'right'
+                        display: true,
+                        position: 'bottom'
                     },
                     title: {
                         display: true,
@@ -259,6 +240,8 @@ $(document).on('vue_init', async () => {
                     },
                 },
             }
-        })
+        }),
+        url: '/api/v1/backend_performance/charts/engine_health/memory?'
     }
+    window.engine_health.reload()
 })

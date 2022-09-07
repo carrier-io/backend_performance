@@ -80,7 +80,7 @@ const SummaryController = {
         this.status_percentage = this.initial_status_percentage
         this.sampler_type = this.samplers.length > 0 ? this.samplers[0] : ''
         $(() => {
-            noUiSlider.create($("#vuh-perfomance-time-picker")[0], {
+            noUiSlider.create($("#vuh-performance-time-picker")[0], {
                 range: {
                     'min': 0,
                     'max': 100
@@ -164,6 +164,7 @@ const SummaryController = {
             [this.slider.low, this.slider.high] = values
             await this.handle_tab_load(this.active_tab_id)
             this.fill_error_table()
+            window.engine_health?.reload()
         },
         handle_tab_change(event) {
             this.active_tab_id = event.target.id
@@ -171,14 +172,17 @@ const SummaryController = {
         async handle_status_change(event) {
             this.status_type = event.target.value
             await this.handle_tab_load(this.active_tab_id)
+            window.engine_health?.reload()
         },
         async handle_aggregator_change(event) {
             this.aggregator = event.target.value
             await this.handle_tab_load(this.active_tab_id)
+            window.engine_health?.reload()
         },
         async handle_sampler_change(event) {
             this.sampler_type = event.target.value
             await this.handle_tab_load(this.active_tab_id)
+            window.engine_health?.reload()
         },
         handle_change_update_interval(event) {
             this.update_interval = parseInt(event.target.value)
@@ -194,6 +198,7 @@ const SummaryController = {
                             if (!['finished', 'error', 'failed', 'success'].includes(message.toLowerCase())) {
                                 await this.handle_tab_load(this.active_tab_id)
                                 this.fill_error_table()
+                                window.engine_health?.reload()
                             } else {
                                 clearInterval(this.auto_update_id)
                                 this.auto_update_id = null

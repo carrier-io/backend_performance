@@ -26,6 +26,7 @@ class API(Resource):
         "engine_health": {
             "cpu": partial(engine_health, part='cpu'),
             "memory": partial(engine_health, part='memory'),
+            "load": partial(engine_health, part='load'),
             "all": engine_health,
         }
     }

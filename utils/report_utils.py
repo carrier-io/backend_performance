@@ -145,8 +145,8 @@ def render_analytics_control(requests):
     return control
 
 
-def calculate_proper_timeframe(build_id, test_name, lg_type, low_value, high_value, start_time, end_time,
-                               aggregation, time_as_ts=False) -> tuple:
+def calculate_proper_timeframe(build_id: str, test_name: str, lg_type: str, low_value: int, high_value: int,
+                               start_time, end_time, aggregation: str, time_as_ts: bool = False) -> tuple:
     start_time = c.str_to_timestamp(start_time)
     end_time = c.str_to_timestamp(end_time)
     interval = end_time - start_time

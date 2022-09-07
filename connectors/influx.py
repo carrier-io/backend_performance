@@ -560,10 +560,12 @@ def get_sampler_types(project_id, build_id, test_name, lg_type):
 def get_engine_health_cpu(influx_client=None, **kwargs):
     kwargs['host'] = 'perfmeter_valid_big_Lg_9042_3537'
     query = '''
-        SELECT mean(usage_idle) as "idle", mean(usage_user) as "user", mean(usage_system) as "system", 
-        mean(usage_softirq) as "softirq", mean(usage_steal) as "steal", mean(usage_nice) as "nice", 
-        mean(usage_irq) as "irq", mean(usage_iowait) as "iowait", mean(usage_guest) as "guest", 
-        mean(usage_guest_nice) as "guest_nice"  
+        SELECT 
+            mean(usage_idle) as "idle", 
+            mean(usage_system) as "system",
+            mean(usage_user) as "user",
+            mean(usage_softirq) as "softirq",
+            mean(usage_iowait) as "iowait"
         FROM "cpu" 
         WHERE "host" =~ /({host})$/ 
         AND cpu = 'cpu-total' 
@@ -585,9 +587,34 @@ def get_engine_health_cpu(influx_client=None, **kwargs):
 def get_engine_health_memory(influx_client=None, **kwargs):
     kwargs['host'] = 'perfmeter_valid_big_Lg_9042_3537'
     query = '''
-        SELECT mean(total) as "total", mean(used) as "used", mean(cached) as "cached", 
-        mean(free) as "free", mean(buffered) as "buffered"  
-        FROM "mem" 
+        SELECT 
+            HeapMemoryUsage.used as "heap memory", 
+            NonHeapMemoryUsage.used as "non-heap memory"
+        FROM "java_memory" 
+        WHERE "host" =~ /({host})$/
+        AND time >= '{start_time}'
+        AND time <= '{end_time}'
+        GROUP BY host
+        ORDER BY asc
+    '''.format(**kwargs)
+
+    if influx_client:
+        result = influx_client.query(query)
+    else:
+        project_id = get_project_id(kwargs['build_id'])
+        client = influx_client or influx_tools.get_client(project_id, f'telegraf_{project_id}')
+        result = client.query(query)
+    return list(result.get_points())
+
+
+def get_engine_health_load(influx_client=None, **kwargs):
+    kwargs['host'] = 'perfmeter_valid_big_Lg_9042_3537'
+    query = '''
+        SELECT 
+            mean(load1) as "load1",
+            mean(load5) as "load5",
+            mean(load15) as "load15"
+        FROM "system" 
         WHERE "host" =~ /({host})$/
         AND time >= '{start_time}'
         AND time <= '{end_time}'

@@ -1,10 +1,12 @@
 from datetime import datetime, timezone
 from ..models.api_reports import APIReport
-from ..connectors.influx import (get_backend_requests, get_hits_tps, average_responses, get_build_data,
-                                 get_tps_for_analytics, get_response_codes_for_analytics, get_backend_users,
-                                 get_throughput_per_test, get_response_time_per_test,
-                                 get_errors_for_analytics, get_backend_requests_for_analytics,
-                                 get_engine_health_cpu, get_project_id, get_engine_health_memory)
+from ..connectors.influx import (
+    get_backend_requests, get_hits_tps, average_responses, get_build_data,
+    get_tps_for_analytics, get_response_codes_for_analytics, get_backend_users,
+    get_throughput_per_test, get_response_time_per_test,
+    get_errors_for_analytics, get_backend_requests_for_analytics,
+    get_engine_health_cpu, get_project_id, get_engine_health_memory, get_engine_health_load
+)
 from ..connectors.loki import get_results
 from .report_utils import calculate_proper_timeframe, chart_data, create_dataset, comparison_data, _create_dataset
 from pylon.core.tools import log
@@ -209,6 +211,7 @@ def engine_health(args: dict, part: str = 'all') -> dict:
     part_mapping = {
         'cpu': engine_health_cpu,
         'memory': engine_health_memory,
+        'load': engine_health_load,
     }
     d = dict(args)
     start_time, end_time, aggregation = _timeframe(d)
@@ -245,21 +248,6 @@ def engine_health_cpu(**kwargs) -> dict:
         'iowait': {
             'borderColor': 'purple',
         },
-        'steal': {
-            'borderColor': 'red',
-        },
-        'nice': {
-            'borderColor': 'navy',
-        },
-        'irq': {
-            'borderColor': 'fuchsia',
-        },
-        'guest': {
-            'borderColor': 'blue',
-        },
-        'guest_nice': {
-            'borderColor': 'lime',
-        }
     }
     for section, options in structure.items():
         dataset = {
@@ -285,21 +273,45 @@ def engine_health_memory(**kwargs) -> dict:
     datasets = []
     labels = list(map(lambda x: x['time'], health_data))
     structure = {
-        'total': {
+        'heap memory': {
             'borderColor': 'green',
         },
-        'used': {
+        'non-heap memory': {
             'borderColor': 'yellow',
         },
-        'cached': {
+    }
+    for section, options in structure.items():
+        dataset = {
+            'data': list(map(lambda x: x[section], health_data)),
+            'label': section,
+            'borderWidth': 2,
+            'fill': False,
+            'lineTension': 0.1,
+            'pointRadius': 0,
+            'spanGaps': True
+        }
+        dataset.update(options)
+        datasets.append(dataset)
+
+    return {
+        'datasets': datasets,
+        'labels': labels
+    }
+
+def engine_health_load(**kwargs) -> dict:
+    health_data = get_engine_health_load(**kwargs)
+    datasets = []
+    labels = list(map(lambda x: x['time'], health_data))
+    structure = {
+        'load1': {
+            'borderColor': 'green',
+        },
+        'load5': {
+            'borderColor': 'yellow',
+        },
+        'load15': {
             'borderColor': 'aqua',
-        },
-        'free': {
-            'borderColor': 'orange',
-        },
-        'buffered': {
-            'borderColor': 'red',
-        },
+        }
     }
     for section, options in structure.items():
         dataset = {

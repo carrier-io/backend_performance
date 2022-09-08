@@ -1,4 +1,4 @@
-var analyticsData;
+var analyticsData = {};
 var interval_id;
 
 function createTest() {
@@ -509,7 +509,6 @@ function loadRequestData(url, y_label) {
 }
 
 function displayAnalytics() {
-    console.log("displayAnalytics ***************")
     $("#preset").hide();
     analyticsCanvas();
     $("#analytics").show();
@@ -602,6 +601,18 @@ function updateChartAnalytic(e, datasetIndex) {
     ci.update();
 };
 
+function highlight(e, datasetIndex, chartType) {
+    var ci = chartType === 'analytic' ? e.view.analyticsLine : e.view.presetLine;
+    ci.data.datasets[datasetIndex].borderWidth = 6;
+    ci.update();
+}
+
+function lowlight(e, datasetIndex, chartType) {
+    var ci = chartType === 'analytic' ? e.view.analyticsLine : e.view.presetLine;
+    ci.data.datasets[datasetIndex].borderWidth = 2;
+    ci.update();
+}
+
 function turnOnAllLine() {
     window.analyticsLine.data.datasets.forEach((item, index) => {
         let curr = item._meta;
@@ -611,7 +622,6 @@ function turnOnAllLine() {
     window.analyticsLine.update();
 }
 function analyticsCanvas() {
-    console.log("analyticsCanvas ******************")
     var analyticsContext=document.getElementById("chart-analytics").getContext("2d");
     window.analyticsLine = Chart.Line(analyticsContext, {
         data: analyticsData,
@@ -623,7 +633,10 @@ function analyticsCanvas() {
                 return chart.data.datasets.map((item, index) => {
                     return `
                         <div class="d-flex mb-3 float-left mr-3">
-                            <label class="mb-0 w-100 d-flex align-items-center custom-checkbox custom-checkbox__multicolor legend-item">
+                            <label 
+                                onmouseover="highlight(event, ${chart.legend.legendItems[index].datasetIndex}, 'analytic')"
+                                onmouseout="lowlight(event, ${chart.legend.legendItems[index].datasetIndex}, 'analytic')"
+                                class="mb-0 w-100 d-flex align-items-center custom-checkbox custom-checkbox__multicolor legend-item">
                                 <input class="mx-2 custom__checkbox"
                                     onclick="updateChartAnalytic(event, ${chart.legend.legendItems[index].datasetIndex})"
                                     id="${chart.legend.legendItems[index].datasetIndex}"
@@ -684,20 +697,23 @@ function drawCanvas(y_label, chartData) {
             hoverMode: 'index',
             stacked: false,
              legendCallback: function (chart) {
-                var legendHtml = [];
-                for (var i=0; i<chart.data.datasets.length; i++) {
-                    if (chart.data.datasets[i].label != "Active Users") {
-                        var cb = '<div class="d-flex mb-3">';
-                        cb += '<label class="mb-0 w-100 d-flex align-items-center custom-checkbox custom-checkbox__multicolor">'
-                        cb += '<input class="mx-2 custom__checkbox" id="'+ chart.legend.legendItems[i].datasetIndex +'" type="checkbox" checked="true" style="--cbx-color: ' + chart.data.datasets[i].backgroundColor + ';" '
-                        cb += 'onclick="updateChart(event, ' + '\'' + chart.legend.legendItems[i].datasetIndex + '\'' + ')"/>';
-                        cb += '<span class="custom-chart-legend-span"></span>'
-                        cb += chart.data.datasets[i].label;
-                        cb += '</label></div>'
-                        legendHtml.push(cb);
+                return chart.data.datasets.map((item, i) => {
+                    if (item.label !== "Active Users") {
+                        return `
+                            <div class="d-flex mb-3">
+                                <label class="mb-0 w-100 d-flex align-items-center custom-checkbox custom-checkbox__multicolor"
+                                    onmouseover="highlight(event, ${chart.legend.legendItems[i].datasetIndex}, 'simple')"
+                                    onmouseout="lowlight(event, ${chart.legend.legendItems[i].datasetIndex}, 'simple')">
+                                    <input class="mx-2 custom__checkbox" id="${chart.legend.legendItems[i].datasetIndex}" 
+                                        type="checkbox" checked="true" style="--cbx-color: ${item.backgroundColor}" 
+                                        onclick="updateChart(event, ${chart.legend.legendItems[i].datasetIndex})"/>
+                                    <span class="custom-chart-legend-span"></span>
+                                    ${item.label}
+                                </label>
+                            </div>
+                        `
                     }
-                }
-                return legendHtml.join("");
+                }).join("");
             },
             legend: {
                 display: false,
@@ -780,8 +796,8 @@ function recalculateAnalytics() {
     })
 }
 
-function getDataForAnalysis(metric, request_name) {
-$.get(
+async function getDataForAnalysis (metric, request_name) {
+ return await $.get(
   '/api/v1/backend_performance/charts/requests/data',
   {
     scope: request_name,
@@ -798,20 +814,12 @@ $.get(
     high_value,
   },
   function( data ) {
-    if (analyticsLine.data.labels.length === 0 || analyticsLine.data.labels.length !== data.labels.length)
-    {
-        analyticsData = data;
-        analyticsCanvas();
-    } else {
-        const uniqueDatasets = data.datasets.filter(item => {
-            const isValueNotExist = analyticsLine.data.datasets.some(currentItem => currentItem.label === item.label)
-            if(!isValueNotExist) return item
-        })
-        analyticsLine.data.datasets.push(...uniqueDatasets);
-        analyticsLine.update();
-    }
-    turnOnAllLine();
-    document.getElementById('chartjs-custom-legend-analytic').innerHTML = analyticsLine.generateLegend();
+      if (data.datasets && data.datasets.length > 0) {
+          return data.datasets.filter(item => {
+              const isValueNotExist = analyticsLine.data.datasets.some(currentItem => currentItem.label === item.label)
+              if (!isValueNotExist) return item
+          });
+      }
   }
  );
 }

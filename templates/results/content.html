@@ -1,22 +1,3 @@
-
-{#<Summary-Controller#}
-{#            @register="register"#}
-{#            instance_name="summary"#}
-{#            :samplers='{{ test_data['samplers'] | tojson }}'#}
-{#            :start_time='{{ test_data['start_time'] | tojson }}'#}
-{#            :end_time='{{ test_data['end_time'] | tojson }}'#}
-{#            :test_name='{{ test_data['name'] | tojson }}'#}
-{#            :initial_status_percentage='{{ test_data['test_status'].get('percentage', 0) | tojson }}'#}
-{#            :lg_type='{{ test_data['lg_type'] | tojson }}'#}
-{#            :build_id='{{ test_data['build_id'] | tojson }}'#}
-{#    >#}
-{#        <template #default="{master}">#}
-{#            [[ master ]]#}
-{#            {% include 'backend_performance:results/engine_health.html' %}#}
-{#        </template>#}
-{#</Summary-Controller>#}
-            {% include 'backend_performance:results/engine_health.html' %}
-{% if True %}
     <div class="card card-12 pb-4">
         <div class="card-header">
             <div class="row">
@@ -244,6 +225,9 @@
             </table>
         </div>
     </div>
+
+    {% include 'backend_performance:results/engine_health.html' %}
+
     {% if test_data['test_status']['status'].lower() in ['finished', 'error', 'failed', 'success'] %}
         {% with result_id=test_data.id %}
             {% include 'backend_performance:results/artifacts_table.html' %}
@@ -260,4 +244,3 @@
     {% with test_config = test_data['test_config'] %}
         {% include 'backend_performance:results/config_modal.html' %}
     {% endwith %}
-{% endif %}

@@ -556,9 +556,22 @@ def get_sampler_types(project_id, build_id, test_name, lg_type):
     return [each["value"] for each in list(client.query(q_samplers)[f"{test_name}_1s"])]
 
 
-# def get_engine_health(build_id, host, start_time, end_time, aggregation):
+def get_engine_health(query: str, influx_client=None, **kwargs):
+    if influx_client:
+        result = influx_client.query(query)
+    else:
+        project_id = get_project_id(kwargs['build_id'])
+        client = influx_client or influx_tools.get_client(project_id, f'telegraf_{project_id}')
+        result = client.query(query)
+
+    data = dict()
+    for (_, groups), series in result.items():
+        data[groups['host']] = list(series)
+
+    return data
+
+
 def get_engine_health_cpu(influx_client=None, **kwargs):
-    kwargs['host'] = 'perfmeter_valid_big_Lg_9042_3537'
     query = '''
         SELECT 
             mean(usage_system) as "system",
@@ -566,65 +579,40 @@ def get_engine_health_cpu(influx_client=None, **kwargs):
             mean(usage_softirq) as "softirq",
             mean(usage_iowait) as "iowait"
         FROM "cpu" 
-        WHERE "host" =~ /({host})$/ 
+        WHERE "build_id" = '{build_id}'
         AND cpu = 'cpu-total' 
         AND time >= '{start_time}'
         AND time <= '{end_time}'
         GROUP BY time({aggregation}), host
     '''.format(**kwargs)
-
-    if influx_client:
-        result = influx_client.query(query)
-    else:
-        project_id = get_project_id(kwargs['build_id'])
-        client = influx_client or influx_tools.get_client(project_id, f'telegraf_{project_id}')
-        result = client.query(query)
-
-    return list(result.get_points())
+    return get_engine_health(query, influx_client=influx_client, **kwargs)
 
 
 def get_engine_health_memory(influx_client=None, **kwargs):
-    kwargs['host'] = 'perfmeter_valid_big_Lg_9042_3537'
     query = '''
         SELECT 
             HeapMemoryUsage.used as "heap memory", 
             NonHeapMemoryUsage.used as "non-heap memory"
         FROM "java_memory" 
-        WHERE "host" =~ /({host})$/
+        WHERE "build_id" = '{build_id}'
         AND time >= '{start_time}'
         AND time <= '{end_time}'
         GROUP BY host
-        ORDER BY asc
     '''.format(**kwargs)
 
-    if influx_client:
-        result = influx_client.query(query)
-    else:
-        project_id = get_project_id(kwargs['build_id'])
-        client = influx_client or influx_tools.get_client(project_id, f'telegraf_{project_id}')
-        result = client.query(query)
-    return list(result.get_points())
+    return get_engine_health(query, influx_client=influx_client, **kwargs)
 
 
 def get_engine_health_load(influx_client=None, **kwargs):
-    kwargs['host'] = 'perfmeter_valid_big_Lg_9042_3537'
     query = '''
         SELECT 
             mean(load1) as "load1",
             mean(load5) as "load5",
             mean(load15) as "load15"
         FROM "system" 
-        WHERE "host" =~ /({host})$/
+        WHERE "build_id" = '{build_id}'
         AND time >= '{start_time}'
         AND time <= '{end_time}'
         GROUP BY time({aggregation}), host
-        ORDER BY asc
     '''.format(**kwargs)
-
-    if influx_client:
-        result = influx_client.query(query)
-    else:
-        project_id = get_project_id(kwargs['build_id'])
-        client = influx_client or influx_tools.get_client(project_id, f'telegraf_{project_id}')
-        result = client.query(query)
-    return list(result.get_points())
+    return get_engine_health(query, influx_client=influx_client, **kwargs)

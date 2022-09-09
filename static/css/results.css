@@ -4,20 +4,14 @@
 
 .engine_health_card {
     position: relative;
-    /*height: 200px;*/
-    /*max-height: 200px;*/
     width: calc(100% - 300px);
 }
 
-.engine_health_card:last-child {
-    height: 280px;
-    max-height: 280px;
-}
-
 .engine_health_card canvas {
-    max-height: 200px;
+    max-height: 250px;
     width: 100%;
 }
+
 .engine_health_card canvas:last-child {
-    max-height: 280px;
+    max-height: 320px;
 }

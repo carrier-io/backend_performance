@@ -1,68 +1,3 @@
-// const chart_object = {
-//     type: 'bar',
-//     data: {
-//         labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
-//         datasets: [{
-//             label: '# of Votes',
-//             data: [12, 19, 3, 5, 2, 3],
-//             backgroundColor: [
-//                 'rgba(255, 99, 132, 0.2)',
-//                 'rgba(54, 162, 235, 0.2)',
-//                 'rgba(255, 206, 86, 0.2)',
-//                 'rgba(75, 192, 192, 0.2)',
-//                 'rgba(153, 102, 255, 0.2)',
-//                 'rgba(255, 159, 64, 0.2)'
-//             ],
-//             borderColor: [
-//                 'rgba(255, 99, 132, 1)',
-//                 'rgba(54, 162, 235, 1)',
-//                 'rgba(255, 206, 86, 1)',
-//                 'rgba(75, 192, 192, 1)',
-//                 'rgba(153, 102, 255, 1)',
-//                 'rgba(255, 159, 64, 1)'
-//             ],
-//             borderWidth: 1
-//         }]
-//     },
-//     options: {
-//         scales: {
-//             y: {
-//                 beginAtZero: true
-//             }
-//         },
-//         plugins: {
-//             legend: {
-//                 display: false
-//             }
-//         }
-//     },
-//     plugins: [{
-//         beforeInit: (chart, args, options) => {
-//             // Make sure we're applying the legend to the right chart
-//             // if (chart.canvas.id === "chart-id") {
-//             const ul = document.createElement('ul');
-//             chart.data.labels.forEach((label, i) => {
-//                 ul.innerHTML += `
-//                         <li>
-//                           <span style="background-color: ${chart.data.datasets[0].backgroundColor[i]}">
-//                             ${chart.data.datasets[0].data[i]}
-//                           </span>
-//                           ${label}
-//                         </li>
-//                     `;
-//             });
-//
-//             return document.getElementById("custom-legend").appendChild(ul);
-//             // }
-//
-//
-//         }
-//     }]
-// }
-
-// $(document).on('vue_init', () => {
-//     window.test_chart = new Chart('tst', chart_object)
-// })
 const formatBytes = (bytes, decimals = 1) => {
     if (bytes === 0) return '0 Bytes'
 
@@ -92,7 +27,7 @@ window.engine_health = {
                         co.chart.update()
                     }
                 })
-
+                await vueVm.registered_components.engine_health_chart_legend?.load_charts()
             } // todo: handle resp not ok
 
         } else {
@@ -152,8 +87,7 @@ $(document).on('vue_init', async () => {
                         type: 'linear',
                         ticks: {
                             count: 6,
-                            padding: 27,
-                            align: 'end'
+                            padding: 22
                         }
                     },
                     x: {
@@ -197,7 +131,7 @@ $(document).on('vue_init', async () => {
                             callback: (value, index, ticks) => {
                                 return `${value}%`
                             },
-                            padding: 20
+                            padding: 16
                         },
                     },
                     x: {
@@ -252,7 +186,7 @@ $(document).on('vue_init', async () => {
                 plugins: {
                     legend: {
                         display: true,
-                        position: 'bottom'
+                        position: 'bottom',
                     },
                     title: {
                         display: true,
@@ -265,5 +199,107 @@ $(document).on('vue_init', async () => {
         }),
         url: '/api/v1/backend_performance/charts/engine_health/memory?'
     }
-    window.engine_health.reload()
+    await window.engine_health.reload()
 })
+
+const EngineHealthLegend = {
+    components: {
+        LegendItem: LegendItem
+    },
+    data() {
+        return {
+            all_selected: true,
+            labels: [],
+            palette: {}
+        }
+    },
+    async mounted() {
+        await this.load_charts()
+    },
+    watch: {
+        all_selected(new_value) {
+            this.labels.forEach(i => {
+                i.hidden = !new_value
+                this.handle_host_visibility_change(i)
+            })
+            this.update_charts()
+        }
+    },
+    methods: {
+        async load_charts() {
+            const unique_hosts = new Set()
+            Object.values(window.engine_health.charts).forEach(({chart: {data: {hosts}}}) => {
+                hosts.forEach(i => unique_hosts.add(i))
+                // Chart.defaults.plugins.legend.labels.generateLabels(this.chart_object)
+            })
+            unique_hosts.forEach(item => {
+                const randomHsl = () => `hsl(${Math.random() * 360}, 100%, 60%)`
+                let color = this.palette[item]
+                if (color === undefined) {
+                    color = randomHsl()
+                    this.palette[item] = color
+                    this.handle_new_color_for_host(item)
+                }
+                this.labels.push({
+                    text: item,
+                    hidden: false,
+                    datasetIndex: this.labels.length,
+                    fillStyle: color
+                })
+            })
+            this.update_charts()
+        },
+        handle_legend_item_change(item_index) {
+            const item = this.labels[item_index]
+            item.hidden = !item.hidden
+
+            this.handle_host_visibility_change(item)
+            this.update_charts()
+        },
+        update_charts() {
+            Object.values(window.engine_health.charts).forEach(({chart}) => chart.update())
+        },
+        handle_new_color_for_host(host) {
+            Object.values(window.engine_health.charts).forEach(({chart}) => {
+                chart.data.datasets.forEach((dataset, index) => {
+                    if (dataset.tag_host === host) {
+                        dataset.backgroundColor = this.palette[host]
+                    }
+                })
+            })
+        },
+        handle_host_visibility_change(item) {
+            Object.values(window.engine_health.charts).forEach(({chart}) => {
+                chart.data.datasets.forEach((dataset, index) => {
+                    dataset.tag_host === item.text && chart.setDatasetVisibility(
+                        index,
+                        !item.hidden
+                    )
+                })
+            })
+        },
+    },
+    template: `
+        <div class="d-flex flex-column p-3">
+            <label class="mb-0 w-100 d-flex align-items-center custom-checkbox custom-checkbox__multicolor">
+                <input class="mx-2 custom__checkbox"
+                    type="checkbox"
+                    style="--cbx-color: var(--basic);"
+                    v-model="all_selected"
+                />
+                <span class="w-100 d-inline-block">Select/Unselect all</span>
+            </label>
+        </div>
+        <hr class="my-0">
+        <div class="custom-chart-legend d-flex flex-column px-3 py-3" style="overflow: scroll; max-height: 450px">
+            <LegendItem
+                v-for="i in labels"
+                :key="i"
+                v-bind="i"
+                @change="handle_legend_item_change"
+            ></LegendItem>
+        </div>
+        
+    `,
+}
+register_component('EngineHealthLegend', EngineHealthLegend)

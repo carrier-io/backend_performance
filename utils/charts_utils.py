@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import Callable
+from typing import Callable, Optional
 
 from ..models.api_reports import APIReport
 from ..connectors.influx import (
@@ -13,7 +13,7 @@ from ..connectors.loki import get_results
 from .report_utils import calculate_proper_timeframe, chart_data, create_dataset, comparison_data, _create_dataset
 from pylon.core.tools import log
 
-from tools import constants as c, influx_tools
+from tools import constants as c, influx_tools, data_tools
 
 
 def _timeframe(args: dict, time_as_ts: bool = False) -> tuple:
@@ -235,13 +235,43 @@ def engine_health(args: dict, part: str = 'all') -> dict:
     return func(**d)
 
 
+def generate_engine_health_dataset(host_name: str, series_data: list, data_structure: dict):
+    for section, options in data_structure.items():
+        dataset = {
+            'data': list(map(lambda x: x[section], series_data)),
+            'label': f'{section}:{host_name}',
+            # 'label': section,
+            'borderWidth': 2,
+            'fill': False,
+            'lineTension': 0.1,
+            'pointRadius': 0,
+            'spanGaps': True,
+            'tag_host': host_name,
+        }
+        dataset.update(options)
+        yield dataset
+
+
+def format_engine_health_data(health_data: dict, data_structure: dict) -> dict:
+    datasets = []
+    labels = []
+    for host, series in health_data.items():
+        if not labels:
+            labels = list(map(lambda x: x['time'], series))
+        datasets.extend(generate_engine_health_dataset(host, series, data_structure))
+
+    return {
+        'datasets': datasets,
+        'labels': labels,
+        'hosts': list(health_data.keys()),
+    }
+
+
 def engine_health_cpu(**kwargs) -> dict:
     health_data = get_engine_health_cpu(**kwargs)
-    datasets = []
-    labels = list(map(lambda x: x['time'], health_data))
     structure = {
         'system': {
-            'borderColor': 'aqua',
+            'borderColor': 'aqua'
         },
         'user': {
             'borderColor': 'yellow',
@@ -253,29 +283,12 @@ def engine_health_cpu(**kwargs) -> dict:
             'borderColor': 'purple',
         },
     }
-    for section, options in structure.items():
-        dataset = {
-            'data': list(map(lambda x: x[section], health_data)),
-            'label': section,
-            'borderWidth': 2,
-            'fill': False,
-            'lineTension': 0.1,
-            'pointRadius': 0,
-            'spanGaps': True
-        }
-        dataset.update(options)
-        datasets.append(dataset)
-
-    return {
-        'datasets': datasets,
-        'labels': labels
-    }
+    return format_engine_health_data(health_data, structure)
 
 
 def engine_health_memory(**kwargs) -> dict:
     health_data = get_engine_health_memory(**kwargs)
-    datasets = []
-    labels = list(map(lambda x: x['time'], health_data))
+
     structure = {
         'heap memory': {
             'borderColor': 'green',
@@ -284,29 +297,11 @@ def engine_health_memory(**kwargs) -> dict:
             'borderColor': 'yellow',
         },
     }
-    for section, options in structure.items():
-        dataset = {
-            'data': list(map(lambda x: x[section], health_data)),
-            'label': section,
-            'borderWidth': 2,
-            'fill': False,
-            'lineTension': 0.1,
-            'pointRadius': 0,
-            'spanGaps': True
-        }
-        dataset.update(options)
-        datasets.append(dataset)
-
-    return {
-        'datasets': datasets,
-        'labels': labels
-    }
+    return format_engine_health_data(health_data, structure)
 
 
 def engine_health_load(**kwargs) -> dict:
     health_data = get_engine_health_load(**kwargs)
-    datasets = []
-    labels = list(map(lambda x: x['time'], health_data))
     structure = {
         'load1': {
             'borderColor': 'green',
@@ -316,22 +311,6 @@ def engine_health_load(**kwargs) -> dict:
         },
         'load15': {
             'borderColor': 'aqua',
-        }
+        },
     }
-    for section, options in structure.items():
-        dataset = {
-            'data': list(map(lambda x: x[section], health_data)),
-            'label': section,
-            'borderWidth': 2,
-            'fill': False,
-            'lineTension': 0.1,
-            'pointRadius': 0,
-            'spanGaps': True
-        }
-        dataset.update(options)
-        datasets.append(dataset)
-
-    return {
-        'datasets': datasets,
-        'labels': labels
-    }
+    return format_engine_health_data(health_data, structure)

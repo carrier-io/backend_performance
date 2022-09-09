@@ -1,4 +1,6 @@
 from datetime import datetime, timezone
+from typing import Callable
+
 from ..models.api_reports import APIReport
 from ..connectors.influx import (
     get_backend_requests, get_hits_tps, average_responses, get_build_data,
@@ -27,12 +29,14 @@ def _timeframe(args: dict, time_as_ts: bool = False) -> tuple:
                                       time_as_ts=time_as_ts)
 
 
-def _query_only(args, query_func):
+def _query_only(args: dict, query_func: Callable) -> dict:
     start_time, end_time, aggregation = _timeframe(args)
-    timeline, results, users = query_func(args['build_id'], args['test_name'], args['lg_type'],
-                                          start_time, end_time, aggregation,
-                                          sampler=args['sampler'], status=args["status"])
-    return chart_data(timeline, users, results)
+    timeline, results, users = query_func(
+        args['build_id'], args['test_name'], args['lg_type'],
+        start_time, end_time, aggregation,
+        sampler=args['sampler'], status=args["status"]
+    )
+    return chart_data(timeline, users, results, convert_time=args.get('convert_time', True))
 
 
 def get_tests_metadata(tests):
@@ -54,24 +58,27 @@ def get_tests_metadata(tests):
     return labels, rps_data, errors_data, users_data, responses_data
 
 
-def requests_summary(args):
+def requests_summary(args: dict):
+    args['convert_time'] = False
     return _query_only(args, get_backend_requests)
 
 
-def requests_hits(args):
+def requests_hits(args: dict):
+    args['convert_time'] = False
     return _query_only(args, get_hits_tps)
 
 
-def avg_responses(args):
+def avg_responses(args: dict):
+    args['convert_time'] = False
     return _query_only(args, average_responses)
 
 
-def summary_table(args):
+def summary_table(args: dict):
     start_time, end_time, aggregation = _timeframe(args)
     return get_build_data(args['build_id'], args['test_name'], args['lg_type'], start_time, end_time, args['sampler'])
 
 
-def get_issues(args):
+def get_issues(args: dict):
     start_time, end_time, aggregation = _timeframe(args, time_as_ts=True)
     return list(get_results(args['test_name'], start_time, end_time).values())
 
@@ -233,9 +240,6 @@ def engine_health_cpu(**kwargs) -> dict:
     datasets = []
     labels = list(map(lambda x: x['time'], health_data))
     structure = {
-        'idle': {
-            'borderColor': 'green',
-        },
         'system': {
             'borderColor': 'aqua',
         },
@@ -297,6 +301,7 @@ def engine_health_memory(**kwargs) -> dict:
         'datasets': datasets,
         'labels': labels
     }
+
 
 def engine_health_load(**kwargs) -> dict:
     health_data = get_engine_health_load(**kwargs)

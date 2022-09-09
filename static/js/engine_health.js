@@ -63,30 +63,52 @@
 // $(document).on('vue_init', () => {
 //     window.test_chart = new Chart('tst', chart_object)
 // })
-const formatBytes = (bytes, decimals = 2) => {
-    if (bytes === 0) return '0 Bytes';
+const formatBytes = (bytes, decimals = 1) => {
+    if (bytes === 0) return '0 Bytes'
 
-    const k = 1024;
-    const dm = decimals < 0 ? 0 : decimals;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+    const k = 1024
+    const dm = decimals < 0 ? 0 : decimals
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
 
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + (sizes[i] || 'byte')
 }
 
 window.engine_health = {
-    reload: () => {
+    reload: async (chart_names = ['all']) => {
         const params = window.engine_health.get_params()
-        Object.values(window.engine_health.charts).forEach(async i => {
-            const resp = await fetch(i.url + params)
+        if (chart_names.includes('all')) {
+            const url_all = '/api/v1/backend_performance/charts/engine_health/all?'
+            const resp = await fetch(url_all + params)
             if (resp.ok) {
-                i.chart.data = await resp.json()
-                i.chart.options.scales.x.min = new Date(params.get('start_time')).valueOf()
-                i.chart.options.scales.x.max = new Date(params.get('end_time')).valueOf()
-                i.chart.update()
+                const charts_data = await resp.json()
+
+                Object.entries(charts_data).forEach(([chart_name, data]) => {
+                    const co = window.engine_health.charts[chart_name]
+                    if (co !== undefined) {
+                        co.chart.data = data
+                        // co.chart.options.scales.x.min = new Date(params.get('start_time')).valueOf()
+                        // co.chart.options.scales.x.max = new Date(params.get('end_time')).valueOf()
+                        co.chart.update()
+                    }
+                })
+
             } // todo: handle resp not ok
-        })
+
+        } else {
+            for (const i of chart_names) {
+                const co = window.engine_health.charts[i]
+                if (co !== undefined) {
+                    const resp = await fetch(co.url + params)
+                    if (resp.ok) {
+                        co.chart.data = await resp.json()
+                        // co.chart.options.scales.x.min = new Date(params.get('start_time')).valueOf()
+                        // co.chart.options.scales.x.max = new Date(params.get('end_time')).valueOf()
+                        co.chart.update()
+                    } // todo: handle resp not ok
+                }
+            }
+        }
     },
     get_params: () => {
         const {
@@ -117,57 +139,57 @@ window.engine_health = {
 
 $(document).on('vue_init', async () => {
     window.engine_health.charts.load = {
-    chart: new Chart('engine_health_load', {
-        type: 'line',
-        // parsing: false,
-        normalized: true,
-        responsive: true,
-        options: {
-            scales: {
-                y: {
-                    min: 0,
-                    // max: 100,
-                    type: 'linear',
-                    ticks: {
-                        count: 6,
-                        padding: 28
-                    }
-                },
-                x: {
-                    type: 'time',
-                    grid: {
-                        display: false
-                    },
-                    display: false
-                }
-            },
-            plugins: {
-                legend: {
-                    display: true,
-                    position: 'bottom'
-                },
-                title: {
-                    display: true,
-                    text: 'LOAD',
-                    align: 'start',
-                    fullSize: false
-                },
-            },
-        },
-    }),
-    url: '/api/v1/backend_performance/charts/engine_health/load?'
-}
-    window.engine_health.charts.cpu = {
-        chart: new Chart('engine_health_cpu', {
+        chart: new Chart('engine_health_load', {
             type: 'line',
             // parsing: false,
-            normalized: true,
+            // normalized: true,
             responsive: true,
             options: {
                 scales: {
                     y: {
                         min: 0,
-                        max: 100,
+                        // max: 100,
+                        type: 'linear',
+                        ticks: {
+                            count: 6,
+                            padding: 27,
+                            align: 'end'
+                        }
+                    },
+                    x: {
+                        type: 'time',
+                        grid: {
+                            display: false
+                        },
+                        display: false
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'bottom'
+                    },
+                    title: {
+                        display: true,
+                        text: 'LOAD',
+                        align: 'start',
+                        fullSize: false
+                    },
+                },
+            },
+        }),
+        url: '/api/v1/backend_performance/charts/engine_health/load?'
+    }
+    window.engine_health.charts.cpu = {
+        chart: new Chart('engine_health_cpu', {
+            type: 'line',
+            // normalized: true,
+            responsive: true,
+            options: {
+                scales: {
+                    y: {
+                        min: 0,
+                        // max: 100,
                         // suggestedMax: 100,
                         type: 'linear',
                         ticks: {
@@ -175,7 +197,7 @@ $(document).on('vue_init', async () => {
                             callback: (value, index, ticks) => {
                                 return `${value}%`
                             },
-                            padding: 15
+                            padding: 20
                         },
                     },
                     x: {
@@ -205,7 +227,7 @@ $(document).on('vue_init', async () => {
     window.engine_health.charts.memory = {
         chart: new Chart('engine_health_memory', {
             type: 'line',
-            normalized: true,
+            // normalized: true,
             responsive: true,
             options: {
                 scales: {
@@ -217,7 +239,7 @@ $(document).on('vue_init', async () => {
                             count: 6,
                             callback: (value, index, ticks) => {
                                 return formatBytes(value)
-                            }
+                            },
                         }
                     },
                     x: {

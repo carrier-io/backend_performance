@@ -56,7 +56,7 @@ const stopTest = async () => {
 
 
 const SummaryController = {
-    props: ['samplers', 'start_time', 'end_time', 'test_name', 'initial_status_percentage', 'lg_type', 'build_id'],
+    props: ['initial_samplers', 'start_time', 'end_time', 'test_name', 'initial_status_percentage', 'lg_type', 'build_id'],
     delimiters: ['[[', ']]'],
     data() {
         return {
@@ -64,11 +64,12 @@ const SummaryController = {
                 low: 0,
                 high: 100
             },
+            samplers: [],
             sampler_type: '',
             status_type: 'all',
             // todo: change to 'auto'
-            aggregator: '30s',
-            // aggregator: 'auto',
+            // aggregator: '30s',
+            aggregator: 'auto',
             update_interval: 0,
             auto_update_id: null,
             status_percentage: 0,
@@ -77,6 +78,7 @@ const SummaryController = {
         }
     },
     async mounted() {
+        this.samplers = this.initial_samplers
         this.status_percentage = this.initial_status_percentage
         this.sampler_type = this.samplers.length > 0 ? this.samplers[0] : ''
         $(() => {
@@ -130,7 +132,10 @@ const SummaryController = {
     watch: {
         async active_tab_id(new_value) {
             await this.handle_tab_load(new_value)
-            await vueVm.registered_components.requests_chart_legend?.load_chart()
+            // await vueVm.registered_components.requests_chart_legend?.load_chart()
+        },
+        samplers() {
+            this.$nextTick(() => $('.selectpicker').selectpicker('redner').selectpicker('refresh'))
         }
     },
     methods: {
@@ -159,12 +164,13 @@ const SummaryController = {
                         'Response time, ms'
                     )
             }
+            await vueVm.registered_components.requests_chart_legend?.load_chart()
         },
         async handle_slider_change(values) {
             [this.slider.low, this.slider.high] = values
             await this.handle_tab_load(this.active_tab_id)
             this.fill_error_table()
-            window.engine_health?.reload()
+            await window.engine_health?.reload()
         },
         handle_tab_change(event) {
             this.active_tab_id = event.target.id
@@ -172,17 +178,17 @@ const SummaryController = {
         async handle_status_change(event) {
             this.status_type = event.target.value
             await this.handle_tab_load(this.active_tab_id)
-            window.engine_health?.reload()
+            await window.engine_health?.reload()
         },
         async handle_aggregator_change(event) {
             this.aggregator = event.target.value
             await this.handle_tab_load(this.active_tab_id)
-            window.engine_health?.reload()
+            await window.engine_health?.reload()
         },
         async handle_sampler_change(event) {
             this.sampler_type = event.target.value
             await this.handle_tab_load(this.active_tab_id)
-            window.engine_health?.reload()
+            await window.engine_health?.reload()
         },
         handle_change_update_interval(event) {
             this.update_interval = parseInt(event.target.value)
@@ -198,7 +204,7 @@ const SummaryController = {
                             if (!['finished', 'error', 'failed', 'success'].includes(message.toLowerCase())) {
                                 await this.handle_tab_load(this.active_tab_id)
                                 this.fill_error_table()
-                                window.engine_health?.reload()
+                                await window.engine_health?.reload()
                             } else {
                                 clearInterval(this.auto_update_id)
                                 this.auto_update_id = null

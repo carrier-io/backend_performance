@@ -6,25 +6,8 @@ const get_responses_chart = (mount_id, y_label, chartData) => {
             animation: false,
             responsive: true,
             // hoverMode: 'index',
-            interaction: {
-                mode: 'point'
-            },
-            // stacked: false,
-            // legendCallback: function (chart) {
-            //     var legendHtml = [];
-            //     for (var i = 0; i < chart.data.datasets.length; i++) {
-            //         if (chart.data.datasets[i].label != "Active Users") {
-            //             var cb = '<div class="d-flex mb-3">';
-            //             cb += '<label class="mb-0 w-100 d-flex align-items-center custom-checkbox custom-checkbox__multicolor">'
-            //             cb += '<input class="mx-2 custom__checkbox" id="' + chart.legend.legendItems[i].datasetIndex + '" type="checkbox" checked="true" style="--cbx-color: ' + chart.data.datasets[i].backgroundColor + ';" '
-            //             cb += 'onclick="updateChart(event, ' + '\'' + chart.legend.legendItems[i].datasetIndex + '\'' + ')"/>';
-            //             cb += '<span class="custom-chart-legend-span"></span>'
-            //             cb += chart.data.datasets[i].label;
-            //             cb += '</label></div>'
-            //             legendHtml.push(cb);
-            //         }
-            //     }
-            //     return legendHtml.join("");
+            // interaction: {
+            //     mode: 'point'
             // },
             plugins: {
                 legend: {
@@ -81,14 +64,35 @@ const get_responses_chart = (mount_id, y_label, chartData) => {
             // }
             scales: {
                 x: {
+                    type: 'time',
                     grid: {
                         display: false
                     }
                 },
-                y: {
+                response_time: {
+                    type: 'linear',
+                    position: 'left',
+                    text: y_label,
                     display: true,
                     grid: {
-                        display: false
+                        display: true,
+                        borderDash: [2, 1],
+                        color: "#D3D3D3"
+                    },
+                    ticks: {
+                        count: 10
+                    }
+                },
+                active_users: {
+                    type: 'linear',
+                    position: 'right',
+                    min: 0,
+                    grid: {
+                        display: false,
+                        drawOnChartArea: false,
+                    },
+                    ticks: {
+                        count: 10
                     }
                 }
             }

@@ -54,15 +54,12 @@ const ChartLegend = {
                     type="checkbox"
                     style="--cbx-color: var(--basic);"
                     v-model="all_selected"
-                >
+                />
                 <span class="w-100 d-inline-block">Select/Unselect all</span>
             </label>
         </div>
         <hr class="my-0">
-        <div id="chartjs-custom-legend"
-            class="custom-chart-legend d-flex flex-column px-3 py-3"
-            style="height: 400px; overflow: scroll;"
-        >
+        <div class="custom-chart-legend d-flex flex-column px-3 py-3" style="overflow: scroll; max-height: 450px">
             <LegendItem
                 v-for="i in labels"
                 :key="i.datasetIndex"

@@ -35,5 +35,5 @@ class API(Resource):
         self.module = module
 
     def get(self, source: str, target: str):
-        args = request.args
+        args = dict(request.args)
         return self.mapping[source][target](args)

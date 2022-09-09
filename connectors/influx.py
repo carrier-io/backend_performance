@@ -561,7 +561,6 @@ def get_engine_health_cpu(influx_client=None, **kwargs):
     kwargs['host'] = 'perfmeter_valid_big_Lg_9042_3537'
     query = '''
         SELECT 
-            mean(usage_idle) as "idle", 
             mean(usage_system) as "system",
             mean(usage_user) as "user",
             mean(usage_softirq) as "softirq",

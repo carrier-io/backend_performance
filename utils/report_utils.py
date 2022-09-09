@@ -79,12 +79,15 @@ def comparison_data(timeline, data):
     return chart_data
 
 
-def chart_data(timeline, users, other, yAxis="response_time"):
-    labels = []
-    try:
-        for _ in timeline:
-            labels.append(datetime.strptime(_, "%Y-%m-%dT%H:%M:%SZ").strftime("%m-%d %H:%M:%S"))
-    except:
+def chart_data(timeline, users, other, yAxis="response_time", convert_time: bool = True) -> dict:
+    if convert_time:
+        labels = []
+        try:
+            for t in timeline:
+                labels.append(datetime.strptime(t, "%Y-%m-%dT%H:%M:%SZ").strftime("%m-%d %H:%M:%S"))
+        except ValueError:
+            labels = timeline
+    else:
         labels = timeline
     _data = {
         "labels": labels,

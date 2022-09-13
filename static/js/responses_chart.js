@@ -91,9 +91,9 @@ const get_responses_chart = (mount_id, y_label, chartData) => {
                         display: false,
                         drawOnChartArea: false,
                     },
-                    ticks: {
-                        count: 10
-                    }
+                    // ticks: {
+                    //     count: 10
+                    // }
                 }
             }
         },

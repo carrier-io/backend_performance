@@ -110,10 +110,10 @@
                 </div>
             </div>
             <div class="position-relative">
+
                 <div id="preset">
                     <div class="d-flex mt-3">
-                        <div class="chart flex-grow-1"
-                             style="position: relative; height: 450px; width: calc(100% - 280px);">
+                        <div class="chart flex-grow-1 chart-container">
                             <div id="chart-loader"
                                  class="layout-spinner">
                                 <i class="spinner-loader__32x32 spinner-centered"></i>
@@ -125,19 +125,20 @@
                                 @register="register"
                                 instance_name="requests_chart_legend"
                                 :chart_object_name="master.current_chart"
+                                item_container_classes="custom-chart-legend"
                             ></Chart-Legend>
                         </div>
                     </div>
                 </div>
+
                 <div id="analytics" class="hidden">
                     <div class="d-flex mt-3">
-                        <div class="chart flex-grow-1" style="position: relative; height: 450px; width: calc(100% - 280px);">
+                        <div class="chart flex-grow-1 chart-container">
                             <canvas id="chart-analytics" height="100%"></canvas>
                         </div>
                         <analytic-filter
                                 :analytics-data='{{ analytics_control | tojson }}'
                                 @register="register"
-{#                                instance_name="analytic-filter"#}
                         >
                         </analytic-filter>
                     </div>

@@ -110,7 +110,9 @@ def calculate_analytics_dataset(build_id, test_name, lg_type, start_time, end_ti
 def get_data_from_influx(args):
     start_time, end_time, aggregation = _timeframe(args)
     metric = args.get('metric', '')
-    scope = args.getlist("scope[]")
+    scope = args.get("scope[]", [])
+    log.info('analytics scopes: %s', scope)
+    log.info('r args: %s', args)
     timestamps, users = get_backend_users(args['build_id'], args['lg_type'],
                                           start_time, end_time, aggregation)
     axe = 'count'
@@ -244,7 +246,7 @@ def generate_engine_health_dataset(host_name: str, series_data: list, data_struc
             'borderWidth': 2,
             'fill': False,
             'lineTension': 0.1,
-            'pointRadius': 0,
+            'pointRadius': 1,
             'spanGaps': True,
             'tag_host': host_name,
         }

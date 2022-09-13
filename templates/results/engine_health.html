@@ -8,14 +8,26 @@
     </div>
     <div class="card-body d-flex">
         <div class="engine_health_card">
+            <multiselect-dropdown
+                @register="register"
+                placeholder="Select Metrics"
+                instance_name="load_metric_select"
+            ></multiselect-dropdown>
             <canvas id="engine_health_load"></canvas>
+            <div>
+                <Chart-Legend
+                    @register="register"
+                    instance_name="engine_health_legend_load"
+                    :select_all_enabled='false'
+                ></Chart-Legend>
+            </div>
             <canvas id="engine_health_cpu"></canvas>
             <canvas id="engine_health_memory"></canvas>
         </div>
         <div class="card mx-3" style="width: 280px;">
             <Engine-Health-Legend
-                @register="register"
-                instance_name="engine_health_chart_legend"
+                    @register="register"
+                    instance_name="engine_health_chart_legend"
             >
             </Engine-Health-Legend>
         </div>

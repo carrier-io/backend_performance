@@ -8,7 +8,7 @@ const LegendItem = {
     ],
     template: `
         <div class="d-flex mb-3">
-            <label class="mb-0 w-100 d-flex align-items-center custom-checkbox custom-checkbox__multicolor">
+            <label class="d-flex align-items-center custom-checkbox custom-checkbox__multicolor">
                 <input type="checkbox" class="mx-2 custom__checkbox" 
                     :checked="!hidden"
                     :style="{'--cbx-color': fillStyle}"
@@ -25,19 +25,27 @@ const ChartLegend = {
     components: {
         LegendItem: LegendItem
     },
-    props: ['chart_object_name'],
+    props: ['chart_object_name', 'select_all_enabled', 'item_container_classes'],
     data() {
         return {
             all_selected: true,
-            labels: []
+            labels: [],
+            co_name: undefined,
+            show_select_all: true
         }
     },
     async mounted() {
-        await this.load_chart()
+        this.co_name = this.chart_object_name
+        this.show_select_all = this.select_all_enabled === undefined ? true : Boolean(this.select_all_enabled)
     },
     watch: {
-        async chart_object_name(new_value) {
-            await this.load_chart()
+        async co_name(new_value) {
+            if (new_value !== undefined) {
+                while (window[new_value] === undefined)
+                    await new Promise(resolve => setTimeout(resolve, 500))
+                this.chart_object = window[new_value]
+                this.reload()
+            }
         },
         all_selected(new_value) {
             this.labels.forEach(i => {
@@ -48,8 +56,10 @@ const ChartLegend = {
         }
     },
     template: `
-        <div class="d-flex flex-column p-3">
-            <label class="mb-0 w-100 d-flex align-items-center custom-checkbox custom-checkbox__multicolor">
+        <div class="d-flex flex-column p-3" 
+            v-if="show_select_all"
+        >
+            <label class="d-flex align-items-center custom-checkbox custom-checkbox__multicolor">
                 <input class="mx-2 custom__checkbox"
                     type="checkbox"
                     style="--cbx-color: var(--basic);"
@@ -58,8 +68,12 @@ const ChartLegend = {
                 <span class="w-100 d-inline-block">Select/Unselect all</span>
             </label>
         </div>
-        <hr class="my-0">
-        <div class="custom-chart-legend d-flex flex-column px-3 py-3" style="overflow: scroll; max-height: 450px">
+        <hr class="my-0"
+            v-if="show_select_all"
+        >
+        <div class="d-flex flex-column p-3"
+            :class="item_container_classes"
+        >
             <LegendItem
                 v-for="i in labels"
                 :key="i.datasetIndex"
@@ -70,11 +84,10 @@ const ChartLegend = {
         
     `,
     methods: {
-        async load_chart() {
-            while (window[this.chart_object_name] === undefined)
-                await new Promise(resolve => setTimeout(resolve, 500))
-            this.chart_object = window[this.chart_object_name]
-            this.labels = Chart.defaults.plugins.legend.labels.generateLabels(this.chart_object)
+        reload() {
+            if (this.chart_object !== undefined) {
+                this.labels = Chart.defaults.plugins.legend.labels.generateLabels(this.chart_object)
+            }
         },
         handle_legend_item_change(item_index) {
             const item = this.labels[item_index]

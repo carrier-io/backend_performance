@@ -139,7 +139,7 @@ $(document).on('vue_init', async () => {
                         grid: {
                             display: false
                         },
-                        display: false
+                        // display: false
                     }
                 },
                 plugins: {
@@ -232,6 +232,7 @@ const EngineHealthLegend = {
                 hosts.forEach(i => unique_hosts.add(i))
                 // Chart.defaults.plugins.legend.labels.generateLabels(this.chart_object)
             })
+            this.labels = []
             unique_hosts.forEach(item => {
                 const randomHsl = () => `hsl(${Math.random() * 360}, 100%, 60%)`
                 let color = this.palette[item]
@@ -281,7 +282,7 @@ const EngineHealthLegend = {
     },
     template: `
         <div class="d-flex flex-column p-3">
-            <label class="mb-0 w-100 d-flex align-items-center custom-checkbox custom-checkbox__multicolor">
+            <label class="d-flex align-items-center custom-checkbox custom-checkbox__multicolor">
                 <input class="mx-2 custom__checkbox"
                     type="checkbox"
                     style="--cbx-color: var(--basic);"
@@ -291,7 +292,7 @@ const EngineHealthLegend = {
             </label>
         </div>
         <hr class="my-0">
-        <div class="custom-chart-legend d-flex flex-column px-3 py-3" style="overflow: scroll; max-height: 450px">
+        <div class="d-flex flex-column p-3" >
             <LegendItem
                 v-for="i in labels"
                 :key="i"

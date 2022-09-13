@@ -35,5 +35,8 @@ class API(Resource):
         self.module = module
 
     def get(self, source: str, target: str):
-        args = dict(request.args)
+        args = request.args.to_dict(flat=True)
+        for i in request.args.keys():
+            if i.endswith('[]'):
+                args[i] = request.args.getlist(i)
         return self.mapping[source][target](args)

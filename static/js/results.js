@@ -132,7 +132,6 @@ const SummaryController = {
     watch: {
         async active_tab_id(new_value) {
             await this.handle_tab_load(new_value)
-            // await vueVm.registered_components.requests_chart_legend?.load_chart()
         },
         samplers() {
             this.$nextTick(() => $('.selectpicker').selectpicker('redner').selectpicker('refresh'))
@@ -164,7 +163,7 @@ const SummaryController = {
                         'Response time, ms'
                     )
             }
-            await vueVm.registered_components.requests_chart_legend?.load_chart()
+            vueVm.registered_components.requests_chart_legend?.reload()
         },
         async handle_slider_change(values) {
             [this.slider.low, this.slider.high] = values

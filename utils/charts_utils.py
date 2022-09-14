@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import Callable, Optional
+from typing import Callable, Optional, Generator
 
 from ..models.api_reports import APIReport
 from ..connectors.influx import (
@@ -237,12 +237,13 @@ def engine_health(args: dict, part: str = 'all') -> dict:
     return func(**d)
 
 
-def generate_engine_health_dataset(host_name: str, series_data: list, data_structure: dict):
+def generate_engine_health_dataset(host_name: str, series_data: list, data_structure: dict,
+                                   palette: Optional[Generator] = None):
     for section, options in data_structure.items():
         dataset = {
             'data': list(map(lambda x: x[section], series_data)),
-            'label': f'{section}:{host_name}',
-            # 'label': section,
+            # 'label': f'{section}:{host_name}',
+            'label': section,
             'borderWidth': 2,
             'fill': False,
             'lineTension': 0.1,
@@ -250,6 +251,11 @@ def generate_engine_health_dataset(host_name: str, series_data: list, data_struc
             'spanGaps': True,
             'tag_host': host_name,
         }
+        if palette:
+            try:
+                dataset['borderColor'] = 'rgb({}, {}, {})'.format(*next(palette))
+            except StopIteration:
+                dataset['borderColor'] = '#ffffff'
         dataset.update(options)
         yield dataset
 
@@ -257,10 +263,12 @@ def generate_engine_health_dataset(host_name: str, series_data: list, data_struc
 def format_engine_health_data(health_data: dict, data_structure: dict) -> dict:
     datasets = []
     labels = []
+    palette = data_tools.charts.color_gen(len(health_data.keys()) * len(data_structure.keys()))
     for host, series in health_data.items():
         if not labels:
             labels = list(map(lambda x: x['time'], series))
-        datasets.extend(generate_engine_health_dataset(host, series, data_structure))
+
+        datasets.extend(generate_engine_health_dataset(host, series, data_structure, palette))
 
     return {
         'datasets': datasets,
@@ -273,16 +281,14 @@ def engine_health_cpu(**kwargs) -> dict:
     health_data = get_engine_health_cpu(**kwargs)
     structure = {
         'system': {
-            'borderColor': 'aqua'
+            'hidden': True
         },
-        'user': {
-            'borderColor': 'yellow',
-        },
+        'user': {},
         'softirq': {
-            'borderColor': 'orange',
+            'hidden': True
         },
         'iowait': {
-            'borderColor': 'purple',
+            'hidden': True
         },
     }
     return format_engine_health_data(health_data, structure)
@@ -290,14 +296,9 @@ def engine_health_cpu(**kwargs) -> dict:
 
 def engine_health_memory(**kwargs) -> dict:
     health_data = get_engine_health_memory(**kwargs)
-
     structure = {
-        'heap memory': {
-            'borderColor': 'green',
-        },
-        'non-heap memory': {
-            'borderColor': 'yellow',
-        },
+        'heap memory': {},
+        'non-heap memory': {},
     }
     return format_engine_health_data(health_data, structure)
 
@@ -305,14 +306,8 @@ def engine_health_memory(**kwargs) -> dict:
 def engine_health_load(**kwargs) -> dict:
     health_data = get_engine_health_load(**kwargs)
     structure = {
-        'load1': {
-            'borderColor': 'green',
-        },
-        'load5': {
-            'borderColor': 'yellow',
-        },
-        'load15': {
-            'borderColor': 'aqua',
-        },
+        'load1': {},
+        'load5': {},
+        'load15': {},
     }
     return format_engine_health_data(health_data, structure)

@@ -25,14 +25,15 @@ window.engine_health = {
                         // co.chart.options.scales.x.min = new Date(params.get('start_time')).valueOf()
                         // co.chart.options.scales.x.max = new Date(params.get('end_time')).valueOf()
                         co.chart.update()
+                        // vueVm.registered_components[`engine_health_legend_${chart_name}`]?.load()
                     }
                 })
                 await vueVm.registered_components.engine_health_chart_legend?.load_charts()
             } // todo: handle resp not ok
 
         } else {
-            for (const i of chart_names) {
-                const co = window.engine_health.charts[i]
+            for (const chart_name of chart_names) {
+                const co = window.engine_health.charts[chart_name]
                 if (co !== undefined) {
                     const resp = await fetch(co.url + params)
                     if (resp.ok) {
@@ -40,6 +41,7 @@ window.engine_health = {
                         // co.chart.options.scales.x.min = new Date(params.get('start_time')).valueOf()
                         // co.chart.options.scales.x.max = new Date(params.get('end_time')).valueOf()
                         co.chart.update()
+                        // vueVm.registered_components?.[`engine_health_legend_${chart_name}`]?.load()
                     } // todo: handle resp not ok
                 }
             }
@@ -95,12 +97,12 @@ $(document).on('vue_init', async () => {
                         grid: {
                             display: false
                         },
-                        display: false
+                        display: true
                     }
                 },
                 plugins: {
                     legend: {
-                        display: true,
+                        display: false,
                         position: 'bottom'
                     },
                     title: {
@@ -144,7 +146,7 @@ $(document).on('vue_init', async () => {
                 },
                 plugins: {
                     legend: {
-                        display: true,
+                        display: false,
                         position: 'bottom'
                     },
                     title: {
@@ -185,7 +187,7 @@ $(document).on('vue_init', async () => {
                 },
                 plugins: {
                     legend: {
-                        display: true,
+                        display: false,
                         position: 'bottom',
                     },
                     title: {
@@ -210,7 +212,7 @@ const EngineHealthLegend = {
         return {
             all_selected: true,
             labels: [],
-            palette: {}
+            // palette: {}
         }
     },
     async mounted() {
@@ -234,18 +236,18 @@ const EngineHealthLegend = {
             })
             this.labels = []
             unique_hosts.forEach(item => {
-                const randomHsl = () => `hsl(${Math.random() * 360}, 100%, 60%)`
-                let color = this.palette[item]
-                if (color === undefined) {
-                    color = randomHsl()
-                    this.palette[item] = color
-                    this.handle_new_color_for_host(item)
-                }
+                // const randomHsl = () => `hsl(${Math.random() * 360}, 100%, 60%)`
+                // let color = this.palette[item]
+                // if (color === undefined) {
+                //     color = randomHsl()
+                //     this.palette[item] = color
+                //     this.handle_new_color_for_host(item)
+                // }
                 this.labels.push({
                     text: item,
                     hidden: false,
                     datasetIndex: this.labels.length,
-                    fillStyle: color
+                    fillStyle: 'var(--basic)'
                 })
             })
             this.update_charts()
@@ -258,17 +260,20 @@ const EngineHealthLegend = {
             this.update_charts()
         },
         update_charts() {
-            Object.values(window.engine_health.charts).forEach(({chart}) => chart.update())
-        },
-        handle_new_color_for_host(host) {
-            Object.values(window.engine_health.charts).forEach(({chart}) => {
-                chart.data.datasets.forEach((dataset, index) => {
-                    if (dataset.tag_host === host) {
-                        dataset.backgroundColor = this.palette[host]
-                    }
-                })
+            Object.entries(window.engine_health.charts).forEach(([chart_name, {chart}]) => {
+                chart.update()
+                vueVm.registered_components[`engine_health_legend_${chart_name}`]?.load()
             })
         },
+        // handle_new_color_for_host(host) {
+        //     Object.values(window.engine_health.charts).forEach(({chart}) => {
+        //         chart.data.datasets.forEach((dataset, index) => {
+        //             if (dataset.tag_host === host) {
+        //                 dataset.backgroundColor = this.palette[host]
+        //             }
+        //         })
+        //     })
+        // },
         handle_host_visibility_change(item) {
             Object.values(window.engine_health.charts).forEach(({chart}) => {
                 chart.data.datasets.forEach((dataset, index) => {
@@ -304,3 +309,110 @@ const EngineHealthLegend = {
     `,
 }
 register_component('EngineHealthLegend', EngineHealthLegend)
+
+const EngineHealthMetricsLegend = {
+    props: ['for_chart'],
+    delimiters: ['[[', ']]'],
+    components: {
+        LegendItem: LegendItem
+    },
+    data() {
+        return {
+            // labels: [],
+            label_groups: {},
+        }
+    },
+    methods: {
+        get_chart() {
+            return window.engine_health?.charts[this.for_chart]?.chart
+        },
+        load() {
+            const chart = this.get_chart()
+            this.label_groups = {}
+            const visible_metrics = window.vueVm?.registered_components[`${this.for_chart}_metric_select`]?.selected_items
+            chart.data.datasets.forEach(({backgroundColor, borderColor, label, tag_host}, index) => {
+                // this.labels.push({
+                //     text: label,
+                //     host: tag_host,
+                //     hidden: !chart.getDataVisibility(index),
+                //     datasetIndex: index,
+                //     fillStyle: backgroundColor
+                // })
+                this.label_groups[tag_host] = this.label_groups[tag_host] || []
+                const label_object = {
+                    text: label,
+                    host: tag_host,
+                    hidden: !chart.isDatasetVisible(index),
+                    datasetIndex: index,
+                    fillStyle: borderColor
+                }
+                if (visible_metrics !== undefined && !visible_metrics.includes(label)) {
+                    label_object.hidden = true
+                    chart.setDatasetVisibility(index, false)
+                }
+                this.label_groups[tag_host].push(label_object)
+
+                // this.label_groups[`${tag_host}_dummy`] = this.label_groups[tag_host] || []
+                // this.label_groups[`${tag_host}_dummy`].push({
+                //     text: label,
+                //     host: tag_host,
+                //     hidden: !chart.getDataVisibility(index),
+                //     datasetIndex: index,
+                //     fillStyle: backgroundColor
+                // })
+            })
+            chart.update()
+        },
+        handle_legend_item_change(index) {
+            const chart = this.get_chart()
+            chart.setDatasetVisibility(index, !chart.isDatasetVisible(index))
+            chart.update()
+            this.load()
+        },
+        // handle_metric_filter_change() {
+        //     $('.dropdown_simple-list').on('change', e => e.target._modelValue)
+        // }
+    },
+    computed: {
+        visible_groups() {
+            const hidden_groups = window.vueVm?.registered_components.engine_health_chart_legend?.labels.filter(
+                i => i.hidden
+            ).map(
+                i => i.text
+            ) || []
+
+            const visible_metrics = window.vueVm?.registered_components[`${this.for_chart}_metric_select`]?.selected_items
+
+            return Object.entries(this.label_groups).filter(
+                ([k, v]) => !hidden_groups.includes(k)
+            ).map(([group, metric]) => {
+                metric = visible_metrics === undefined ?
+                    metric :
+                    metric.filter(({text}) => {
+                        return visible_metrics.includes(text)
+                    })
+                return [group, metric]
+            })
+        }
+    },
+    template: `
+        <div class="d-flex flex-wrap justify-content-around engine_health_metrics_legend">
+
+            <div class="d-flex flex-column text-center" 
+                v-for="([group, metric]) in visible_groups"
+            >
+                <div><h13>[[ group ]]</h13></div>
+                <div><hr class="my-0"/></div>
+                <div class="d-flex justify-content-center">
+                    <LegendItem
+                        v-for="i in metric"
+                        :key="i"
+                        v-bind="i"
+                        @change="handle_legend_item_change"
+                    ></LegendItem>
+                </div>
+            </div>
+        </div>
+    `
+}
+register_component('EngineHealthMetricsLegend', EngineHealthMetricsLegend)

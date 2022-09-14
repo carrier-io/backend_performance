@@ -23,6 +23,14 @@
     width: 100%;
 }
 
-.engine_health_card canvas:last-child {
-    max-height: 320px;
+/*.engine_health_card canvas:last-child {*/
+/*    max-height: 320px;*/
+/*}*/
+
+.engine_health_metrics_legend {
+    margin: 0px 15px 10px 65px;
 }
+
+/*.engine_health_metrics_legend:last-child {*/
+/*    margin: 0 15px 10px 65px;*/
+/*}*/

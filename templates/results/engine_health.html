@@ -8,21 +8,45 @@
     </div>
     <div class="card-body d-flex">
         <div class="engine_health_card">
-            <multiselect-dropdown
+            <Multiselect-Dropdown
                 @register="register"
                 placeholder="Select Metrics"
                 instance_name="load_metric_select"
-            ></multiselect-dropdown>
+                :list_items='["load1", "load5", "load15"]'
+                :pre_selected_indexes='[2]'
+            ></Multiselect-Dropdown>
+            <Multiselect-Dropdown
+                @register="register"
+                placeholder="Select Metrics"
+                instance_name="cpu_metric_select"
+                :list_items='["system", "user", "softirq", "iowait"]'
+                :pre_selected_indexes='[1]'
+            ></Multiselect-Dropdown>
+            <Multiselect-Dropdown
+                @register="register"
+                placeholder="Select Metrics"
+                instance_name="memory_metric_select"
+                :list_items='["heap memory", "non-heap memory"]'
+                :pre_selected_indexes='[0]'
+            ></Multiselect-Dropdown>
             <canvas id="engine_health_load"></canvas>
-            <div>
-                <Chart-Legend
-                    @register="register"
-                    instance_name="engine_health_legend_load"
-                    :select_all_enabled='false'
-                ></Chart-Legend>
-            </div>
+            <Engine-Health-Metrics-Legend
+                @register="register"
+                instance_name="engine_health_legend_load"
+                for_chart="load"
+            ></Engine-Health-Metrics-Legend>
             <canvas id="engine_health_cpu"></canvas>
+            <Engine-Health-Metrics-Legend
+                @register="register"
+                instance_name="engine_health_legend_cpu"
+                for_chart="cpu"
+            ></Engine-Health-Metrics-Legend>
             <canvas id="engine_health_memory"></canvas>
+            <Engine-Health-Metrics-Legend
+                @register="register"
+                instance_name="engine_health_legend_memory"
+                for_chart="memory"
+            ></Engine-Health-Metrics-Legend>
         </div>
         <div class="card mx-3" style="width: 280px;">
             <Engine-Health-Legend

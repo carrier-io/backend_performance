@@ -14,8 +14,7 @@ const LegendItem = {
                     :style="{'--cbx-color': fillStyle}"
                     @change="$emit('change', this.datasetIndex)"
                  />
-                 <span class="custom-chart-legend-span"></span>
-                 [[ text ]]
+                 <span>[[ text ]]</span>
              </label>
          </div>
     `,

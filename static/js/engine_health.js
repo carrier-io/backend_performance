@@ -300,7 +300,7 @@ const EngineHealthLegend = {
         <div class="d-flex flex-column p-3" >
             <LegendItem
                 v-for="i in labels"
-                :key="i"
+                :key="i.datasetIndex"
                 v-bind="i"
                 @change="handle_legend_item_change"
             ></LegendItem>
@@ -316,9 +316,15 @@ const EngineHealthMetricsLegend = {
     components: {
         LegendItem: LegendItem
     },
+    async mounted() {
+        await wait_for('vueVm')
+        this.metric_select = await wait_for(`${this.for_chart}_metric_select`, vueVm.registered_components)
+        this.legend = await wait_for('engine_health_chart_legend', vueVm.registered_components)
+    },
     data() {
         return {
-            // labels: [],
+            metric_select: undefined,
+            legend: undefined,
             label_groups: {},
         }
     },
@@ -329,15 +335,7 @@ const EngineHealthMetricsLegend = {
         load() {
             const chart = this.get_chart()
             this.label_groups = {}
-            const visible_metrics = window.vueVm?.registered_components[`${this.for_chart}_metric_select`]?.selected_items
             chart.data.datasets.forEach(({backgroundColor, borderColor, label, tag_host}, index) => {
-                // this.labels.push({
-                //     text: label,
-                //     host: tag_host,
-                //     hidden: !chart.getDataVisibility(index),
-                //     datasetIndex: index,
-                //     fillStyle: backgroundColor
-                // })
                 this.label_groups[tag_host] = this.label_groups[tag_host] || []
                 const label_object = {
                     text: label,
@@ -346,20 +344,11 @@ const EngineHealthMetricsLegend = {
                     datasetIndex: index,
                     fillStyle: borderColor
                 }
-                if (visible_metrics !== undefined && !visible_metrics.includes(label)) {
+                if (this.visible_metrics !== undefined && !this.visible_metrics.includes(label)) {
                     label_object.hidden = true
                     chart.setDatasetVisibility(index, false)
                 }
                 this.label_groups[tag_host].push(label_object)
-
-                // this.label_groups[`${tag_host}_dummy`] = this.label_groups[tag_host] || []
-                // this.label_groups[`${tag_host}_dummy`].push({
-                //     text: label,
-                //     host: tag_host,
-                //     hidden: !chart.getDataVisibility(index),
-                //     datasetIndex: index,
-                //     fillStyle: backgroundColor
-                // })
             })
             chart.update()
         },
@@ -369,31 +358,33 @@ const EngineHealthMetricsLegend = {
             chart.update()
             this.load()
         },
-        // handle_metric_filter_change() {
-        //     $('.dropdown_simple-list').on('change', e => e.target._modelValue)
-        // }
+    },
+    watch: {
+        visible_metrics(newValue) {
+            this.load()
+        }
     },
     computed: {
-        visible_groups() {
-            const hidden_groups = window.vueVm?.registered_components.engine_health_chart_legend?.labels.filter(
+        visible_metrics() {
+            return this.metric_select?.selected_items
+        },
+        hidden_groups() {
+            return this.legend?.labels.filter(
                 i => i.hidden
             ).map(
                 i => i.text
-            ) || []
-
-            const visible_metrics = window.vueVm?.registered_components[`${this.for_chart}_metric_select`]?.selected_items
-
+            )
+        },
+        visible_groups() {
             return Object.entries(this.label_groups).filter(
-                ([k, v]) => !hidden_groups.includes(k)
+                ([k, v]) => !this.hidden_groups.includes(k)
             ).map(([group, metric]) => {
-                metric = visible_metrics === undefined ?
+                metric = this.visible_metrics === undefined ?
                     metric :
-                    metric.filter(({text}) => {
-                        return visible_metrics.includes(text)
-                    })
+                    metric.filter(({text}) => this.visible_metrics.includes(text))
                 return [group, metric]
             })
-        }
+        },
     },
     template: `
         <div class="d-flex flex-wrap justify-content-around engine_health_metrics_legend">
@@ -406,7 +397,7 @@ const EngineHealthMetricsLegend = {
                 <div class="d-flex justify-content-center">
                     <LegendItem
                         v-for="i in metric"
-                        :key="i"
+                        :key="i.datasetIndex"
                         v-bind="i"
                         @change="handle_legend_item_change"
                     ></LegendItem>

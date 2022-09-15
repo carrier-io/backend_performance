@@ -111,8 +111,6 @@ def get_data_from_influx(args):
     start_time, end_time, aggregation = _timeframe(args)
     metric = args.get('metric', '')
     scope = args.get("scope[]", [])
-    log.info('analytics scopes: %s', scope)
-    log.info('r args: %s', args)
     timestamps, users = get_backend_users(args['build_id'], args['lg_type'],
                                           start_time, end_time, aggregation)
     axe = 'count'

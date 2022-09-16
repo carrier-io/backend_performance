@@ -297,7 +297,7 @@ const EngineHealthLegend = {
             </label>
         </div>
         <hr class="my-0">
-        <div class="d-flex flex-column p-3" >
+        <div class="d-flex flex-column p-3 engine_health_legend_items">
             <LegendItem
                 v-for="i in labels"
                 :key="i.datasetIndex"

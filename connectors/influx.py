@@ -20,11 +20,13 @@ from ..models.api_reports import APIReport
 from pylon.core.tools import log
 
 
-def get_project_id(build_id):
-    return APIReport.query.filter_by(build_id=build_id).first().to_json()["project_id"]
+def get_project_id(build_id: str) -> int:
+    # return APIReport.query.filter_by(build_id=build_id).first().to_json()["project_id"]
+    resp = APIReport.query.with_entities(APIReport.project_id).filter(APIReport.build_id == build_id).first()
+    return resp[0]
 
 
-def get_aggregated_test_results(test, build_id):
+def get_aggregated_test_results(test, build_id: str):
     project_id = get_project_id(build_id)
     query = f"SELECT * from api_comparison where simulation='{test}' and build_id='{build_id}'"
     return list(influx_tools.get_client(project_id, f'comparison_{project_id}').query(query))
@@ -552,3 +554,65 @@ def get_sampler_types(project_id, build_id, test_name, lg_type):
     q_samplers = f"show tag values on {lg_type}_{project_id} with key=sampler_type where build_id='{build_id}'"
     client = influx_tools.get_client(project_id)
     return [each["value"] for each in list(client.query(q_samplers)[f"{test_name}_1s"])]
+
+
+def get_engine_health(query: str, influx_client=None, **kwargs):
+    if influx_client:
+        result = influx_client.query(query)
+    else:
+        project_id = get_project_id(kwargs['build_id'])
+        client = influx_client or influx_tools.get_client(project_id, f'telegraf_{project_id}')
+        result = client.query(query)
+
+    data = dict()
+    for (_, groups), series in result.items():
+        data[groups['host']] = list(series)
+
+    return data
+
+
+def get_engine_health_cpu(influx_client=None, **kwargs):
+    query = '''
+        SELECT 
+            mean(usage_system) as "system",
+            mean(usage_user) as "user",
+            mean(usage_softirq) as "softirq",
+            mean(usage_iowait) as "iowait"
+        FROM "cpu" 
+        WHERE "build_id" = '{build_id}'
+        AND cpu = 'cpu-total' 
+        AND time >= '{start_time}'
+        AND time <= '{end_time}'
+        GROUP BY time({aggregation}), host
+    '''.format(**kwargs)
+    return get_engine_health(query, influx_client=influx_client, **kwargs)
+
+
+def get_engine_health_memory(influx_client=None, **kwargs):
+    query = '''
+        SELECT 
+            HeapMemoryUsage.used as "heap memory", 
+            NonHeapMemoryUsage.used as "non-heap memory"
+        FROM "java_memory" 
+        WHERE "build_id" = '{build_id}'
+        AND time >= '{start_time}'
+        AND time <= '{end_time}'
+        GROUP BY host
+    '''.format(**kwargs)
+
+    return get_engine_health(query, influx_client=influx_client, **kwargs)
+
+
+def get_engine_health_load(influx_client=None, **kwargs):
+    query = '''
+        SELECT 
+            mean(load1) as "load1",
+            mean(load5) as "load5",
+            mean(load15) as "load15"
+        FROM "system" 
+        WHERE "build_id" = '{build_id}'
+        AND time >= '{start_time}'
+        AND time <= '{end_time}'
+        GROUP BY time({aggregation}), host
+    '''.format(**kwargs)
+    return get_engine_health(query, influx_client=influx_client, **kwargs)

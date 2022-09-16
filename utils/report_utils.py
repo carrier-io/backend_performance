@@ -79,12 +79,15 @@ def comparison_data(timeline, data):
     return chart_data
 
 
-def chart_data(timeline, users, other, yAxis="response_time"):
-    labels = []
-    try:
-        for _ in timeline:
-            labels.append(datetime.strptime(_, "%Y-%m-%dT%H:%M:%SZ").strftime("%m-%d %H:%M:%S"))
-    except:
+def chart_data(timeline, users, other, yAxis="response_time", convert_time: bool = True) -> dict:
+    if convert_time:
+        labels = []
+        try:
+            for t in timeline:
+                labels.append(datetime.strptime(t, "%Y-%m-%dT%H:%M:%SZ").strftime("%m-%d %H:%M:%S"))
+        except ValueError:
+            labels = timeline
+    else:
         labels = timeline
     _data = {
         "labels": labels,
@@ -145,8 +148,8 @@ def render_analytics_control(requests):
     return control
 
 
-def calculate_proper_timeframe(build_id, test_name, lg_type, low_value, high_value, start_time, end_time,
-                               aggregation, time_as_ts=False):
+def calculate_proper_timeframe(build_id: str, test_name: str, lg_type: str, low_value: int, high_value: int,
+                               start_time, end_time, aggregation: str, time_as_ts: bool = False) -> tuple:
     start_time = c.str_to_timestamp(start_time)
     end_time = c.str_to_timestamp(end_time)
     interval = end_time - start_time

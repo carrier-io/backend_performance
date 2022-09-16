@@ -82,6 +82,7 @@ const SummaryController = {
         this.status_percentage = this.initial_status_percentage
         this.sampler_type = this.samplers.length > 0 ? this.samplers[0] : ''
         $(() => {
+            // init slider
             noUiSlider.create($("#vuh-performance-time-picker")[0], {
                 range: {
                     'min': 0,
@@ -93,6 +94,8 @@ const SummaryController = {
                     decimals: 0
                 }),
             }).on('set', this.handle_slider_change)
+
+            // init observer
             const observer = new IntersectionObserver((entries, observer) => {
                 entries.forEach((entry) => {
                     if (entry.intersectionRatio === 0) {
@@ -109,23 +112,24 @@ const SummaryController = {
                 threshold: 0
             })
             observer.observe(document.getElementById('under-summary-controller'))
-        })
-        this.fill_error_table()
-        this.poll_test_status()
 
-        $('#summary_table').bootstrapTable('refresh', {
-            url: '/api/v1/backend_performance/charts/requests/table?' + new URLSearchParams({
-                build_id: this.build_id,
-                test_name: this.test_name,
-                lg_type: this.lg_type,
-                sampler: this.sampler_type,
-                start_time: this.start_time,
-                end_time: this.end_time,
-                low_value: this.slider.low,
-                high_value: this.slider.high
+            // refresh tables
+            this.fill_error_table()
+            $('#summary_table').bootstrapTable('refresh', {
+                url: '/api/v1/backend_performance/charts/requests/table?' + new URLSearchParams({
+                    build_id: this.build_id,
+                    test_name: this.test_name,
+                    lg_type: this.lg_type,
+                    sampler: this.sampler_type,
+                    start_time: this.start_time,
+                    end_time: this.end_time,
+                    low_value: this.slider.low,
+                    high_value: this.slider.high
+                })
             })
         })
-        // await this.load_request_data('/api/v1/backend_performance/charts/requests/summary', "Response time, ms")
+
+        this.poll_test_status()
         this.active_tab_id = $('#pills-tab a.active').attr('id')
 
     },

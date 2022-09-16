@@ -369,11 +369,9 @@ const EngineHealthMetricsLegend = {
             return this.metric_select?.selected_items
         },
         hidden_groups() {
-            return this.legend?.labels.filter(
+            return this.legend ? this.legend.labels.filter(
                 i => i.hidden
-            ).map(
-                i => i.text
-            )
+            ).map(i => i.text) : []
         },
         visible_groups() {
             return Object.entries(this.label_groups).filter(

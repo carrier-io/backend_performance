@@ -604,7 +604,8 @@ const TestCreateModal = {
                     },
                     parallel_runners: this.parallel_runners,
                     cc_env_vars: {},
-                    customization: this.customization
+                    customization: this.customization,
+                    location: this.location
                 },
                 test_parameters: this.test_parameters.get(),
                 integrations: this.integrations?.get() || {},
@@ -960,7 +961,8 @@ const TestRunModal = {
                         cpu_quota: this.cpu_quota,
                         memory_quota: this.memory_quota
                     },
-                    parallel_runners: this.parallel_runners
+                    parallel_runners: this.parallel_runners,
+                    location: this.location
                 },
                 test_parameters: test_params,
                 integrations: integrations,

@@ -49,6 +49,16 @@ JMETER_MAPPING = {
 }
 
 GATLING_MAPPING = {
+    "v3.7": {
+        "container": f"getcarrier/perfgun:{CURRENT_RELEASE}-3.7",
+        "job_type": "perfgun",
+        "influx_db": "{{secret.gatling_db}}"
+    },
+    "v3.6": {
+        "container": f"getcarrier/perfgun:{CURRENT_RELEASE}-3.6",
+        "job_type": "perfgun",
+        "influx_db": "{{secret.gatling_db}}"
+    },
     "v3.1": {
         "container": f"getcarrier/perfgun:{CURRENT_RELEASE}-3.1",
         "job_type": "perfgun",

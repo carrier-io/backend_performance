@@ -165,10 +165,8 @@ class PerformanceApiTest(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin
         for section, integration in self.integrations.items():
             for integration_name, integration_data in integration.items():
                 try:
-                    # we mutate/enrich integration_data with the result from rpc,
-                    # so it remains mutated in self.integrations,
-                    # but we never commit, so this is fine
-                    integration_data = self.rpc.call_function_with_timeout(
+                    # we never commit, so this is fine
+                    integration[integration_name] = self.rpc.call_function_with_timeout(
                         func=f'backend_performance_execution_json_config_{integration_name}',
                         timeout=3,
                         integration_data=integration_data,

@@ -1,4 +1,4 @@
-from pylon.core.tools import web  # pylint: disable=E0611,E0401
+from pylon.core.tools import web, log  # pylint: disable=E0611,E0401
 from tools import auth  # pylint: disable=E0401
 
 from ..constants import JMETER_MAPPING, GATLING_MAPPING
@@ -11,6 +11,8 @@ class Slot:  # pylint: disable=E1101,R0903
         public_regions = context.rpc_manager.call.get_rabbit_queues("carrier")
         public_regions.remove("__internal")
         project_regions = context.rpc_manager.call.get_rabbit_queues(f"project_{project_id}_vhost")
+        cloud_regions = context.rpc_manager.call.integrations_get_cloud_integrations(
+                project_id)
         with context.app.app_context():
             return self.descriptor.render_template(
                 'backend_performance/content.html',
@@ -20,7 +22,8 @@ class Slot:  # pylint: disable=E1101,R0903
                 },
                 locations={
                     'public_regions': public_regions,
-                    'project_regions': project_regions
+                    'project_regions': project_regions,
+                    "cloud_regions": cloud_regions
                 }
             )
 

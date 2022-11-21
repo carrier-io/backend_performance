@@ -422,6 +422,7 @@ const TestCreateModal = {
                     v-model:parallel_runners="parallel_runners"
                     v-model:cpu="cpu_quota"
                     v-model:memory="memory_quota"
+                    v-model:cloud_settings="cloud_settings"
                     
                     modal_id="backend"
                     
@@ -490,7 +491,6 @@ const TestCreateModal = {
     },
     mounted() {
         $(this.$el).on('hide.bs.modal', this.clear)
-        $(this.$el).on('show.bs.modal', this.$refs.locations.fetch_locations)
         this.runner = this.default_runner
         $(this.source.el).find('a.nav-item').on('click', e => {
                 this.active_source_tab = this.source.get_active_tab(e.target.id)
@@ -569,6 +569,18 @@ const TestCreateModal = {
                 return acc === '' ? item.msg : [acc, item.msg].join('; ')
             }, '')
         },
+        compareObjectsDiff(o1, o2, required_fields) {
+            return Object.keys(o2).reduce((diff, key) => {
+                if (o1[key] !== o2[key] || required_fields.includes(key)) {
+                    return {
+                        ...diff,
+                        [key]: o2[key]
+                    }
+                } else {
+                    return diff
+                }
+            }, {})
+        },
         get_data() {
 
             const data = {
@@ -581,7 +593,12 @@ const TestCreateModal = {
                     source: this.source.get(),
                     env_vars: {
                         cpu_quota: this.cpu_quota,
-                        memory_quota: this.memory_quota
+                        memory_quota: this.memory_quota,
+                        cloud_settings: this.compareObjectsDiff(
+                            this.$refs.locations.chosen_location_settings,
+                            this.cloud_settings,
+                            ["id", "integration_name", "instance_type"]
+                        )
                     },
                     parallel_runners: this.parallel_runners,
                     cc_env_vars: {},
@@ -670,6 +687,7 @@ const TestCreateModal = {
                 parallel_runners: 1,
                 cpu_quota: 1,
                 memory_quota: 4,
+                cloud_settings: {},
 
                 entrypoint: '',
                 runner: this.default_runner,
@@ -688,7 +706,7 @@ const TestCreateModal = {
         set(data) {
             const {test_parameters, integrations, scheduling, source, env_vars: all_env_vars, ...rest} = data
 
-            const {cpu_quota, memory_quota, ...env_vars} = all_env_vars
+            const {cpu_quota, memory_quota, cloud_settings, ...env_vars} = all_env_vars
 
             let test_type = ''
             let env_type = ''
@@ -701,18 +719,15 @@ const TestCreateModal = {
                     env_type = item.default;
                     return false
                 }
-                if (item.name === 'test_name') {
-                    return false
-                }
-                return true
+                return item.name !== 'test_name';
+
             })
             // common fields
-            Object.assign(this.$data, {...rest, cpu_quota, memory_quota, env_vars, test_type, env_type})
+            Object.assign(this.$data, {...rest, cpu_quota, memory_quota, cloud_settings, env_vars, test_type, env_type})
 
             // special fields
             this.test_parameters.set(test_parameters_filtered)
             this.source.set(source)
-
             integrations && this.integrations.set(integrations)
             scheduling && this.scheduling.set(scheduling)
 
@@ -745,8 +760,6 @@ const TestCreateModal = {
 }
 
 register_component('TestCreateModal', TestCreateModal)
-
-
 
 
 function addCSVSplit(id, key = "", is_header = "") {
@@ -808,6 +821,7 @@ const TestRunModal = {
                             v-model:parallel_runners="parallel_runners"
                             v-model:cpu="cpu_quota"
                             v-model:memory="memory_quota"
+                            v-model:cloud_settings="cloud_settings"
                             
                             ref="locations"
                         ></Locations>
@@ -834,7 +848,7 @@ const TestRunModal = {
     },
     mounted() {
         $(this.$el).on('hide.bs.modal', this.clear)
-        $(this.$el).on('show.bs.modal', this.$refs.locations.fetch_locations)
+        // $(this.$el).on('show.bs.modal', this.$refs.locations.fetch_locations)
     },
     data() {
         return this.initial_state()
@@ -849,6 +863,7 @@ const TestRunModal = {
                 parallel_runners: 1,
                 cpu_quota: 1,
                 memory_quota: 4,
+                cloud_settings: {},
 
                 env_vars: {},
                 customization: {},
@@ -862,13 +877,14 @@ const TestRunModal = {
             console.log('set data called', data)
             const {test_parameters, env_vars: all_env_vars, integrations, ...rest} = data
 
-            const {cpu_quota, memory_quota, ...env_vars} = all_env_vars
+            const {cpu_quota, memory_quota, cloud_settings, ...env_vars} = all_env_vars
 
             // common fields
-            Object.assign(this.$data, {...rest, cpu_quota, memory_quota, env_vars,})
+            Object.assign(this.$data, {...rest, cpu_quota, memory_quota, cloud_settings, env_vars,})
 
             // special fields
             this.test_parameters.set(test_parameters)
+
             this.integrations.set(integrations)
             this.show()
         },
@@ -901,7 +917,8 @@ const TestRunModal = {
                     env_type: env_type,
                     env_vars: {
                         cpu_quota: this.cpu_quota,
-                        memory_quota: this.memory_quota
+                        memory_quota: this.memory_quota,
+                        cloud_settings: this.cloud_settings
                     },
                     parallel_runners: this.parallel_runners,
                     location: this.location

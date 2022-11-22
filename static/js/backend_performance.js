@@ -261,8 +261,7 @@ const Customization = {
 const TestCreateModal = {
     delimiters: ['[[', ']]'],
     components: {
-        Customization: Customization,
-        QualityGate: QualityGate
+        Customization: Customization
     },
     props: ['modal_id', 'runners', 'test_params_id', 'source_card_id', 'locations'],
     template: `
@@ -480,13 +479,6 @@ const TestCreateModal = {
                                 </div>
                             </div>
                         </div>
-                        <div class="col">
-                            <QualityGate
-                                v-model:failed_thresholds_rate="quality_gate.failed_thresholds_rate"
-                                v-model:active="quality_gate.active"
-                                :error="errors.quality_gate"
-                            ></QualityGate>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -549,20 +541,9 @@ const TestCreateModal = {
                     this.source.setError(newValue.source) :
                     this.source.clearErrors()
 
-                let quality_gate_error
                 newValue.integrations ?
-                    this.integrations?.setError(newValue.integrations.filter(i => {
-                        if (i.loc.includes('reporters_quality_gate')) {
-                            quality_gate_error = i
-                            return false
-                        }
-                        return true
-                    })) :
+                    this.integrations?.setError(newValue.integrations) :
                     this.integrations?.clearErrors()
-                if (quality_gate_error) {
-                    this.errors.quality_gate = quality_gate_error
-                    $(this.$refs.advanced_params).collapse('show')
-                }
 
                 newValue.scheduling ?
                     this.scheduling?.setError(newValue.scheduling) :
@@ -627,13 +608,6 @@ const TestCreateModal = {
                 test_parameters: this.test_parameters.get(),
                 integrations: this.integrations?.get() || {},
                 scheduling: this.scheduling?.get() || [],
-            }
-            if (this.quality_gate.active) {
-                data.integrations.reporters = {
-                    ...data.integrations.reporters, quality_gate: {
-                        failed_thresholds_rate: this.quality_gate.failed_thresholds_rate
-                    }
-                }
             }
             let csv_files = {}
             $("#splitCSV .flex-row").slice(1,).each(function (_, item) {
@@ -727,10 +701,6 @@ const TestCreateModal = {
                 advanced_params_icon: 'fas fa-chevron-down',
                 mode: 'create',
                 active_source_tab: undefined,
-                quality_gate: {
-                    active: false,
-                    failed_thresholds_rate: 20
-                },
             }
         },
         set(data) {
@@ -758,12 +728,6 @@ const TestCreateModal = {
             // special fields
             this.test_parameters.set(test_parameters_filtered)
             this.source.set(source)
-            try {
-                this.quality_gate.failed_thresholds_rate = integrations.reporters.quality_gate.failed_thresholds_rate
-                this.quality_gate.active = true
-                $(this.$refs.advanced_params).collapse('show')
-            } catch (e) {
-            }
             integrations && this.integrations.set(integrations)
             scheduling && this.scheduling.set(scheduling)
 
@@ -829,9 +793,6 @@ function addCSVSplit(id, key = "", is_header = "") {
 const TestRunModal = {
     delimiters: ['[[', ']]'],
     props: ['test_params_id', 'instance_name_prefix'],
-    components: {
-        QualityGate: QualityGate
-    },
     template: `
         <div class="modal modal-base fixed-left fade shadow-sm" tabindex="-1" role="dialog" id="runTestModal">
             <div class="modal-dialog modal-dialog-aside" role="document">
@@ -866,15 +827,6 @@ const TestRunModal = {
                         ></Locations>
                         <slot name="integrations"></slot>
                         <div class="section">
-                            <div class="row">
-                                <div class="col-6">
-                                    <QualityGate
-                                        v-model:failed_thresholds_rate="quality_gate.failed_thresholds_rate"
-                                        v-model:active="quality_gate.active"
-                                        :error="errors.quality_gate"
-                                    ></QualityGate>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -919,10 +871,6 @@ const TestRunModal = {
 
                 compile_tests: false,
                 errors: {},
-                quality_gate: {
-                    active: false,
-                    failed_thresholds_rate: 20
-                },
             }
         },
         set(data) {
@@ -936,11 +884,7 @@ const TestRunModal = {
 
             // special fields
             this.test_parameters.set(test_parameters)
-            try {
-                this.quality_gate.failed_thresholds_rate = integrations.reporters.quality_gate.failed_thresholds_rate
-                this.quality_gate.active = true
-            } catch (e) {
-            }
+
             this.integrations.set(integrations)
             this.show()
         },
@@ -962,13 +906,6 @@ const TestRunModal = {
         get_data() {
             const test_params = this.test_parameters.get()
             const integrations = this.integrations.get()
-            if (this.quality_gate.active) {
-                integrations.reporters = {
-                    ...integrations.reporters, quality_gate: {
-                        failed_thresholds_rate: this.quality_gate.failed_thresholds_rate
-                    }
-                }
-            }
             const name = test_params.find(i => i.name === 'test_name')
             const test_type = test_params.find(i => i.name === 'test_type')
             const env_type = test_params.find(i => i.name === 'env_type')
@@ -1030,19 +967,9 @@ const TestRunModal = {
                 newValue.test_parameters ?
                     this.test_parameters.setError(newValue.test_parameters) :
                     this.test_parameters.clearErrors()
-                let quality_gate_error
                 newValue.integrations ?
-                    this.integrations?.setError(newValue.integrations.filter(i => {
-                        if (i.loc.includes('reporters_quality_gate')) {
-                            quality_gate_error = i
-                            return false
-                        }
-                        return true
-                    })) :
+                    this.integrations?.setError(newValue.integrations) :
                     this.integrations?.clearErrors()
-                if (quality_gate_error) {
-                    this.errors.quality_gate = quality_gate_error
-                }
             } else {
                 this.test_parameters.clearErrors()
                 this.integrations.clearErrors()

@@ -12,22 +12,19 @@ var test_formatters = {
     actions(value, row, index) {
         return `
             <div class="d-flex justify-content-end">
-                <button type="button" class="btn btn-24 btn-action test_run" 
-                        data-toggle="tooltip" data-placement="top" title="Run Test"
-                >
-                    <i class="fas fa-play"></i>
+                <button type="button" class="btn btn-default btn-xs btn-table btn-icon__xs test_run mr-2" 
+                        data-toggle="tooltip" data-placement="top" title="Run Test">
+                    <i class="icon__18x18 icon-run"></i>
                 </button>
                 <div class="dropdown_multilevel">
-                    <button class="btn btn-24 btn-action" type="button"
+                    <button class="btn btn-default btn-xs btn-table btn-icon__xs" type="button"
                             data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <i class="fas fa-ellipsis-v"></i>
+                        <i class="icon__18x18 icon-menu-dots"></i>
                     </button>
                     <ul class="dropdown-menu">
                         <li class="dropdown-menu_item dropdown-item d-flex align-items-center">
-                            <span class="w-100 font-h5"><i class="fas fa-share-alt mr-2"></i>Integrate with</span>
-                            <i class="fa fa-sort-down"
-                               style="transform: rotate(270deg)"
-                            ></i>
+                            <span class="w-100 font-h5 d-flex align-items-center"><i class="icon__18x18 icon-integrate mr-1"></i>Integrate with</span>
+                            <i class="icon__16x16 icon-sort"></i>
                             <ul class="submenu dropdown-menu">
                                 <li class="dropdown-menu_item dropdown-item d-flex align-items-center int_docker">
                                     <span class="w-100 font-h5">Docker command</span>
@@ -35,10 +32,10 @@ var test_formatters = {
                             </ul>
                         </li>
                         <li class="dropdown-menu_item dropdown-item d-flex align-items-center test_edit">
-                            <i class="fas fa-cog mr-2"></i><span class="w-100 font-h5">Settings</span>
+                            <i class="icon__18x18 icon-settings mr-2"></i><span class="w-100 font-h5">Settings</span>
                         </li>
                         <li class="dropdown-menu_item dropdown-item d-flex align-items-center test_delete">
-                            <i class="fas fa-trash-alt mr-2"></i><span class="w-100 font-h5">Delete</span>
+                            <i class="icon__18x18 icon-delete mr-2"></i><span class="w-100 font-h5">Delete</span>
                         </li>
                     </ul>
                 </div>

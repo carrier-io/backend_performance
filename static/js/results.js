@@ -230,9 +230,7 @@ const SummaryController = {
             })
         },
         async poll_test_status() {
-            if (this.status_percentage < 100) {
-                $('#AN').addClass('disabled')
-                $('#analytic-loader').show()
+            if (this.status_percentage == 100) {
                 const resp = await fetch(`/api/v1/backend_performance/reports/${getSelectedProjectId()}/?report_id=${result_test_id}`)
                 if (resp.ok) {
                     const {test_status: {percentage}} = await resp.json()
@@ -242,9 +240,6 @@ const SummaryController = {
                     // todo: handle fetch error
                 }
 
-            } else {
-                $('#AN').removeClass('disabled');
-                $('#analytic-loader').hide()
             }
         },
         async load_request_data(url, y_label) {

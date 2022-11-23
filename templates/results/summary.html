@@ -24,7 +24,7 @@
         <div class="card card-12 p-28 mt-3" id="under-summary-controller">
             <div class="d-flex justify-content-between pb-4">
                 <div class="d-flex align-items-center">
-                    <h1 class="font-h2 mr-4">Requests summary</h1>
+                    <h3 class="text-gray mr-4">Requests summary</h3>
 
                     {% if test_data['test_status']['status'].lower() not in ['finished', 'error', 'failed', 'success'] %}
                         <div class="selectpicker-titled">
@@ -97,13 +97,19 @@
                         </li>
                         <li class="nav-item" role="presentation" id="analytic-tab">
                             <a id="AN" class="font-h5 font-uppercase"
-                               style="position: relative; padding-right: 20px"
+                               v-if="master.status_percentage === 100"
                                @click="master.handle_tab_change"
                                data-toggle="pill">Analytics
+                            </a>
+                            <a v-else
+                               style="position: relative; padding-right: 20px"
+                               class="font-h5 font-uppercase text-disabled">
+                                Analytics
                                 <i id="analytic-loader" class="spinner-loader"
                                    style="position: absolute; top: 8px; right: 0"></i>
                             </a>
                         </li>
+
                     </ul>
                     <button
                             @click="master.handle_download"

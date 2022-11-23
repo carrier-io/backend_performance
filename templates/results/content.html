@@ -243,12 +243,6 @@
                 @register="register"
         ></performancelogsapp>
     {% endif %}
-    <performancelogsapp
-            :project_id="{{ test_data.project_id }}"
-            :report_id="{{ test_data.id }}"
-            instance_name="perf_logs"
-            @register="register"
-    ></performancelogsapp>
     {% with test_config = test_data['test_config'] %}
         {% include 'backend_performance:results/config_modal.html' %}
     {% endwith %}

@@ -2,8 +2,11 @@
         <div class="card-header">
             <div class="row">
                 <div class="col-4">
-                    <h3><a id="back-button" href="/-/performance/backend"><i
-                            class="fas fa-arrow-left"></i></a> {{ test_data["name"] }} (back)</h3>
+                    <h3 class="text-gray">
+                        <a id="back-button" href="/-/performance/backend">
+                            <i class="icon__16x16 icon-arrow-left-bold__16"></i>
+                        </a> {{ test_data["name"] }} (back)
+                    </h3>
                 </div>
                 <div class="col-8">
                     <div class="d-flex justify-content-end">
@@ -240,7 +243,6 @@
                 @register="register"
         ></performancelogsapp>
     {% endif %}
-
     {% with test_config = test_data['test_config'] %}
         {% include 'backend_performance:results/config_modal.html' %}
     {% endwith %}

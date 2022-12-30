@@ -28,7 +28,7 @@ def _timeframe(args: dict, time_as_ts: bool = False) -> tuple:
     return calculate_proper_timeframe(args.get('build_id', None), args['test_name'], args.get('lg_type', None),
                                       args.get('low_value', 0),
                                       high_value, args['start_time'], end_time, args.get('aggregator', 'auto'),
-                                      time_as_ts=time_as_ts)
+                                      time_as_ts=time_as_ts, source=args.get('source'))
 
 
 def _query_only(args: dict, query_func: Callable) -> dict:
@@ -62,20 +62,16 @@ def get_tests_metadata(tests):
 
 def requests_summary(args: dict):
     args['convert_time'] = False
-    # log.info("args***********")
-    # log.info(args)
-    # log.info("********************")
-    # log.info("influx response")
-    # _res = _query_only(args, get_backend_requests)
-    # log.info(_res)
-    # is_finished = True
-    # if is_finished:
-    #     _res = get_requests_summary_data(args)
-    #     log.info("minio response")
-    #     log.info(_res)
-    # return _res
-    return _query_only(args, get_backend_requests)
-
+    if args.get('source') == 'minio':
+        _res = _query_only(args, get_requests_summary_data)
+        # _res = get_requests_summary_data(args)
+        log.info("minio response")
+        # log.info(_res)
+    else:
+        log.info("influx response")
+        _res = _query_only(args, get_backend_requests)
+        # log.info(_res)
+    return _res
 
 def requests_hits(args: dict):
     args['convert_time'] = False

@@ -1,5 +1,6 @@
 from datetime import datetime
-from ..connectors.influx import calculate_auto_aggregation
+from ..connectors.minio import calculate_auto_aggregation as calculate_auto_aggregation_minio
+from ..connectors.influx import calculate_auto_aggregation as calculate_auto_aggregation_influx
 
 from tools import constants as c
 from tools import data_tools
@@ -149,7 +150,8 @@ def render_analytics_control(requests):
 
 
 def calculate_proper_timeframe(build_id: str, test_name: str, lg_type: str, low_value: int, high_value: int,
-                               start_time, end_time, aggregation: str, time_as_ts: bool = False) -> tuple:
+                               start_time, end_time, aggregation: str, time_as_ts: bool = False, 
+                               source: str = None) -> tuple:
     start_time = c.str_to_timestamp(start_time)
     end_time = c.str_to_timestamp(end_time)
     interval = end_time - start_time
@@ -163,5 +165,8 @@ def calculate_proper_timeframe(build_id: str, test_name: str, lg_type: str, low_
     start_time = datetime.fromtimestamp(start_time).strftime(t_format)
     end_time = datetime.fromtimestamp(end_time).strftime(t_format)
     if aggregation == 'auto' and build_id:
-        aggregation = calculate_auto_aggregation(build_id, test_name, lg_type, start_time, end_time)
+        if source == 'minio':
+            aggregation = calculate_auto_aggregation_minio(build_id, test_name, lg_type, start_time, end_time)
+        else:
+            aggregation = calculate_auto_aggregation_influx(build_id, test_name, lg_type, start_time, end_time)
     return start_time, end_time, aggregation

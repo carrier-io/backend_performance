@@ -267,6 +267,7 @@ const SummaryController = {
                 end_time: this.end_time,
                 low_value: this.slider.low,
                 high_value: this.slider.high,
+                source: new URLSearchParams(location.search).get('from_minio') !== null ? 'minio' : 'influx'
             }))
             if (resp.ok) {
                 const data = await resp.json()

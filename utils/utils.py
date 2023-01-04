@@ -53,8 +53,9 @@ def get_backend_test_data(event):
         for i in range(tests_count):
             exec_params = json.loads(event["execution_params"])
             test_type = exec_params['test_type'] if exec_params.get('test_type') else 'demo'
-            test_name = exec_params['test'].split(".")[1].lower() if exec_params.get(
-                'test') else 'test'
+            # test_name = exec_params['test'].split(".")[1].lower() if exec_params.get(
+            #     'test') else 'test'
+            test_name = event['job_name']
             environment = exec_params['env'] if exec_params.get('env') else 'demo'
             if exec_params.get('GATLING_TEST_PARAMS'):
                 if '-dduration' in exec_params['GATLING_TEST_PARAMS'].lower():

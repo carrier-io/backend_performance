@@ -83,7 +83,7 @@ def _calculate_limit(limit, total):
     return len(total) if limit == 'All' else limit
 
 
-def run_test(test: 'PerformanceApiTest', config_only: bool = False, execution: bool = False
+def run_test(test: 'PerformanceApiTest', config_only: bool = False, execution: bool = False, engagement_id: str = None
 ) -> dict:
     event = test.configure_execution_json(
         execution=execution
@@ -114,7 +114,8 @@ def run_test(test: 'PerformanceApiTest', config_only: bool = False, execution: b
         onexx=0, twoxx=0, threexx=0, fourxx=0, fivexx=0,
         requests="",
         test_uid=test.test_uid,
-        test_config=test.api_json()
+        test_config=test.api_json(),
+        engagement=engagement_id
     )
     report.insert()
     event["cc_env_vars"]["REPORT_ID"] = str(report.id)

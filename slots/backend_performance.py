@@ -9,7 +9,10 @@ class Slot:  # pylint: disable=E1101,R0903
     def content(self, context, slot, payload):
         project_id = context.rpc_manager.call.project_get_id()
         public_regions = context.rpc_manager.call.get_rabbit_queues("carrier")
-        public_regions.remove("__internal")
+        try:
+            public_regions.remove("__internal")
+        except:
+            pass
         project_regions = context.rpc_manager.call.get_rabbit_queues(f"project_{project_id}_vhost")
         cloud_regions = context.rpc_manager.call.integrations_get_cloud_integrations(
                 project_id)

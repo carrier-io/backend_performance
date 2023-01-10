@@ -1,7 +1,7 @@
 from pylon.core.tools import web, log  # pylint: disable=E0611,E0401
 from tools import auth  # pylint: disable=E0401
 
-from ..constants import JMETER_MAPPING, GATLING_MAPPING
+from ..constants import JMETER_MAPPING, GATLING_MAPPING, EXECUTABLE_MAPPING
 
 
 class Slot:  # pylint: disable=E1101,R0903
@@ -21,7 +21,8 @@ class Slot:  # pylint: disable=E1101,R0903
                 'backend_performance/content.html',
                 runners={
                     'jMeter': list(map(lambda i: {'version': i}, JMETER_MAPPING.keys())),
-                    'Gatling': list(map(lambda i: {'version': i}, GATLING_MAPPING.keys()))
+                    'Gatling': list(map(lambda i: {'version': i}, GATLING_MAPPING.keys())),
+                    'Executable JAR (BETA)': list(map(lambda i: {'version': i}, EXECUTABLE_MAPPING.keys()))
                 },
                 locations={
                     'public_regions': public_regions,

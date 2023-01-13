@@ -18,7 +18,7 @@ from tools import db_tools, db
 
 
 class APIReport(db_tools.AbstractBaseMixin, db.Base):
-    __tablename__ = "backend_reports_4"
+    __tablename__ = "backend_reports_5"
 
     id = Column(Integer, primary_key=True)
     project_id = Column(Integer, unique=False, nullable=False)

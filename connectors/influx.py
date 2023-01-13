@@ -19,6 +19,8 @@ from tools import constants as c
 from ..models.reports import Report
 from pylon.core.tools import log
 
+from ..utils.utils import str_to_timestamp
+
 
 def get_project_id(build_id: str) -> int:
     resp = Report.query.with_entities(Report.project_id).filter(Report.build_id == build_id).first()
@@ -81,7 +83,7 @@ def get_test_details(project_id, build_id, test_name, lg_type):
     client = influx_tools.get_client(project_id)
     test["start_time"] = list(client.query(q_start_time)["users"])[0]["time"]
     test["end_time"] = list(client.query(q_end_time)["users"])[0]["time"]
-    test["duration"] = round(c.str_to_timestamp(test["end_time"]) - c.str_to_timestamp(test["start_time"]), 1)
+    test["duration"] = round(str_to_timestamp(test["end_time"]) - str_to_timestamp(test["start_time"]), 1)
     test["vusers"] = list(client.query(q_total_users)["api_comparison"])[0]["value"]
     test["environment"] = list(client.query(q_env)["api_comparison"])[0]["value"]
     test["type"] = list(client.query(q_type)["api_comparison"])[0]["value"]

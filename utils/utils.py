@@ -100,7 +100,7 @@ def run_test(test: 'Test', config_only: bool = False, execution: bool = False, e
         project_id=test.project_id,
         environment=test_data["environment"],
         type=test_data["type"],
-        end_time="",
+        end_time=None,
         start_time=test_data["start_time"],
         failures=0,
         total=0,
@@ -230,3 +230,16 @@ def parse_test_data(project_id: int, request_data: dict,
                 return test_data, errors
 
     return test_data, errors
+
+
+def str_to_timestamp(t: Union[str, datetime]) -> float:
+    log.info('old t %s', t)
+    if isinstance(t, datetime):
+        return t.timestamp()
+    iso = t.replace("Z", "")
+    # if "." not in timestamp:
+    #     timestamp += "."
+    # timestamp += "".join(["0" for _ in range(26 - len(timestamp))])
+    # log.info('new t %s', t)
+    # timestamp = datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%S").timestamp()
+    return datetime.fromisoformat(iso).timestamp()

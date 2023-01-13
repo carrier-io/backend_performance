@@ -26,7 +26,7 @@ class Report(db_tools.AbstractBaseMixin, db.Base):
     name = Column(String(128), unique=False)
     environment = Column(String(128), unique=False)
     type = Column(String(128), unique=False)
-    end_time = Column(String(128), unique=False)
+    end_time = Column(String(128), unique=False, nullable=True)
     start_time = Column(String(128), unique=False)
     failures = Column(Integer, unique=False)
     total = Column(Integer, unique=False)
@@ -64,10 +64,13 @@ class Report(db_tools.AbstractBaseMixin, db.Base):
     engagement = Column(String(64), nullable=True, default=None)
 
 
-    # def to_json(self, exclude_fields: tuple = ()) -> dict:
-    #     json_dict = super().to_json(exclude_fields=("requests",))
-    #     json_dict["requests"] = self.requests.split(";")
-    #     return json_dict
+    @property
+    def serialized(self):
+        from .pd.report import ReportGetSerializer
+        return ReportGetSerializer.from_orm(self)
+
+    def to_json(self, exclude_fields: tuple = ()) -> dict:
+        return self.serialized.dict(exclude=set(exclude_fields))
 
     def insert(self):
         if not self.test_config:

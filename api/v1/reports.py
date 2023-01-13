@@ -1,4 +1,7 @@
 from traceback import format_exc
+from typing import List
+
+from pydantic import parse_obj_as
 from sqlalchemy import and_
 from json import loads
 
@@ -10,7 +13,7 @@ import requests
 from pylon.core.tools import log
 from flask import current_app, request
 
-# from ...models.pd.report import ReportCreateSerializer, ReportGetSerializer
+from ...models.pd.report import ReportCreateSerializer, ReportGetSerializer
 from ...models.pd.test_parameters import PerformanceTestParamsRun
 from ...models.baselines import Baseline
 from ...models.reports import Report
@@ -31,23 +34,17 @@ class API(Resource):
     def get(self, project_id: int):
         args = request.args
         if args.get("report_id"):
-            report = Report.query.filter_by(project_id=project_id, id=args.get("report_id")).first().to_json()
-            return report
-        reports = []
+            report = Report.query.filter_by(project_id=project_id, id=args.get("report_id")).first()
+            return ReportGetSerializer.from_orm(report).dict(), 200
         project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
         total, res = api_tools.get(project.id, args, Report)
-        for each in res:
-            each_json = each.to_json()
-            each_json["start_time"] = each_json["start_time"].replace("T", " ").split(".")[0]
-            each_json["duration"] = int(each_json["duration"] if each_json["duration"] else 0)
-            try:
-                each_json["failure_rate"] = round((each_json["failures"] / each_json["total"]) * 100, 2)
-            except ZeroDivisionError:
-                each_json["failure_rate"] = 0
-            reports.append(each_json)
-        return {"total": total, "rows": reports}
+        reports = parse_obj_as(List[ReportGetSerializer], res)
+        return {"total": total, "rows": [i.dict() for i in reports]}, 200
 
     def post(self, project_id: int):
+        '''
+            create report from control tower?
+        '''
         args = request.json
         project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
 
@@ -76,7 +73,7 @@ class API(Resource):
             project_id=project.id,
             environment=args["environment"],
             type=args["type"],
-            end_time="",
+            end_time=None,
             start_time=args["start_time"],
             failures=0,
             total=0,
@@ -118,7 +115,8 @@ class API(Resource):
                                      lg_type=args["lg_type"])
         response_times = loads(args["response_times"])
         report = Report.query.filter(
-            and_(Report.project_id == project.id, Report.build_id == args["build_id"])
+            Report.project_id == project.id,
+            Report.build_id == args["build_id"]
         ).first()
         report.end_time = test_data["end_time"]
         report.start_time = test_data["start_time"]

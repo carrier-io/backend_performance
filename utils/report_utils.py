@@ -1,10 +1,11 @@
 from collections import defaultdict
 from datetime import datetime
+
+from .utils import str_to_timestamp
 from ..connectors.minio import calculate_auto_aggregation as calculate_auto_aggregation_minio
 from ..connectors.influx import calculate_auto_aggregation as calculate_auto_aggregation_influx
 
-from tools import constants as c
-from tools import data_tools
+from tools import data_tools, constants as c
 
 
 def create_dataset(timeline, data, scope, metric, axe):
@@ -15,16 +16,16 @@ def create_dataset(timeline, data, scope, metric, axe):
     colors = data_tools.charts.color_gen(len(scope))
     for each, color in zip(scope, colors):
         datasets.append({
-                "label": f"{each}_{metric}",
-                "fill": False,
-                "data": list(data.values()),
-                "yAxisID": axe,
-                "borderWidth": 2,
-                "lineTension": 0,
-                "spanGaps": True,
-                "backgroundColor": "rgb({}, {}, {})".format(*color),
-                "borderColor": "rgb({}, {}, {})".format(*color)
-            })
+            "label": f"{each}_{metric}",
+            "fill": False,
+            "data": list(data.values()),
+            "yAxisID": axe,
+            "borderWidth": 2,
+            "lineTension": 0,
+            "spanGaps": True,
+            "backgroundColor": "rgb({}, {}, {})".format(*color),
+            "borderColor": "rgb({}, {}, {})".format(*color)
+        })
     return {
         "labels": labels,
         "datasets": datasets
@@ -40,16 +41,16 @@ def _create_dataset(timeline, data, scope, metric, axe):
     for each, color in zip(data, colors):
         key = list(each.keys())[0]
         datasets.append({
-                "label": f"{key}_{metric}",
-                "fill": False,
-                "data": list(each[key].values()),
-                "yAxisID": axe,
-                "borderWidth": 2,
-                "lineTension": 0,
-                "spanGaps": True,
-                "backgroundColor": "rgb({}, {}, {})".format(*color),
-                "borderColor": "rgb({}, {}, {})".format(*color)
-            })
+            "label": f"{key}_{metric}",
+            "fill": False,
+            "data": list(each[key].values()),
+            "yAxisID": axe,
+            "borderWidth": 2,
+            "lineTension": 0,
+            "spanGaps": True,
+            "backgroundColor": "rgb({}, {}, {})".format(*color),
+            "borderColor": "rgb({}, {}, {})".format(*color)
+        })
     return {
         "labels": labels,
         "datasets": datasets
@@ -150,10 +151,12 @@ def render_analytics_control(requests: list) -> dict:
 
 
 def calculate_proper_timeframe(build_id: str, test_name: str, lg_type: str, low_value: int, high_value: int,
-                               start_time, end_time, aggregation: str, time_as_ts: bool = False, 
+                               start_time: datetime, end_time: datetime, aggregation: str, time_as_ts: bool = False,
                                source: str = None) -> tuple:
-    start_time = c.str_to_timestamp(start_time)
-    end_time = c.str_to_timestamp(end_time)
+    start_time = start_time.isoformat(timespec='seconds')
+    end_time = end_time.isoformat(timespec='seconds')
+    start_time = str_to_timestamp(start_time)
+    end_time = str_to_timestamp(end_time)
     interval = end_time - start_time
     start_shift = interval * (float(low_value) / 100.0)
     end_shift = interval * (float(high_value) / 100.0)

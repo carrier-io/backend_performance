@@ -1,6 +1,8 @@
 from datetime import datetime, timezone
-from typing import Callable, Optional, Generator
+from typing import Callable, Optional, Generator, Union
 
+from pydantic import BaseModel, validator
+from .utils import str_to_timestamp
 from ..models.reports import Report
 from ..connectors.influx import (
     get_backend_requests, get_hits_tps, average_responses, get_build_data,
@@ -18,17 +20,62 @@ from pylon.core.tools import log
 from tools import constants as c, influx_tools, data_tools
 
 
+class TimeframeArgs(BaseModel):
+    start_time: datetime
+    end_time: Optional[datetime]
+    low_value: Union[int, float, str, None] = 0
+    high_value: Union[int, float, str, None] = 100
+    test_name: str
+    build_id: Optional[str]
+    lg_type: Optional[str]
+    aggregation: Optional[str] = 'auto'
+    source: Optional[str] = 'influx'
+
+    @validator('end_time', pre=True)
+    def clear_null(cls, value):
+        if value == 'null':
+            return
+        return value
+
+    @validator('end_time', always=True)
+    def set_end_time(cls, value, values: dict):
+        if not value:
+            values['high_value'] = 100
+            return datetime.utcnow()
+        return value
+
+    @validator('start_time', 'end_time')
+    def ensure_tz(cls, value: datetime):
+        if value.tzinfo:
+            return value.astimezone(timezone.utc)
+        return value.replace(tzinfo=timezone.utc)
+
+    @validator('low_value', 'high_value')
+    def convert(cls, value, values, field):
+        try:
+            return int(value)
+        except TypeError:
+            return field.default
+
+    class Config:
+        fields = {
+            'aggregator': 'aggregation'
+        }
+
+
 def _timeframe(args: dict, time_as_ts: bool = False) -> tuple:
-    log.info(f"args {args}")
-    end_time = args.get('end_time')
-    high_value = args.get('high_value', 100)
-    if not end_time:
-        end_time = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
-        high_value = 100
-    return calculate_proper_timeframe(args.get('build_id', None), args['test_name'], args.get('lg_type', None),
-                                      args.get('low_value', 0),
-                                      high_value, args['start_time'], end_time, args.get('aggregator', 'auto'),
-                                      time_as_ts=time_as_ts, source=args.get('source'))
+    log.info(f"_timeframe args {args}")
+    _parsed_args = TimeframeArgs.parse_obj(args)
+    # end_time = args.get('end_time')
+    # high_value = args.get('high_value', 100)
+    # if not end_time or end_time == 'null':
+    #     end_time = datetime.utcnow()
+    #     high_value = 100
+    # return calculate_proper_timeframe(args.get('build_id', None), args['test_name'], args.get('lg_type', None),
+    #                                   args.get('low_value', 0),
+    #                                   high_value, args['start_time'], end_time, args.get('aggregator', 'auto'),
+    #                                   time_as_ts=time_as_ts)
+    return calculate_proper_timeframe(**_parsed_args.dict(), time_as_ts=time_as_ts)
 
 
 def _query_only(args: dict, query_func: Callable) -> dict:
@@ -50,7 +97,7 @@ def get_tests_metadata(tests):
     labels = []
 
     for each in tests_meta:
-        ts = datetime.fromtimestamp(c.str_to_timestamp(each.start_time),
+        ts = datetime.fromtimestamp(str_to_timestamp(each.start_time),
                                     tz=timezone.utc).strftime("%m-%d %H:%M:%S")
         labels.append(ts)
         users_data[ts] = each.vusers
@@ -132,94 +179,97 @@ def get_data_from_influx(args):
         return {}
 
 
-def prepare_comparison_responses(args):
-    log.info('prepare_comparison_responses %s', args)
-    tests = args['id[]']
-    tests_meta = []
-    longest_test = 0
-    longest_time = 0
-    sampler = args.get('sampler', "REQUEST")
-    for i in range(len(tests)):
-        data = Report.query.filter_by(id=tests[i]).first().to_json()
-        if data['duration'] > longest_time:
-            longest_time = data['duration']
-            longest_test = i
-        tests_meta.append(data)
-    start_time, end_time, aggregation = calculate_proper_timeframe(tests_meta[longest_test]['build_id'],
-                                                                   tests_meta[longest_test]['name'],
-                                                                   tests_meta[longest_test]['lg_type'],
-                                                                   args.get('low_value', 0),
-                                                                   args.get('high_value', 100),
-                                                                   tests_meta[longest_test]['start_time'],
-                                                                   tests_meta[longest_test]['end_time'],
-                                                                   args.get('aggregator', 'auto'))
-    # if args.get('aggregator', 'auto') != "auto":
-    #     aggregation = args.get('aggregator')
-    metric = args.get('metric', '')
-    scope = args.get('scope', '')
-    status = args.get("status", 'all')
-    timestamps, users = get_backend_users(tests_meta[longest_test]['build_id'],
-                                          tests_meta[longest_test]['lg_type'], start_time, end_time, aggregation)
-    test_start_time = "{}_{}".format(tests_meta[longest_test]['start_time'].replace("T", " ").split(".")[0], metric)
-    data = {test_start_time: calculate_analytics_dataset(tests_meta[longest_test]['build_id'],
-                                                         tests_meta[longest_test]['name'],
-                                                         tests_meta[longest_test]['lg_type'],
-                                                         start_time, end_time, aggregation,
-                                                         sampler, scope, metric, status)}
-    for i in range(len(tests_meta)):
-        if i != longest_test:
-            test_start_time = "{}_{}".format(tests_meta[i]['start_time'].replace("T", " ").split(".")[0], metric)
-            data[test_start_time] = calculate_analytics_dataset(tests_meta[i]['build_id'], tests_meta[i]['name'],
-                                                                tests_meta[i]['lg_type'],
-                                                                tests_meta[i]['start_time'],
-                                                                tests_meta[i]['end_time'],
-                                                                aggregation, sampler, scope, metric, status)
-    return comparison_data(timeline=timestamps, data=data)
+# def prepare_comparison_responses(args):
+#     log.info('prepare_comparison_responses %s', args)
+#     tests = args['id[]']
+#     tests_meta = []
+#     longest_test = 0
+#     longest_time = 0
+#     sampler = args.get('sampler', "REQUEST")
+#     for i in range(len(tests)):
+#         data = Report.query.filter_by(id=tests[i]).first().to_json()
+#         if data['duration'] > longest_time:
+#             longest_time = data['duration']
+#             longest_test = i
+#         tests_meta.append(data)
+#     log.info(f"prepare_comparison_responses {tests_meta[longest_test]}")
+#     _parsed_args = TimeframeArgs(**args, **tests_meta[longest_test])
+#     start_time, end_time, aggregation = calculate_proper_timeframe(**_parsed_args.dict())
+#     # start_time, end_time, aggregation = calculate_proper_timeframe(tests_meta[longest_test]['build_id'],
+#     #                                                                tests_meta[longest_test]['name'],
+#     #                                                                tests_meta[longest_test]['lg_type'],
+#     #                                                                args.get('low_value', 0),
+#     #                                                                args.get('high_value', 100),
+#     #                                                                tests_meta[longest_test]['start_time'],
+#     #                                                                tests_meta[longest_test]['end_time'],
+#     #                                                                args.get('aggregator', 'auto'))
+#     # if args.get('aggregator', 'auto') != "auto":
+#     #     aggregation = args.get('aggregator')
+#     metric = args.get('metric', '')
+#     scope = args.get('scope', '')
+#     status = args.get("status", 'all')
+#     timestamps, users = get_backend_users(tests_meta[longest_test]['build_id'],
+#                                           tests_meta[longest_test]['lg_type'], start_time, end_time, aggregation)
+#     test_start_time = "{}_{}".format(tests_meta[longest_test]['start_time'].replace("T", " ").split(".")[0], metric)
+#     data = {test_start_time: calculate_analytics_dataset(tests_meta[longest_test]['build_id'],
+#                                                          tests_meta[longest_test]['name'],
+#                                                          tests_meta[longest_test]['lg_type'],
+#                                                          start_time, end_time, aggregation,
+#                                                          sampler, scope, metric, status)}
+#     for i in range(len(tests_meta)):
+#         if i != longest_test:
+#             test_start_time = "{}_{}".format(tests_meta[i]['start_time'].replace("T", " ").split(".")[0], metric)
+#             data[test_start_time] = calculate_analytics_dataset(tests_meta[i]['build_id'], tests_meta[i]['name'],
+#                                                                 tests_meta[i]['lg_type'],
+#                                                                 tests_meta[i]['start_time'],
+#                                                                 tests_meta[i]['end_time'],
+#                                                                 aggregation, sampler, scope, metric, status)
+#     return comparison_data(timeline=timestamps, data=data)
 
 
-def compare_tests(args):
-    labels, rps_data, errors_data, users_data, responses_data = get_tests_metadata(args['id[]'])
-    return {
-        "response": chart_data(labels, {"users": users_data}, {"pct95": responses_data}, "time"),
-        "errors": chart_data(labels, {"users": users_data}, {"errors": errors_data}, "count"),
-        "rps": chart_data(labels, {"users": users_data}, {"RPS": rps_data}, "count")
-    }
+# def compare_tests(args):
+#     labels, rps_data, errors_data, users_data, responses_data = get_tests_metadata(args['id[]'])
+#     return {
+#         "response": chart_data(labels, {"users": users_data}, {"pct95": responses_data}, "time"),
+#         "errors": chart_data(labels, {"users": users_data}, {"errors": errors_data}, "count"),
+#         "rps": chart_data(labels, {"users": users_data}, {"RPS": rps_data}, "count")
+#     }
 
 
-def create_benchmark_dataset(args):
-    build_ids = args['id[]']
-    req = args.get('request')
-    calculation = args.get('calculation')
-    aggregator = args.get('aggregator')
-    status = args.get("status", 'all')
-    if not aggregator or aggregator == 'auto':
-        aggregator = '1s'
-    tests_meta = Report.query.filter(Report.id.in_(build_ids)).order_by(Report.vusers.asc()).all()
-    labels = set()
-    data = {}
-    y_axis = ''
-    for _ in tests_meta:
-        try:
-            labels.add(_.vusers)
-            if _.environment not in data:
-                data[_.environment] = {}
-            if calculation == 'throughput':
-                y_axis = 'Requests per second'
-                data[_.environment][str(_.vusers)] = get_throughput_per_test(
-                    _.build_id, _.name, _.lg_type, "", req, aggregator, status)
-            elif calculation != ['throughput']:
-                y_axis = 'Response time, ms'
-                if calculation == 'errors':
-                    y_axis = 'Errors'
-                data[_.environment][str(_.vusers)] = get_response_time_per_test(
-                    _.build_id, _.name, _.lg_type, "", req, calculation, status, aggregator)
-            else:
-                data[_.environment][str(_.vusers)] = None
-        except IndexError:
-            pass
-
-    labels = [""] + sorted(list(labels)) + [""]
-    return {"data": chart_data(labels, [], data, "data"), "label": y_axis}
+# def create_benchmark_dataset(args):
+#     build_ids = args['id[]']
+#     req = args.get('request')
+#     calculation = args.get('calculation')
+#     aggregator = args.get('aggregator')
+#     status = args.get("status", 'all')
+#     if not aggregator or aggregator == 'auto':
+#         aggregator = '1s'
+#     tests_meta = Report.query.filter(Report.id.in_(build_ids)).order_by(Report.vusers.asc()).all()
+#     labels = set()
+#     data = {}
+#     y_axis = ''
+#     for _ in tests_meta:
+#         try:
+#             labels.add(_.vusers)
+#             if _.environment not in data:
+#                 data[_.environment] = {}
+#             if calculation == 'throughput':
+#                 y_axis = 'Requests per second'
+#                 data[_.environment][str(_.vusers)] = get_throughput_per_test(
+#                     _.build_id, _.name, _.lg_type, "", req, aggregator, status)
+#             elif calculation != ['throughput']:
+#                 y_axis = 'Response time, ms'
+#                 if calculation == 'errors':
+#                     y_axis = 'Errors'
+#                 data[_.environment][str(_.vusers)] = get_response_time_per_test(
+#                     _.build_id, _.name, _.lg_type, "", req, calculation, status, aggregator)
+#             else:
+#                 data[_.environment][str(_.vusers)] = None
+#         except IndexError:
+#             pass
+#
+#     labels = [""] + sorted(list(labels)) + [""]
+#     return {"data": chart_data(labels, [], data, "data"), "label": y_axis}
 
 
 def engine_health(args: dict, part: str = 'all') -> dict:

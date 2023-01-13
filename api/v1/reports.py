@@ -99,7 +99,7 @@ class API(Resource):
             threexx=0,
             fourxx=0,
             fivexx=0,
-            requests="",
+            requests=[],
             test_uid=args.get("test_id")
         )
         if test_config:
@@ -139,7 +139,7 @@ class API(Resource):
         report.threexx = test_data["3xx"]
         report.fourxx = test_data["4xx"]
         report.fivexx = test_data["5xx"]
-        report.requests = ";".join(test_data["requests"])
+        report.requests = test_data["requests"]
         report.test_status = args["test_status"]
         report.vusers = args["vusers"]
         report.duration = args["duration"]

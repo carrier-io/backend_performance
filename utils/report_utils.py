@@ -1,3 +1,4 @@
+from collections import defaultdict
 from datetime import datetime
 from ..connectors.minio import calculate_auto_aggregation as calculate_auto_aggregation_minio
 from ..connectors.influx import calculate_auto_aggregation as calculate_auto_aggregation_influx
@@ -123,7 +124,7 @@ def chart_data(timeline, users, other, yAxis="response_time", convert_time: bool
     return _data
 
 
-def render_analytics_control(requests):
+def render_analytics_control(requests: list) -> dict:
     item = {
         "Users": "getData('Users', '{}')",
         # "Hits": "getData('Hits', '{}')",
@@ -141,9 +142,8 @@ def render_analytics_control(requests):
         "4xx": "getData('4xx', '{}')",
         "5xx": "getData('5xx', '{}')"
     }
-    control = {}
-    for each in ["All"] + requests:
-        control[each] = {}
+    control = defaultdict(dict)
+    for each in ["All", *requests]:
         for every in item:
             control[each][every] = item[every].format(each)
     return control

@@ -84,7 +84,7 @@ def _calculate_limit(limit, total):
     return len(total) if limit == 'All' else limit
 
 
-def run_test(test: 'PerformanceApiTest', config_only: bool = False, execution: bool = False, engagement_id: str = None
+def run_test(test: 'Test', config_only: bool = False, execution: bool = False, engagement_id: str = None
 ) -> dict:
     event = test.configure_execution_json(
         execution=execution
@@ -94,8 +94,8 @@ def run_test(test: 'PerformanceApiTest', config_only: bool = False, execution: b
         return event
 
     test_data = get_backend_test_data(event)
-    from ..models.api_reports import APIReport
-    report = APIReport(
+    from ..models.reports import Report
+    report = Report(
         name=test_data["test_name"],
         project_id=test.project_id,
         environment=test_data["environment"],

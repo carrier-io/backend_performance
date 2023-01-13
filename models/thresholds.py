@@ -3,7 +3,7 @@ from sqlalchemy import Column, Integer, String, Float
 from tools import db_tools, db
 
 
-class APIThresholds(db_tools.AbstractBaseMixin, db.Base):
+class Threshold(db_tools.AbstractBaseMixin, db.Base):
     __tablename__ = "backend_thresholds_5"
     id = Column(Integer, primary_key=True)
     project_id = Column(Integer, unique=False, nullable=False)

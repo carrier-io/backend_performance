@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Callable, Optional, Generator
 
-from ..models.api_reports import APIReport
+from ..models.reports import Report
 from ..connectors.influx import (
     get_backend_requests, get_hits_tps, average_responses, get_build_data,
     get_tps_for_analytics, get_response_codes_for_analytics, get_backend_users,
@@ -42,7 +42,7 @@ def _query_only(args: dict, query_func: Callable) -> dict:
 
 
 def get_tests_metadata(tests):
-    tests_meta = APIReport.query.filter(APIReport.id.in_(tests)).order_by(APIReport.id.asc()).all()
+    tests_meta = Report.query.filter(Report.id.in_(tests)).order_by(Report.id.asc()).all()
     users_data = {}
     responses_data = {}
     errors_data = {}
@@ -63,14 +63,11 @@ def get_tests_metadata(tests):
 def requests_summary(args: dict):
     args['convert_time'] = False
     if args.get('source') == 'minio':
-        _res = _query_only(args, get_requests_summary_data)
-        # _res = get_requests_summary_data(args)
         log.info("minio response")
-        # log.info(_res)
+        _res = _query_only(args, get_requests_summary_data)
     else:
         log.info("influx response")
         _res = _query_only(args, get_backend_requests)
-        # log.info(_res)
     return _res
 
 def requests_hits(args: dict):
@@ -136,13 +133,14 @@ def get_data_from_influx(args):
 
 
 def prepare_comparison_responses(args):
+    log.info('prepare_comparison_responses %s', args)
     tests = args['id[]']
     tests_meta = []
     longest_test = 0
     longest_time = 0
     sampler = args.get('sampler', "REQUEST")
     for i in range(len(tests)):
-        data = APIReport.query.filter_by(id=tests[i]).first().to_json()
+        data = Report.query.filter_by(id=tests[i]).first().to_json()
         if data['duration'] > longest_time:
             longest_time = data['duration']
             longest_test = i
@@ -196,7 +194,7 @@ def create_benchmark_dataset(args):
     status = args.get("status", 'all')
     if not aggregator or aggregator == 'auto':
         aggregator = '1s'
-    tests_meta = APIReport.query.filter(APIReport.id.in_(build_ids)).order_by(APIReport.vusers.asc()).all()
+    tests_meta = Report.query.filter(Report.id.in_(build_ids)).order_by(Report.vusers.asc()).all()
     labels = set()
     data = {}
     y_axis = ''

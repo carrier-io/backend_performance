@@ -17,7 +17,7 @@ from sqlalchemy import String, Column, Integer, Float, Text, ARRAY, JSON
 from tools import db_tools, db
 
 
-class APIReport(db_tools.AbstractBaseMixin, db.Base):
+class Report(db_tools.AbstractBaseMixin, db.Base):
     __tablename__ = "backend_reports_5"
 
     id = Column(Integer, primary_key=True)
@@ -71,8 +71,8 @@ class APIReport(db_tools.AbstractBaseMixin, db.Base):
 
     def insert(self):
         if not self.test_config:
-            from .api_tests import PerformanceApiTest
-            self.test_config = PerformanceApiTest.query.filter(
-                PerformanceApiTest.uid == self.test_uid
+            from .tests import Test
+            self.test_config = Test.query.filter(
+                Test.uid == self.test_uid
             ).first().api_json()
         super().insert()

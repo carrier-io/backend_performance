@@ -114,7 +114,7 @@ def run_test(test: 'PerformanceApiTest', config_only: bool = False, execution: b
         lg_type=test_data["lg_type"],
         onexx=0, twoxx=0, threexx=0, fourxx=0, fivexx=0,
         requests=[],
-        test_uid=test.test_uid,
+        test_uid=test.uid,
         test_config=test.api_json(),
         engagement=engagement_id
     )

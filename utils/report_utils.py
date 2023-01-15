@@ -1,11 +1,15 @@
 from collections import defaultdict
 from datetime import datetime
+from functools import partial
+from typing import Tuple, Union
 
 from .utils import str_to_timestamp
 from ..connectors.minio import calculate_auto_aggregation as calculate_auto_aggregation_minio
 from ..connectors.influx import calculate_auto_aggregation as calculate_auto_aggregation_influx
 
 from tools import data_tools, constants as c
+
+from pylon.core.tools import log
 
 
 def create_dataset(timeline, data, scope, metric, axe):
@@ -88,6 +92,7 @@ def chart_data(timeline, users, other, yAxis="response_time", convert_time: bool
         try:
             for t in timeline:
                 labels.append(datetime.strptime(t, "%Y-%m-%dT%H:%M:%SZ").strftime("%m-%d %H:%M:%S"))
+                # labels.append(t)
         except ValueError:
             labels = timeline
     else:
@@ -117,8 +122,9 @@ def chart_data(timeline, users, other, yAxis="response_time", convert_time: bool
             "data": []
         }
         for _ in timeline:
-            if str(_) in other[each]:
-                dataset['data'].append(other[each][str(_)])
+            dumb_fix = str(_) + 'Z'
+            if dumb_fix in other[each]:
+                dataset['data'].append(other[each][dumb_fix])
             else:
                 dataset['data'].append(None)
         _data['datasets'].append(dataset)
@@ -151,25 +157,31 @@ def render_analytics_control(requests: list) -> dict:
 
 
 def calculate_proper_timeframe(build_id: str, test_name: str, lg_type: str, low_value: int, high_value: int,
-                               start_time: datetime, end_time: datetime, aggregation: str, time_as_ts: bool = False,
-                               source: str = None) -> tuple:
-    start_time = start_time.isoformat(timespec='seconds')
-    end_time = end_time.isoformat(timespec='seconds')
-    start_time = str_to_timestamp(start_time)
-    end_time = str_to_timestamp(end_time)
-    interval = end_time - start_time
+                               start_time: datetime, end_time: datetime, aggregation: str,
+                               time_as_ts: bool = False, source: str = None) -> Union[Tuple[str, str, str], Tuple[int, int, str]]:
+    start_time_ts = start_time.timestamp()
+    end_time_ts = end_time.timestamp()
+
+    interval = end_time_ts - start_time_ts
     start_shift = interval * (float(low_value) / 100.0)
     end_shift = interval * (float(high_value) / 100.0)
-    end_time = start_time + end_shift
-    start_time += start_shift
+
+    end_time_ts = start_time_ts + end_shift
+    start_time_ts += start_shift
     if time_as_ts:
-        return int(start_time), int(end_time), aggregation
-    t_format = "%Y-%m-%dT%H:%M:%S.000Z"
-    start_time = datetime.fromtimestamp(start_time).strftime(t_format)
-    end_time = datetime.fromtimestamp(end_time).strftime(t_format)
+        return int(start_time_ts), int(end_time_ts), aggregation
+    # t_format = "%Y-%m-%dT%H:%M:%S.000Z"
+    # start_time = datetime.fromtimestamp(start_time_ts).strftime(t_format)
+    # end_time = datetime.fromtimestamp(end_time).strftime(t_format)
+    _start_time = datetime.utcfromtimestamp(start_time_ts).isoformat(sep=' ', timespec='seconds')
+    _end_time = datetime.utcfromtimestamp(end_time_ts).isoformat(sep=' ', timespec='seconds')
     if aggregation == 'auto' and build_id:
         if source == 'minio':
-            aggregation = calculate_auto_aggregation_minio(build_id, test_name, lg_type, start_time, end_time)
+            aggregation = calculate_auto_aggregation_minio(build_id, test_name, lg_type,
+                                                           start_time=_start_time,
+                                                           end_time=_end_time)
         else:
-            aggregation = calculate_auto_aggregation_influx(build_id, test_name, lg_type, start_time, end_time)
-    return start_time, end_time, aggregation
+            aggregation = calculate_auto_aggregation_influx(build_id, test_name, lg_type,
+                                                            start_time=_start_time,
+                                                            end_time=_end_time)
+    return _start_time, _end_time, aggregation

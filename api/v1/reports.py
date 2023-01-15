@@ -99,6 +99,14 @@ class API(Resource):
             requests=[],
             test_uid=args.get("test_id")
         )
+        # report_model = ReportCreateSerializer(**args, project_id=project.id, test_uid=args.get("test_id"), name=args['test_name'])
+        # report2 = Report(**report_model.dict(by_alias=True))
+        # d1 = report.to_json()
+        # d2 = report2.to_json()
+        # for k in d1.keys():
+        #     log.info('comparing dicts %s', [k, d1[k], d2[k]])
+        #     assert d1[k] == d2[k], 'DICTS NOT EQUAL IN %s' % k
+
         # if test_config:
         #     report.test_config = test_config
         report.insert()

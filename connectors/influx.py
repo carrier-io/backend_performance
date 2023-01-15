@@ -532,7 +532,7 @@ def get_response_time_per_test(build_id, test_name, lg_type, sampler, scope, agg
     return round(list(influx_tools.get_client(project_id).query(query)[f"{test_name}_{aggregator}"])[0]["rt"], 2)
 
 
-def calculate_auto_aggregation(build_id, test_name, lg_type, start_time, end_time):
+def calculate_auto_aggregation(build_id: str, test_name: str, lg_type: str, start_time: str, end_time: str):
     project_id = get_project_id(build_id)
     client = influx_tools.get_client(project_id)
     aggregation = "1s"

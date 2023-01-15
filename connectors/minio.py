@@ -29,7 +29,7 @@ def get_client(project_id) -> MinioClient:
     return MinioClient(rpc.call.project_get_or_404(project_id))
 
 
-def calculate_auto_aggregation(build_id, test_name, lg_type, start_time, end_time):
+def calculate_auto_aggregation(build_id: str, test_name: str, *args, **kwargs):
     project_id = get_project_id(build_id)
     client = get_client(project_id)
     bucket_name = f'p--{project_id}.{test_name}'
@@ -47,14 +47,12 @@ def calculate_auto_aggregation(build_id, test_name, lg_type, start_time, end_tim
     return aggregation
 
 
-def calculate_timestamps(start_time: str, end_time: str) -> list:
-    t_format = "%Y-%m-%dT%H:%M:%S.000Z"
-    start_time = datetime.strptime(start_time, t_format)
-    end_time = datetime.strptime(end_time, t_format)
+def calculate_timestamps(start_time: datetime, end_time: datetime) -> list:
     timestamps = []
     while start_time <= end_time:
-        timestamps.append(start_time.strftime("%Y-%m-%dT%H:%M:%SZ"))
+        timestamps.append(start_time.isoformat(timespec='seconds'))
         start_time += timedelta(seconds=1)
+    timestamps.append(start_time.isoformat(timespec='seconds'))
     return timestamps
 
 
@@ -81,7 +79,8 @@ def get_backend_users(build_id, test_name, aggregation):
     return timestamps, results
 
 
-def get_requests_summary_data(build_id, test_name, lg_type, start_time, end_time, aggregation, sampler,
+def get_requests_summary_data(build_id: str, test_name: str, lg_type: str,
+                              start_time: str, end_time: str, aggregation: str, sampler: str,
                               timestamps=None, users=None, scope=None, aggr='pct95', status='all'):
     scope_addon = ""
     status_addon = ""
@@ -103,10 +102,12 @@ def get_requests_summary_data(build_id, test_name, lg_type, start_time, end_time
     
     if not (timestamps and users):
         timestamps, users = get_backend_users(build_id, test_name, aggregation)
-    timestamps = calculate_timestamps(start_time, end_time)
+    timestamps = calculate_timestamps(datetime.fromisoformat(start_time), datetime.fromisoformat(end_time))
     
     response = client.select_object_content(bucket_name, file_name, expression_addon)
-    
+    log.info('get_requests_summary_data resp %s', response)
+
+
     results = {}
     
     if group_by:
@@ -115,14 +116,16 @@ def get_requests_summary_data(build_id, test_name, lg_type, start_time, end_time
                 continue
             if line['request_name'] not in results:
                 results[line['request_name']] = {}
-                for ts in timestamps:
-                    results[line['request_name']][ts] = None
+                # for ts in timestamps:
+                #     results[line['request_name']][ts] = None
             results[line['request_name']][line['time']] = int(line[aggr])
     else:
         results['response'] = {}
-        for ts in timestamps:
-            results['response'][ts] = None
+        # for ts in timestamps:
+        #     results['response'][ts] = None
         for line in response:
             results['response'][line['time']] = int(line[aggr])
+
+    log.info('get_requests_summary_data results %s', results)
     
     return timestamps, results, users

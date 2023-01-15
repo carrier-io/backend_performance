@@ -122,7 +122,8 @@ def chart_data(timeline, users, other, yAxis="response_time", convert_time: bool
             "data": []
         }
         for _ in timeline:
-            dumb_fix = str(_) + 'Z'
+            # todo: refactor - this is ridiculous
+            dumb_fix = str(_).strip('Z') + 'Z'
             if dumb_fix in other[each]:
                 dataset['data'].append(other[each][dumb_fix])
             else:
@@ -155,6 +156,19 @@ def render_analytics_control(requests: list) -> dict:
             control[each][every] = item[every].format(each)
     return control
 
+
+
+
+
+# def _check_equality(func, *, second_func=None):
+#     log.info('calculate_proper_timeframe')
+#     def wrapper(*args, **kwargs):
+#         result = func(*args, **kwargs)
+#         result2 = second_func(*args, **kwargs)
+#         log.info(f'FUNCTIONS RETURN RESULTS {result} | {result2}')
+#         log.info(f'RESULTS equal? {all(i == j for i, j in zip(result, result2))} | {list(i == j for i, j in zip(result, result2))}')
+#         return result2
+#     return wrapper
 
 def calculate_proper_timeframe(build_id: str, test_name: str, lg_type: str, low_value: int, high_value: int,
                                start_time: datetime, end_time: datetime, aggregation: str,

@@ -13,6 +13,8 @@
 #   limitations under the License.
 
 from datetime import datetime, timedelta
+from typing import Optional
+
 from tools import constants as c
 from tools import MinioClient, rpc_tools
 from ..models.reports import Report
@@ -80,7 +82,7 @@ def get_backend_users(build_id, test_name, aggregation):
 
 
 def get_requests_summary_data(build_id: str, test_name: str, lg_type: str,
-                              start_time: str, end_time: str, aggregation: str, sampler: str,
+                              start_time: str, end_time: str, aggregation: str, sampler: Optional[str] = None,
                               timestamps=None, users=None, scope=None, aggr='pct95', status='all'):
     scope_addon = ""
     status_addon = ""
@@ -102,7 +104,11 @@ def get_requests_summary_data(build_id: str, test_name: str, lg_type: str,
     
     if not (timestamps and users):
         timestamps, users = get_backend_users(build_id, test_name, aggregation)
-    timestamps = calculate_timestamps(datetime.fromisoformat(start_time), datetime.fromisoformat(end_time))
+    # dumb fixes
+    timestamps = calculate_timestamps(
+        datetime.fromisoformat(start_time.strip('Z')),
+        datetime.fromisoformat(end_time.strip('Z'))
+    )
     
     response = client.select_object_content(bucket_name, file_name, expression_addon)
     log.info('get_requests_summary_data resp %s', response)

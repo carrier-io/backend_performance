@@ -18,7 +18,7 @@ from tools import db_tools, db
 
 
 class Report(db_tools.AbstractBaseMixin, db.Base):
-    __tablename__ = "backend_reports_5"
+    __tablename__ = "backend_reports"
 
     id = Column(Integer, primary_key=True)
     project_id = Column(Integer, unique=False, nullable=False)

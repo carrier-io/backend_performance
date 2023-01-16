@@ -236,7 +236,7 @@ def str_to_timestamp(t: Union[str, datetime]) -> float:
     log.info('old t %s', t)
     if isinstance(t, datetime):
         return t.timestamp()
-    iso = t.replace("Z", "")
+    iso = t.strip('Z')
     # if "." not in timestamp:
     #     timestamp += "."
     # timestamp += "".join(["0" for _ in range(26 - len(timestamp))])

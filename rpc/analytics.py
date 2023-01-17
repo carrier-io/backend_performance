@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel, validator
-from sqlalchemy import JSON, cast, Integer, String, literal_column, desc, asc, func
+from sqlalchemy import String, literal_column, asc, func
 from collections import OrderedDict, defaultdict
 
 from pylon.core.tools import web, log
@@ -26,11 +26,6 @@ class ReportBuilderReflection(BaseModel):
     def set_bucket_name(cls, value: str, values: dict):
         name = values["name"].replace('_', '').lower()
         return f'p--{values["project_id"]}.{name}'
-
-    # @validator('report_file_name', always=True)
-    # def set_report_file_name(cls, value: str, values: dict):
-    #     time_aggregation = '1s'
-    #     return f'{values["build_id"]}_{time_aggregation}.csv.gz'
 
     class Config:
         orm_mode = True
@@ -171,12 +166,12 @@ class RPC:
                 for r in results:
                     request_name = r.pop('request_name')
                     all_requests.add(request_name)
-                    # loop = int(r.pop('loop'))
                     result_model = ReportResultsModel.parse_obj(r)
 
-                    # if not data[report_reflection.id].get(request_name):
-                    #     data[report_reflection.id][request_name] = dict()
-                    data[report_reflection.id][time_aggregation][request_name] = result_model.dict()
+                    try:
+                        data[report_reflection.id][time_aggregation][request_name].append(result_model.dict())
+                    except KeyError:
+                        data[report_reflection.id][time_aggregation][request_name] = [result_model.dict()]
 
                     current_date = datetime.fromisoformat(result_model.time)
                     if earliest_date is None or earliest_date > current_date:

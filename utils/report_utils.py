@@ -1,9 +1,15 @@
+from collections import defaultdict
 from datetime import datetime
+from functools import partial
+from typing import Tuple, Union
+
+from .utils import str_to_timestamp
 from ..connectors.minio import calculate_auto_aggregation as calculate_auto_aggregation_minio
 from ..connectors.influx import calculate_auto_aggregation as calculate_auto_aggregation_influx
 
-from tools import constants as c
-from tools import data_tools
+from tools import data_tools, constants as c
+
+from pylon.core.tools import log
 
 
 def create_dataset(timeline, data, scope, metric, axe):
@@ -14,16 +20,16 @@ def create_dataset(timeline, data, scope, metric, axe):
     colors = data_tools.charts.color_gen(len(scope))
     for each, color in zip(scope, colors):
         datasets.append({
-                "label": f"{each}_{metric}",
-                "fill": False,
-                "data": list(data.values()),
-                "yAxisID": axe,
-                "borderWidth": 2,
-                "lineTension": 0,
-                "spanGaps": True,
-                "backgroundColor": "rgb({}, {}, {})".format(*color),
-                "borderColor": "rgb({}, {}, {})".format(*color)
-            })
+            "label": f"{each}_{metric}",
+            "fill": False,
+            "data": list(data.values()),
+            "yAxisID": axe,
+            "borderWidth": 2,
+            "lineTension": 0,
+            "spanGaps": True,
+            "backgroundColor": "rgb({}, {}, {})".format(*color),
+            "borderColor": "rgb({}, {}, {})".format(*color)
+        })
     return {
         "labels": labels,
         "datasets": datasets
@@ -39,16 +45,16 @@ def _create_dataset(timeline, data, scope, metric, axe):
     for each, color in zip(data, colors):
         key = list(each.keys())[0]
         datasets.append({
-                "label": f"{key}_{metric}",
-                "fill": False,
-                "data": list(each[key].values()),
-                "yAxisID": axe,
-                "borderWidth": 2,
-                "lineTension": 0,
-                "spanGaps": True,
-                "backgroundColor": "rgb({}, {}, {})".format(*color),
-                "borderColor": "rgb({}, {}, {})".format(*color)
-            })
+            "label": f"{key}_{metric}",
+            "fill": False,
+            "data": list(each[key].values()),
+            "yAxisID": axe,
+            "borderWidth": 2,
+            "lineTension": 0,
+            "spanGaps": True,
+            "backgroundColor": "rgb({}, {}, {})".format(*color),
+            "borderColor": "rgb({}, {}, {})".format(*color)
+        })
     return {
         "labels": labels,
         "datasets": datasets
@@ -86,6 +92,7 @@ def chart_data(timeline, users, other, yAxis="response_time", convert_time: bool
         try:
             for t in timeline:
                 labels.append(datetime.strptime(t, "%Y-%m-%dT%H:%M:%SZ").strftime("%m-%d %H:%M:%S"))
+                # labels.append(t)
         except ValueError:
             labels = timeline
     else:
@@ -115,15 +122,17 @@ def chart_data(timeline, users, other, yAxis="response_time", convert_time: bool
             "data": []
         }
         for _ in timeline:
-            if str(_) in other[each]:
-                dataset['data'].append(other[each][str(_)])
+            # todo: refactor - this is ridiculous
+            dumb_fix = str(_).strip('Z') + 'Z'
+            if dumb_fix in other[each]:
+                dataset['data'].append(other[each][dumb_fix])
             else:
                 dataset['data'].append(None)
         _data['datasets'].append(dataset)
     return _data
 
 
-def render_analytics_control(requests):
+def render_analytics_control(requests: list) -> dict:
     item = {
         "Users": "getData('Users', '{}')",
         # "Hits": "getData('Hits', '{}')",
@@ -141,32 +150,52 @@ def render_analytics_control(requests):
         "4xx": "getData('4xx', '{}')",
         "5xx": "getData('5xx', '{}')"
     }
-    control = {}
-    for each in ["All"] + requests:
-        control[each] = {}
+    control = defaultdict(dict)
+    for each in ["All", *requests]:
         for every in item:
             control[each][every] = item[every].format(each)
     return control
 
 
+
+
+
+# def _check_equality(func, *, second_func=None):
+#     log.info('calculate_proper_timeframe')
+#     def wrapper(*args, **kwargs):
+#         result = func(*args, **kwargs)
+#         result2 = second_func(*args, **kwargs)
+#         log.info(f'FUNCTIONS RETURN RESULTS {result} | {result2}')
+#         log.info(f'RESULTS equal? {all(i == j for i, j in zip(result, result2))} | {list(i == j for i, j in zip(result, result2))}')
+#         return result2
+#     return wrapper
+
 def calculate_proper_timeframe(build_id: str, test_name: str, lg_type: str, low_value: int, high_value: int,
-                               start_time, end_time, aggregation: str, time_as_ts: bool = False, 
-                               source: str = None) -> tuple:
-    start_time = c.str_to_timestamp(start_time)
-    end_time = c.str_to_timestamp(end_time)
-    interval = end_time - start_time
+                               start_time: datetime, end_time: datetime, aggregation: str,
+                               time_as_ts: bool = False, source: str = None) -> Union[Tuple[str, str, str], Tuple[int, int, str]]:
+    start_time_ts = start_time.timestamp()
+    end_time_ts = end_time.timestamp()
+
+    interval = end_time_ts - start_time_ts
     start_shift = interval * (float(low_value) / 100.0)
     end_shift = interval * (float(high_value) / 100.0)
-    end_time = start_time + end_shift
-    start_time += start_shift
+
+    end_time_ts = start_time_ts + end_shift
+    start_time_ts += start_shift
     if time_as_ts:
-        return int(start_time), int(end_time), aggregation
-    t_format = "%Y-%m-%dT%H:%M:%S.000Z"
-    start_time = datetime.fromtimestamp(start_time).strftime(t_format)
-    end_time = datetime.fromtimestamp(end_time).strftime(t_format)
+        return int(start_time_ts), int(end_time_ts), aggregation
+    # t_format = "%Y-%m-%dT%H:%M:%S.000Z"
+    # start_time = datetime.fromtimestamp(start_time_ts).strftime(t_format)
+    # end_time = datetime.fromtimestamp(end_time).strftime(t_format)
+    _start_time = datetime.utcfromtimestamp(start_time_ts).isoformat(sep=' ', timespec='seconds')
+    _end_time = datetime.utcfromtimestamp(end_time_ts).isoformat(sep=' ', timespec='seconds')
     if aggregation == 'auto' and build_id:
         if source == 'minio':
-            aggregation = calculate_auto_aggregation_minio(build_id, test_name, lg_type, start_time, end_time)
+            aggregation = calculate_auto_aggregation_minio(build_id, test_name, lg_type,
+                                                           start_time=_start_time,
+                                                           end_time=_end_time)
         else:
-            aggregation = calculate_auto_aggregation_influx(build_id, test_name, lg_type, start_time, end_time)
-    return start_time, end_time, aggregation
+            aggregation = calculate_auto_aggregation_influx(build_id, test_name, lg_type,
+                                                            start_time=_start_time,
+                                                            end_time=_end_time)
+    return _start_time, _end_time, aggregation

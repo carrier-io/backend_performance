@@ -167,7 +167,6 @@ class API(Resource):
             and_(Report.project_id == project.id, Report.id.in_(delete_ids))
         ).all()
         for build_id, name, lg_type in query_result:
-            log.info('DELETE query (%s)', (build_id, name, lg_type))
             try:
                 delete_test_data(build_id, name, lg_type)
             except InfluxDBClientError as e:
@@ -178,12 +177,14 @@ class API(Resource):
             Baseline.project_id == project.id,
             Baseline.report_id.in_(delete_ids)
         ).delete()
+        Baseline.commit()
 
         # bulk delete reports
         Report.query.filter(
             Report.project_id == project.id,
             Report.id.in_(delete_ids)
         ).delete()
+        Report.commit()
         return {"message": "deleted"}, 204
 
 

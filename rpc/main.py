@@ -58,9 +58,9 @@ class RPC:
 
     @web.rpc('backend_performance_job_type_by_uid')
     @rpc_tools.wrap_exceptions(RuntimeError)
-    def job_type_by_uid(self, project_id: int, uid: str) -> Optional[str]:
+    def job_type_by_uid(self, project_id: int, test_uid: str) -> Optional[str]:
         test = Test.query.filter(
-            Test.get_api_filter(project_id, uid)
+            Test.get_api_filter(project_id, test_uid)
         ).first()
         if test:
             return test.job_type

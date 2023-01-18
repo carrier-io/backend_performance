@@ -21,7 +21,7 @@
     </template>
     <template #sources>
         {{ template_slot("sources_content", payload={
-            "chapters": ["git", "artifact"],
+            "chapters": ["git", "artifact", "local"],
             "container_id": source_container_id
         }) | safe }}
     </template>

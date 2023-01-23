@@ -160,6 +160,7 @@ class Test(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin):
 
     def configure_execution_json(self, execution: bool = False) -> dict:
         exec_params = ExecutionParams.from_orm(self).dict(exclude_none=True)
+        exec_params.pop("cloud_settings")
         mark_for_delete = defaultdict(list)
         for section, integration in self.integrations.items():
             for integration_name, integration_data in integration.items():

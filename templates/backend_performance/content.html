@@ -39,7 +39,7 @@
                     </th>
                     <th scope="col" data-sortable="true"
                         data-cell-style="test_formatters.name_style"
-                        data-field="test_uid">
+                        data-field="uid">
                         UUID
                     </th>
                     <th scope="col" data-sortable="true"
@@ -95,7 +95,8 @@
             <th data-visible="false" data-field="id">index</th>
             <th scope="col" data-sortable="true" data-field="name"
                 data-formatter=report_formatters.createLinkToTest>Name</th>
-            <th scope="col" data-sortable="true" data-field="start_time">Date</th>
+            <th scope="col" data-sortable="true" data-field="start_time"
+                data-formatter="report_formatters.date_formatter">Date</th>
             <th scope="col" data-sortable="true" data-field="duration">Duration</th>
             <th scope="col" data-sortable="true" data-field="vusers">vUsers</th>
             <th scope="col" data-sortable="true" data-field="environment">Env</th>

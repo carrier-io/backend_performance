@@ -271,7 +271,7 @@ const TestCreateModal = {
             <div class="modal-header">
                 <div class="row w-100">
                     <div class="col">
-                        <h2>[[ mode === 'create' ? 'Create Backend Tests' : 'Update Backend Test' ]]</h2>
+                        <p class="font-h3 font-bold">[[ mode === 'create' ? 'Create Backend Test' : 'Update Backend Test' ]]</p>
                     </div>
                     <div class="col-xs">
                         <button type="button" class="btn btn-secondary mr-2" data-dismiss="modal" aria-label="Close">
@@ -314,10 +314,8 @@ const TestCreateModal = {
                         <div class="col">
                             <div class="form-group">
                                 <p class="font-h5 font-semibold">Test Name</p>
-                                <p>
-                                    <h13>Enter a name that describes the purpose of your test.</h13>
-                                </p>
-                                <div class="custom-input mb-3 mt-1" 
+                                <p class="font-h6 font-weight-400">Enter a name that describes the purpose of your test.</p>
+                                <div class="custom-input mb-3 mt-2" 
                                     :class="{'invalid-input': errors?.name}">
                                     <input type="text"
                                         placeholder="Test Name"
@@ -332,10 +330,8 @@ const TestCreateModal = {
                                 <div class="flex-fill">
                                     <div class="form-group">
                                         <p class="font-h5 font-semibold">Test Type</p>
-                                        <p>
-                                            <h13>Tag to group tests by type</h13>
-                                        </p>
-                                        <div class="custom-input mb-3 mt-1"
+                                        <p class="font-h6 font-weight-400">Tag to group tests by type</p>
+                                        <div class="custom-input mb-3 mt-2"
                                             :class="{ 'invalid-input': errors?.test_type }">
                                             <input type="text"
                                                 placeholder="Test Type"
@@ -348,10 +344,8 @@ const TestCreateModal = {
                                 <div class="flex-fill">
                                     <div class="form-group">
                                         <p class="font-h5 font-semibold">Environment</p>
-                                        <p>
-                                            <h13>Tag to group tests by env</h13>
-                                        </p>
-                                        <div class="custom-input mb-3 mt-1"
+                                        <p class="font-h6 font-weight-400">Tag to group tests by env</p>
+                                        <div class="custom-input mb-3 mt-2"
                                             :class="{ 'invalid-input': errors?.env_type }">
                                             <input type="text"
                                                 placeholder="Test Environment"
@@ -364,9 +358,7 @@ const TestCreateModal = {
                             </div>
                             <div class="form-group" >
                                 <p class="font-h5 font-semibold">Test runner</p>
-                                <p>
-                                    <h13>Choose the runner for the test.</h13>
-                                </p>
+                                <p class="font-h6 font-weight-400">Choose the runner for the test.</p>
                                 <div class="custom-input w-100-imp">
                                     <select class="selectpicker bootstrap-select__b mt-1" data-style="btn" 
                                     v-model="runner"
@@ -401,9 +393,7 @@ const TestCreateModal = {
                             <div class="form-group mt-3">
                                 <div class="form-group">
                                     <p class="font-h5 font-semibold">Entrypoint</p>
-                                    <p>
-                                        <h13>File for jMeter and class for gatling</h13>
-                                    </p>
+                                    <p class="font-h6 font-weight-400">File for jMeter and class for gatling</p>
                                     <input type="text" class="form-control form-control-alternative"
                                            placeholder="Entrypoint (e.g. some.jmx or some.Test)"
                                            v-model='entrypoint'
@@ -435,13 +425,11 @@ const TestCreateModal = {
                 <slot name='scheduling'></slot>
                 
 
-                <div class="section mt-3" @click="handle_advanced_params_icon">
+                <div class="section" style="margin-top: 50px" @click="handle_advanced_params_icon">
                     <div class="row" data-toggle="collapse" data-target="#advancedBackend" role="button" aria-expanded="false" aria-controls="advancedBackend">
                         <div class="col">
-                            <h7>ADVANCED PARAMETERS</h7>
-                            <p>
-                                <h13>Configure parameters for test runner, test data and network setting</h13>
-                            </p>
+                            <p class="font-h5 font-bold">ADVANCED PARAMETERS</p>
+                            <p class="font-h6 font-weight-400">Configure parameters for test runner, test data and network setting</p>
                         </div>
                         <div class="col">
                             <div class="col-xs text-right">
@@ -466,9 +454,7 @@ const TestCreateModal = {
                                     <div class="d-flex flex-row">
                                         <div class="flex-fill">
                                             <h9 class="flex-grow-1">Split CSV</h9>
-                                            <p>
-                                                <h13>Distribute CSV data across load generators</h13>
-                                            </p>
+                                            <p class="font-h6 font-weight-400">Distribute CSV data across load generators</p>
                                         </div>
                                         <div>
                                             <button type="button" class="btn btn-32 btn-action mt-1"

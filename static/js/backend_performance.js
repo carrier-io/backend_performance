@@ -201,10 +201,8 @@ const Customization = {
         <div class="card-header">
             <div class="d-flex flex-row">
                 <div class="flex-fill">
-                    <h9 class="flex-grow-1">Custom plugins and extensions</h9>
-                    <p>
-                        <h13>Bucket and file for your customizations</h13>
-                    </p>
+                    <p class="flex-grow-1 font-h5 font-semibold">Custom plugins and extensions</p>
+                    <p class="font-h6 font-weight-400">Bucket and file for your customizations</p>
                 </div>
                 <div>
                     <button type="button" class="btn btn-32 btn-action mt-1"
@@ -428,19 +426,16 @@ const TestCreateModal = {
                 <div class="section" style="margin-top: 50px" @click="handle_advanced_params_icon">
                     <div class="row" data-toggle="collapse" data-target="#advancedBackend" role="button" aria-expanded="false" aria-controls="advancedBackend">
                         <div class="col">
-                            <p class="font-h5 font-bold">ADVANCED PARAMETERS</p>
+                            <p class="font-h5 font-bold">ADVANCED PARAMETERS
+                                <button type="button" class="btn btn-nooutline-secondary p-0 pb-1 ml-1"
+                                    data-toggle="collapse" data-target="#advancedBackend">
+                                    <i :class="advanced_params_icon"></i>
+                                </button>
+                            </p>
                             <p class="font-h6 font-weight-400">Configure parameters for test runner, test data and network setting</p>
                         </div>
-                        <div class="col">
-                            <div class="col-xs text-right">
-                                <button type="button" class="btn btn-nooutline-secondary mr-2"
-                                        data-toggle="collapse" data-target="#advancedBackend">
-                                        <i :class="advanced_params_icon"></i>
-                                </button>
-                            </div>
-                        </div>
                     </div>
-                    <div class="collapse row pt-4" id="advancedBackend"
+                    <div class="collapse row pt-4 px-1" id="advancedBackend"
                         ref="advanced_params"
                     >
                         <div class="col">
@@ -453,7 +448,7 @@ const TestCreateModal = {
                                 <div class="card-header">
                                     <div class="d-flex flex-row">
                                         <div class="flex-fill">
-                                            <h9 class="flex-grow-1">Split CSV</h9>
+                                            <p class="flex-grow-1 font-h5 font-semibold">Split CSV</h9>
                                             <p class="font-h6 font-weight-400">Distribute CSV data across load generators</p>
                                         </div>
                                         <div>
@@ -610,7 +605,7 @@ const TestCreateModal = {
         },
         handle_advanced_params_icon(e) {
             this.advanced_params_icon = this.$refs.advanced_params.classList.contains('show') ?
-                'fas fa-chevron-down' : 'fas fa-chevron-up'
+                'icon__16x16 icon-arrow-up__16 rotate-90' : 'icon__16x16 icon-arrow-down__16'
         },
         async handleCreate(run_test = false) {
             this.clearErrors()
@@ -684,7 +679,7 @@ const TestCreateModal = {
                 compile_tests: false,
                 errors: {},
 
-                advanced_params_icon: 'fas fa-chevron-down',
+                advanced_params_icon: 'icon__16x16 icon-arrow-up__16 rotate-90',
                 mode: 'create',
                 active_source_tab: undefined,
             }

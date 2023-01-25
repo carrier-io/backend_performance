@@ -358,7 +358,7 @@ const TestCreateModal = {
                                 <p class="font-h5 font-semibold">Test runner</p>
                                 <p class="font-h6 font-weight-400">Choose the runner for the test.</p>
                                 <div class="custom-input w-100-imp">
-                                    <select class="selectpicker bootstrap-select__b mt-1" data-style="btn" 
+                                    <select class="selectpicker bootstrap-select__b mt-2" data-style="btn" 
                                     v-model="runner"
                                     :class="{ 'is-invalid': errors?.runner }"
                                 >
@@ -392,7 +392,7 @@ const TestCreateModal = {
                                 <div class="form-group">
                                     <p class="font-h5 font-semibold">Entrypoint</p>
                                     <p class="font-h6 font-weight-400">File for jMeter and class for gatling</p>
-                                    <input type="text" class="form-control form-control-alternative"
+                                    <input type="text" class="form-control form-control-alternative mt-2"
                                            placeholder="Entrypoint (e.g. some.jmx or some.Test)"
                                            v-model='entrypoint'
                                            :class="{ 'is-invalid': errors?.entrypoint }"

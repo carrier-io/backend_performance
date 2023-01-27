@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import List, Union, Optional
+from uuid import uuid4
 
 from pydantic import BaseModel, validator
 
@@ -14,6 +15,7 @@ class ReportDefaultSerializer(BaseModel):
     id: int
     project_id: int
     test_uid: str
+    uid: str
     name: str
     environment: str
     type: str
@@ -77,6 +79,7 @@ class ReportGetSerializer(ReportDefaultSerializer):
 
 class ReportCreateSerializer(ReportDefaultSerializer):
     id: Optional[int]
+    uid: Optional[str]
     failures: int = 0
     total: int = 0
     thresholds_missed: int = 0
@@ -116,3 +119,9 @@ class ReportCreateSerializer(ReportDefaultSerializer):
     @validator('throughput')
     def round_throughput(cls, value: float):
         return round(value, 1)
+
+    @validator('uid', pre=True, always=True)
+    def set_uid(cls, value: Optional[str]):
+        if not value:
+            return str(uuid4())
+        return value

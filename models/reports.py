@@ -11,6 +11,7 @@
 #     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
+from uuid import uuid4
 
 from sqlalchemy import String, Column, Integer, Float, Text, ARRAY, JSON
 
@@ -23,6 +24,7 @@ class Report(db_tools.AbstractBaseMixin, db.Base):
     id = Column(Integer, primary_key=True)
     project_id = Column(Integer, unique=False, nullable=False)
     test_uid = Column(String(128), unique=False, nullable=False)
+    uid = Column(String(128), unique=True, nullable=False)
     name = Column(String(128), unique=False)
     environment = Column(String(128), unique=False)
     type = Column(String(128), unique=False)
@@ -73,6 +75,8 @@ class Report(db_tools.AbstractBaseMixin, db.Base):
         return self.serialized.dict(exclude=set(exclude_fields))
 
     def insert(self):
+        if not self.uid:
+            self.uid = str(uuid4())
         if not self.test_config:
             from .tests import Test
             self.test_config = Test.query.filter(

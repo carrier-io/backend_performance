@@ -1,8 +1,8 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
-from pydantic import BaseModel, validator
-from sqlalchemy import String, literal_column, asc, func
+from pydantic import BaseModel, validator, parse_obj_as
+from sqlalchemy import String, literal_column, asc, func, and_, not_
 from collections import OrderedDict, defaultdict
 
 from pylon.core.tools import web, log
@@ -11,15 +11,17 @@ from ..connectors.minio import get_client
 from ..models.baselines import Baseline
 from ..models.reports import Report
 
-from tools import rpc_tools
+from tools import rpc_tools, influx_tools
 
 
 class ReportBuilderReflection(BaseModel):
     project_id: int
     id: int
+    uid: str
     build_id: str
     name: str
     bucket_name: Optional[str]
+
     # report_file_name: Optional[str]
 
     @validator('bucket_name', always=True)
@@ -46,10 +48,6 @@ class ReportResultsModel(BaseModel):
     fourxx: int
     fivexx: int
 
-    @validator('time')
-    def time_formatter(cls, value: str):
-        return value.strip('Z')
-
     class Config:
         fields = {
             'onexx': '1xx',
@@ -59,11 +57,23 @@ class ReportResultsModel(BaseModel):
             'fivexx': '5xx',
         }
 
+    @validator('time', pre=True)
+    def convert_time(cls, value):
+        if isinstance(value, datetime):
+            return value.isoformat(timespec='seconds')
+        return value.strip('Z')
+
+
+class ReportRequestMetricsInfluxModel(ReportResultsModel):
+    build_id: str
+    method: str
+    request_name: str
 
 
 columns = OrderedDict((
     ('id', Report.id),
     ('build_id', Report.build_id),
+    ('uid', Report.uid),
     ('group', literal_column("'backend_performance'").label('group')),
     ('name', Report.name),
     ('start_time', Report.start_time),
@@ -77,6 +87,11 @@ columns = OrderedDict((
     ('aggregation_pct90', Report.pct90),
     ('aggregation_pct95', Report.pct95),
     ('aggregation_pct99', Report.pct99),
+    ('aggregation_onexx', Report.onexx),
+    ('aggregation_twoxx', Report.twoxx),
+    ('aggregation_threexx', Report.threexx),
+    ('aggregation_fourxx', Report.fourxx),
+    ('aggregation_fivexx', Report.fivexx),
     ('throughput', Report.throughput),
     ('status', Report.test_status['status']),
     ('duration', Report.duration),
@@ -86,25 +101,57 @@ columns = OrderedDict((
 ))
 
 
+def _get_requests_aggregations_from_influx(project_id: int, reports: list) -> dict:
+    # log.info('influx def reports %s', reports)
+    build_ids = '|'.join(map(lambda x: x['build_id'], reports))
+    # log.info('influx def build_ids %s', build_ids)
+    query = r'''
+        select build_id, time, request_name, method, min, max, mean as median, total, 
+        "1xx", "2xx", "3xx", "4xx", "5xx", pct50, pct75, pct90, pct95, pct99 
+        from api_comparison 
+        where request_name <> 'All' 
+        and build_id =~ /{build_ids}/ 
+        group by build_id
+    '''.replace('\n', ' ').replace('\t', ' ').strip().format(build_ids=build_ids)
+
+    client = influx_tools.get_client(project_id, db_name=f'comparison_{project_id}')
+    results = client.query(query)
+
+    grouped_data = defaultdict(dict)
+    for series, build_result in zip(results.raw.get('series', []), list(results)):
+        build_id = series.get('tags', {}).get('build_id')
+        # log.info('build_tag %s', build_id)
+        # log.info('build_result %s', build_result)
+        build_data = parse_obj_as(List[ReportRequestMetricsInfluxModel], list(build_result))
+        for request_data in build_data:
+            grouped_data[build_id][request_data.request_name] = request_data.dict(exclude={'request_name', 'build_id'})
+    return grouped_data
+
+
 class RPC:
     @web.rpc('performance_analysis_test_runs_backend_performance')
     @rpc_tools.wrap_exceptions(RuntimeError)
     def test_runs(self, project_id: int,
-                  start_time, end_time=None) -> tuple:
-        log.info('backend_performance rpc | %s | %s', project_id, [start_time, end_time, ])
-
+                  start_time: Optional[datetime] = None,
+                  end_time: Optional[datetime] = None,
+                  exclude_uids: Optional[list] = None) -> tuple:
         query = Report.query.with_entities(
             *columns.values()
         ).filter(
             Report.project_id == project_id,
-            Report.start_time >= start_time,
             func.lower(Report.test_status['status'].cast(String)).in_(('"finished"', '"failed"', '"success"'))
         ).order_by(
             asc(Report.start_time)
         )
 
+        if start_time:
+            query = query.filter(Report.start_time >= start_time.isoformat())
+
         if end_time:
-            query.filter(Report.end_time <= end_time)
+            query = query.filter(Report.end_time <= end_time.isoformat())
+
+        if exclude_uids:
+            query = query.filter(not_(Report.uid.in_(exclude_uids)))
 
         return tuple(zip(columns.keys(), i) for i in query.all())
 
@@ -151,7 +198,7 @@ class RPC:
             else:
                 report_reflection = ReportBuilderReflection.from_orm(report)
 
-            log.info(report_reflection.dict())
+            # log.info(report_reflection.dict())
 
             data[report_reflection.id] = defaultdict(dict)
 
@@ -180,5 +227,7 @@ class RPC:
         return {
             'datasets': data,
             'all_requests': list(all_requests),
-            'earliest_date': earliest_date.isoformat()
+            'earliest_date': earliest_date.isoformat(),
+            'aggregated_requests_data': _get_requests_aggregations_from_influx(project_id, reports)
         }
+

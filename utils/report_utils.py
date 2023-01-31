@@ -4,15 +4,15 @@ from functools import partial
 from typing import Tuple, Union
 
 from .utils import str_to_timestamp
-from ..connectors.minio import calculate_auto_aggregation as calculate_auto_aggregation_minio
-from ..connectors.influx import calculate_auto_aggregation as calculate_auto_aggregation_influx
+# from ..connectors.minio import calculate_auto_aggregation as calculate_auto_aggregation_minio
+# from ..connectors.influx import calculate_auto_aggregation as calculate_auto_aggregation_influx
 
 from tools import data_tools, constants as c
 
 from pylon.core.tools import log
 
 
-def create_dataset(timeline, data, scope, metric, axe):
+def _create_dataset_for_users(timeline, data, scope, metric, axe):
     labels = []
     for _ in timeline:
         labels.append(datetime.strptime(_, "%Y-%m-%dT%H:%M:%SZ").strftime("%m-%d %H:%M:%S"))
@@ -36,30 +36,64 @@ def create_dataset(timeline, data, scope, metric, axe):
     }
 
 
-def _create_dataset(timeline, data, scope, metric, axe):
+# def _create_dataset(timeline, data, scope, metric, axe):
+#     labels = []
+#     for _ in timeline:
+#         labels.append(datetime.strptime(_, "%Y-%m-%dT%H:%M:%SZ").strftime("%m-%d %H:%M:%S"))
+#     datasets = []
+#     colors = data_tools.charts.color_gen(len(data))
+#     for each, color in zip(data, colors):
+#         key = list(each.keys())[0]
+#         datasets.append({
+#             "label": f"{key}_{metric}",
+#             "fill": False,
+#             "data": list(each[key].values()),
+#             "yAxisID": axe,
+#             "borderWidth": 2,
+#             "lineTension": 0,
+#             "spanGaps": True,
+#             "backgroundColor": "rgb({}, {}, {})".format(*color),
+#             "borderColor": "rgb({}, {}, {})".format(*color)
+#         })
+#     return {
+#         "labels": labels,
+#         "datasets": datasets
+#     }
+
+
+def create_dataset(timeline, data, scope, metric, axe):
     labels = []
-    for _ in timeline:
-        labels.append(datetime.strptime(_, "%Y-%m-%dT%H:%M:%SZ").strftime("%m-%d %H:%M:%S"))
-    datasets = []
+    for ts in timeline:
+        labels.append(datetime.strptime(ts, "%Y-%m-%dT%H:%M:%SZ").strftime("%m-%d %H:%M:%S"))
+    _data = {
+        "labels": labels,
+        "datasets": []
+    }
     colors = data_tools.charts.color_gen(len(data))
-    for each, color in zip(data, colors):
-        key = list(each.keys())[0]
-        datasets.append({
+    if metric == "Users":
+        return _create_dataset_for_users(timeline, data['users'], scope, metric, axe)
+    for key, color in zip(data, colors):
+        dataset = {
             "label": f"{key}_{metric}",
             "fill": False,
-            "data": list(each[key].values()),
+            "data": [],
             "yAxisID": axe,
             "borderWidth": 2,
             "lineTension": 0,
             "spanGaps": True,
             "backgroundColor": "rgb({}, {}, {})".format(*color),
             "borderColor": "rgb({}, {}, {})".format(*color)
-        })
-    return {
-        "labels": labels,
-        "datasets": datasets
-    }
-
+        }
+        for _ in timeline:
+            # todo: refactor - this is ridiculous
+            dumb_fix = str(_).strip('Z') + 'Z'
+            if dumb_fix in data[key]:
+                dataset['data'].append(data[key][dumb_fix])
+            else:
+                dataset['data'].append(None)
+        _data['datasets'].append(dataset)
+        
+    return _data
 
 def comparison_data(timeline, data):
     labels = []
@@ -171,8 +205,9 @@ def render_analytics_control(requests: list) -> dict:
 #     return wrapper
 
 def calculate_proper_timeframe(build_id: str, test_name: str, lg_type: str, low_value: int, high_value: int,
-                               start_time: datetime, end_time: datetime, aggregation: str,
-                               time_as_ts: bool = False, source: str = None) -> Union[Tuple[str, str, str], Tuple[int, int, str]]:
+                               start_time: datetime, end_time: datetime, aggregation: str, 
+                               time_as_ts: bool = False, source: str = None,
+                               ) -> Union[Tuple[str, str, str], Tuple[int, int, str]]:
     start_time_ts = start_time.timestamp()
     end_time_ts = end_time.timestamp()
 
@@ -183,19 +218,10 @@ def calculate_proper_timeframe(build_id: str, test_name: str, lg_type: str, low_
     end_time_ts = start_time_ts + end_shift
     start_time_ts += start_shift
     if time_as_ts:
-        return int(start_time_ts), int(end_time_ts), aggregation
+        return int(start_time_ts), int(end_time_ts)
     # t_format = "%Y-%m-%dT%H:%M:%S.000Z"
     # start_time = datetime.fromtimestamp(start_time_ts).strftime(t_format)
     # end_time = datetime.fromtimestamp(end_time).strftime(t_format)
     _start_time = datetime.utcfromtimestamp(start_time_ts).isoformat(sep=' ', timespec='seconds')
     _end_time = datetime.utcfromtimestamp(end_time_ts).isoformat(sep=' ', timespec='seconds')
-    if aggregation == 'auto' and build_id:
-        if source == 'minio':
-            aggregation = calculate_auto_aggregation_minio(build_id, test_name, lg_type,
-                                                           start_time=_start_time,
-                                                           end_time=_end_time)
-        else:
-            aggregation = calculate_auto_aggregation_influx(build_id, test_name, lg_type,
-                                                            start_time=_start_time,
-                                                            end_time=_end_time)
-    return _start_time, _end_time, aggregation
+    return _start_time, _end_time

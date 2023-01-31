@@ -13,12 +13,13 @@
 #   limitations under the License.
 
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Optional, Tuple
 
+from pylon.core.tools import log
 from tools import constants as c
 from tools import MinioClient, rpc_tools
+
 from ..models.reports import Report
-from pylon.core.tools import log
 
 
 def get_project_id(build_id: str) -> int:
@@ -31,10 +32,10 @@ def get_client(project_id) -> MinioClient:
     return MinioClient(rpc.call.project_get_or_404(project_id))
 
 
-def calculate_auto_aggregation(build_id: str, test_name: str, *args, **kwargs):
+def calculate_auto_aggregation(build_id: str, test_name: str, *args, **kwargs) -> str:
     project_id = get_project_id(build_id)
     client = get_client(project_id)
-    bucket_name = f'p--{project_id}.{test_name}'
+    bucket_name = f'p--{project_id}.{test_name}'.replace("_", "").lower()
     aggregation = "1s"
     aggr_list = ["1s", "5s", "30s", "1m", "5m", "10m"]
     for i in range(len(aggr_list)):
@@ -49,7 +50,7 @@ def calculate_auto_aggregation(build_id: str, test_name: str, *args, **kwargs):
     return aggregation
 
 
-def calculate_timestamps(start_time: datetime, end_time: datetime) -> list:
+def _calculate_timestamps(start_time: datetime, end_time: datetime) -> list:
     timestamps = []
     while start_time <= end_time:
         timestamps.append(start_time.isoformat(timespec='seconds'))
@@ -58,10 +59,10 @@ def calculate_timestamps(start_time: datetime, end_time: datetime) -> list:
     return timestamps
 
 
-def get_backend_users(build_id, test_name, aggregation):
+def get_backend_users(build_id: str, test_name: str, aggregation: str) -> Tuple[list, dict]:
     project_id = get_project_id(build_id)
     client = get_client(project_id)
-    bucket_name = f'p--{project_id}.{test_name}'
+    bucket_name = f'p--{project_id}.{test_name}'.replace("_", "").lower()
     file_name = f'users_{build_id}_{aggregation}.csv.gz'
     response = client.select_object_content(bucket_name, file_name)
     timestamps = []
@@ -89,7 +90,7 @@ def get_requests_summary_data(build_id: str, test_name: str, lg_type: str,
     group_by = False
     project_id = get_project_id(build_id)
     client = get_client(project_id)
-    bucket_name = f'p--{project_id}.{test_name}'
+    bucket_name = f'p--{project_id}.{test_name}'.replace("_", "").lower()
     file_name = f'{build_id}_{aggregation}.csv.gz'
     aggr = aggr.lower()
     
@@ -105,14 +106,13 @@ def get_requests_summary_data(build_id: str, test_name: str, lg_type: str,
     if not (timestamps and users):
         timestamps, users = get_backend_users(build_id, test_name, aggregation)
     # dumb fixes
-    timestamps = calculate_timestamps(
+    timestamps = _calculate_timestamps(
         datetime.fromisoformat(start_time.strip('Z')),
         datetime.fromisoformat(end_time.strip('Z'))
     )
     
     response = client.select_object_content(bucket_name, file_name, expression_addon)
     log.info('get_requests_summary_data resp %s', response)
-
 
     results = {}
     
@@ -135,3 +135,215 @@ def get_requests_summary_data(build_id: str, test_name: str, lg_type: str,
     log.info('get_requests_summary_data results %s', results)
     
     return timestamps, results, users
+
+
+def get_average_responses(build_id, test_name, lg_type, start_time, end_time, aggregation, sampler, status='all'):
+    project_id = get_project_id(build_id)
+    client = get_client(project_id)
+    bucket_name = f'p--{project_id}.{test_name}'.replace("_", "").lower()
+    file_name = f'{build_id}_{aggregation}.csv.gz'
+    timestamps, users = get_backend_users(build_id, test_name, aggregation)
+    timestamps = _calculate_timestamps(
+        datetime.fromisoformat(start_time.strip('Z')),
+        datetime.fromisoformat(end_time.strip('Z'))
+    )
+    status_addon = ""
+    if status != 'all':
+        status_addon = f" where status='{status.upper()}'"
+        
+    response = client.select_object_content(bucket_name, file_name, status_addon)
+    results = {"responses": {}}
+    # for ts in timestamps:
+    #     results['responses'][ts] = None
+    for line in response:
+        results["responses"][line['time']] = int(line['pct95'])
+    return timestamps, results, users
+
+
+def get_tps(build_id, test_name, lg_type, start_time, end_time, aggregation, sampler,
+            timestamps=None, users=None, scope=None, status='all'):
+    scope_addon = ""
+    status_addon = ""
+    project_id = get_project_id(build_id)
+    client = get_client(project_id)
+    bucket_name = f'p--{project_id}.{test_name}'.replace("_", "").lower()
+    file_name = f'{build_id}_{aggregation}.csv.gz'
+    if not (timestamps and users):
+        timestamps, users = get_backend_users(build_id, test_name, aggregation)
+    timestamps = _calculate_timestamps(
+        datetime.fromisoformat(start_time.strip('Z')),
+        datetime.fromisoformat(end_time.strip('Z'))
+    )
+    if scope and scope != 'All':
+        scope_addon = f" where request_name='{scope}'"
+    if status != 'all':
+        status_addon = f" and status='{status.upper()}'"
+        
+    expression_addon = scope_addon + status_addon
+    
+    response = client.select_object_content(bucket_name, file_name, expression_addon)    
+
+    results = {'throughput': {}}
+    # for ts in timestamps:
+    #     results['throughput'][ts] = None
+    for line in response:
+        results['throughput'][line['time']] = results['throughput'].get(line['time'], 0) + int(line['total'])
+    return timestamps, results, users
+
+
+def get_tps_analytics(build_id, test_name, lg_type, start_time, end_time, aggregation, sampler,
+                          timestamps=None, users=None, scope=None, status='all'):
+    scope_addon = ""
+    status_addon = ""
+    project_id = get_project_id(build_id)
+    client = get_client(project_id)
+    bucket_name = f'p--{project_id}.{test_name}'.replace("_", "").lower()
+    file_name = f'{build_id}_{aggregation}.csv.gz'
+    if not (timestamps and users):
+        timestamps, users = get_backend_users(build_id, test_name, aggregation)
+    # timestamps = _calculate_timestamps(
+    #     datetime.fromisoformat(start_time.strip('Z')),
+    #     datetime.fromisoformat(end_time.strip('Z'))
+    # )
+    if scope and 'All' not in scope:
+        scope_addon = " where ("
+        for each in scope:
+            scope_addon += f"request_name='{each}' OR "
+        scope_addon = scope_addon[0: -4] + ")"
+    if status != 'all':
+        status_addon = f" and status='{status.upper()}'"
+        
+    expression_addon = scope_addon + status_addon
+    
+    response = client.select_object_content(bucket_name, file_name, expression_addon) 
+        
+    data = {}
+    for line in response:
+        if not line.get('request_name'):
+            continue
+        if line['request_name'] not in data:
+            data[line['request_name']] = {}
+        timepoint = line['time']
+        data[line['request_name']][timepoint] = data[line['request_name']].get(timepoint, 0) + int(line['total'])
+
+    return timestamps, data, users
+
+
+def get_errors_analytics(build_id, test_name, lg_type, start_time, end_time, aggregation, sampler,
+                             timestamps=None, users=None, scope=None):
+    scope_addon = ""
+    status_addon = ""
+    project_id = get_project_id(build_id)
+    client = get_client(project_id)
+    bucket_name = f'p--{project_id}.{test_name}'.replace("_", "").lower()
+    file_name = f'{build_id}_{aggregation}.csv.gz'
+    if not (timestamps and users):
+        timestamps, users = get_backend_users(build_id, test_name, aggregation)
+    # timestamps = _calculate_timestamps(
+    #     datetime.fromisoformat(start_time.strip('Z')),
+    #     datetime.fromisoformat(end_time.strip('Z'))
+    # )
+    if scope and 'All' not in scope:
+        scope_addon = " where ("
+        for each in scope:
+            scope_addon += f"request_name='{each}' OR "
+        scope_addon = scope_addon[0: -4] + ")"
+
+    expression_addon = scope_addon + " and status='KO'"
+    
+    response = client.select_object_content(bucket_name, file_name, expression_addon)
+    
+    data = {}
+    for line in response:
+        if not line.get('request_name'):
+            continue
+        if line['request_name'] not in data:
+            data[line['request_name']] = {}
+        # for _ in timestamps:
+        #     results[req_name][_] = None
+        data[line['request_name']][line['time']] = data[line['request_name']].get(line['time'], 0) + 1
+    log.info('=====get_errors_analytics')
+    
+    return timestamps, data, users
+
+
+def get_backend_requests_analytics(build_id, test_name, lg_type, start_time, end_time, aggregation, sampler,
+                         timestamps=None, users=None, scope=None, aggr='pct95', status='all'):
+    scope_addon = ""
+    status_addon = ""
+    project_id = get_project_id(build_id)
+    client = get_client(project_id)
+    bucket_name = f'p--{project_id}.{test_name}'.replace("_", "").lower()
+    file_name = f'{build_id}_{aggregation}.csv.gz'
+    aggr = aggr.lower()
+    if not (timestamps and users):
+        timestamps, users = get_backend_users(build_id, test_name, aggregation)
+    # timestamps = _calculate_timestamps(
+    #     datetime.fromisoformat(start_time.strip('Z')),
+    #     datetime.fromisoformat(end_time.strip('Z'))
+    # )
+
+    if scope and 'All' not in scope:
+        scope_addon = " where ("
+        for each in scope:
+            scope_addon += f"request_name='{each}' OR "
+        scope_addon = scope_addon[0: -4] + ")"
+    if status != 'all':
+        status_addon = f" and status='{status.upper()}'"
+
+    expression_addon = scope_addon + status_addon
+    
+    response = client.select_object_content(bucket_name, file_name, expression_addon)     
+    
+    data = {}
+    for line in response:
+        if not line.get('request_name'):
+            continue
+        if line['request_name'] not in data:
+            data[line['request_name']] = {}
+        # for _ in timestamps:
+        #     results[req_name][_] = None
+        data[line['request_name']][line['time']] = int(line[aggr])   
+
+    return timestamps, data, users
+
+
+def get_response_codes_analytics(build_id, test_name, lg_type, start_time, end_time, aggregation, sampler,
+                                     timestamps=None, users=None, scope=None, aggr="2xx", status='all'):
+    scope_addon = ""
+    status_addon = ""
+    project_id = get_project_id(build_id)
+    client = get_client(project_id)
+    bucket_name = f'p--{project_id}.{test_name}'.replace("_", "").lower()
+    file_name = f'{build_id}_{aggregation}.csv.gz'
+    if not (timestamps and users):
+        timestamps, users = get_backend_users(build_id, test_name, aggregation)
+    # timestamps = _calculate_timestamps(
+    #     datetime.fromisoformat(start_time.strip('Z')),
+    #     datetime.fromisoformat(end_time.strip('Z'))
+    # )
+    
+    if scope and 'All' not in scope:
+        scope_addon = " where ("
+        for each in scope:
+            scope_addon += f"request_name='{each}' OR "
+        scope_addon = scope_addon[0: -4] + ")"
+    if status != 'all':
+        status_addon = f" and status='{status.upper()}'"
+        
+    expression_addon = scope_addon + status_addon
+    
+    response = client.select_object_content(bucket_name, file_name, expression_addon)
+    
+    data = {}
+    for line in response:
+        if not line.get('request_name'):
+            continue
+        if line['request_name'] not in data:
+            data[line['request_name']] = {}
+        # for _ in timestamps:
+        #     results[req_name][_] = None
+        data[line['request_name']][line['time']] = data[line['request_name']].get(line['time'], 0) + int(line[aggr])
+    log.info('=====get_response_codes_analytics')
+
+    return timestamps, data, users

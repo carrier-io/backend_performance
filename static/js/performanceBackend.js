@@ -167,6 +167,7 @@ function getDataForAnalysis(metric, request_name) {
             end_time: controller_proxy.end_time,
             low_value: controller_proxy.slider.low,
             high_value: controller_proxy.slider.high,
+            // source: new URLSearchParams(location.search).get('from_minio') !== null ? 'minio' : 'influx'
         },
         function (data) {
             if (analyticsLine.data.labels.length === 0 || analyticsLine.data.labels.length !== data.labels.length) {

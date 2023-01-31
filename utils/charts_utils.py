@@ -5,16 +5,18 @@ from pydantic import BaseModel, validator
 from .utils import str_to_timestamp
 from ..models.reports import Report
 from ..connectors.influx import (
-    get_backend_requests, get_hits_tps, average_responses, get_build_data,
-    get_tps_for_analytics, get_response_codes_for_analytics, get_backend_users,
-    get_throughput_per_test, get_response_time_per_test,
-    get_errors_for_analytics, get_backend_requests_for_analytics,
-    get_engine_health_cpu, get_project_id, get_engine_health_memory, get_engine_health_load
+    get_build_data, get_engine_health_cpu, get_project_id, 
+    get_engine_health_memory, get_engine_health_load
 )
 
-from ..connectors.minio import get_requests_summary_data
+# from ..connectors.minio import (
+#     get_requests_summary_data, get_average_responses, get_tps, get_backend_users as get_backend_users_minio,
+#     get_tps_analytics, get_errors_analytics, get_backend_requests_analytics, get_response_codes_analytics    
+# )
 from ..connectors.loki import get_results
-from .report_utils import calculate_proper_timeframe, chart_data, create_dataset, comparison_data, _create_dataset
+from .report_utils import (
+    calculate_proper_timeframe, chart_data, create_dataset, comparison_data
+)
 from pylon.core.tools import log
 
 from tools import constants as c, influx_tools, data_tools
@@ -63,8 +65,8 @@ class TimeframeArgs(BaseModel):
         }
 
 
-def _timeframe(args: dict, time_as_ts: bool = False) -> tuple:
-    log.info(f"_timeframe args {args}")
+def timeframe(args: dict, time_as_ts: bool = False) -> tuple:
+    log.info(f"timeframe args {args}")
     _parsed_args = TimeframeArgs.parse_obj(args)
     # end_time = args.get('end_time')
     # high_value = args.get('high_value', 100)
@@ -78,14 +80,13 @@ def _timeframe(args: dict, time_as_ts: bool = False) -> tuple:
     return calculate_proper_timeframe(**_parsed_args.dict(), time_as_ts=time_as_ts)
 
 
-def _query_only(args: dict, query_func: Callable) -> dict:
-    start_time, end_time, aggregation = _timeframe(args)
-    timeline, results, users = query_func(
-        args['build_id'], args['test_name'], args['lg_type'],
-        start_time, end_time, aggregation,
-        sampler=args['sampler'], status=args["status"]
-    )
-    return chart_data(timeline, users, results, convert_time=args.get('convert_time', True))
+# def _query_only(args: dict, query_func: Callable, connector) -> dict:
+#     # start_time, end_time, aggregation = _timeframe(args, connector)
+#     timeline, results, users = query_func(
+#         # start_time, end_time, aggregation,
+#         # sampler=args['sampler'], status=args["status"]
+#     )
+#     return chart_data(timeline, users, results, convert_time=args.get('convert_time', True))
 
 
 def get_tests_metadata(tests):
@@ -107,76 +108,44 @@ def get_tests_metadata(tests):
     return labels, rps_data, errors_data, users_data, responses_data
 
 
-def requests_summary(args: dict):
-    args['convert_time'] = False
-    if args.get('source') == 'minio':
-        log.info("minio response")
-        _res = _query_only(args, get_requests_summary_data)
-    else:
-        log.info("influx response")
-        _res = _query_only(args, get_backend_requests)
-    return _res
-
-def requests_hits(args: dict):
-    args['convert_time'] = False
-    return _query_only(args, get_hits_tps)
+def requests_summary(args: dict, connector):
+    # args['convert_time'] = False
+    timeline, results, users = connector.get_requests_summary_data()
+    return chart_data(timeline, users, results, convert_time=False)
 
 
-def avg_responses(args: dict):
-    args['convert_time'] = False
-    return _query_only(args, average_responses)
+def requests_hits(args: dict, connector):
+    # args['convert_time'] = False
+    timeline, results, users = connector.get_tps()
+    return chart_data(timeline, users, results, convert_time=False)
 
 
-def summary_table(args: dict):
-    start_time, end_time, aggregation = _timeframe(args)
+def avg_responses(args: dict, connector):
+    # args['convert_time'] = False
+    timeline, results, users = connector.get_average_responses()
+    return chart_data(timeline, users, results, convert_time=False)
+
+
+def summary_table(args: dict, connector):
+    start_time, end_time = timeframe(args)
     return get_build_data(args['build_id'], args['test_name'], args['lg_type'], start_time, end_time, args['sampler'])
 
 
-def get_issues(args: dict):
-    start_time, end_time, aggregation = _timeframe(args, time_as_ts=True)
+def get_issues(args: dict, connector):
+    start_time, end_time = timeframe(args, time_as_ts=True)
     return list(get_results(args['test_name'], start_time, end_time).values())
 
 
-def calculate_analytics_dataset(build_id, test_name, lg_type, start_time, end_time, aggregation, sampler,
-                                scope, metric, status):
-    data = None
-    axe = 'count'
-    if metric == "Throughput":
-        timestamps, data, _ = get_tps_for_analytics(build_id, test_name, lg_type, start_time, end_time, aggregation,
-                                                    sampler, scope=scope, status=status)
-
-    elif metric == "Errors":
-        timestamps, data, _ = get_errors_for_analytics(build_id, test_name, lg_type, start_time, end_time, aggregation,
-                                                       sampler, scope=scope)
-    elif metric in ["Min", "Median", "Max", "pct90", "pct95", "pct99"]:
-        timestamps, data, _ = get_backend_requests_for_analytics(build_id, test_name, lg_type, start_time, end_time,
-                                                                 aggregation, sampler, scope=scope, aggr=metric,
-                                                                 status=status)
-        axe = 'time'
-
-    elif "xx" in metric:
-        timestamps, data, _ = get_response_codes_for_analytics(build_id, test_name, lg_type, start_time, end_time,
-                                                               aggregation, sampler, scope=scope, aggr=metric,
-                                                               status=status)
-    return data, axe
-
-
-def get_data_from_influx(args):
-    start_time, end_time, aggregation = _timeframe(args)
+def get_data_for_analytics(args, connector):
+    # start_time, end_time = timeframe(args)
     metric = args.get('metric', '')
     scope = args.get("scope[]", [])
-    timestamps, users = get_backend_users(args['build_id'], args['lg_type'],
-                                          start_time, end_time, aggregation)
     axe = 'count'
-    if metric == "Users":
-        return create_dataset(timestamps, users['users'], scope, metric, axe)
-    data, axe = calculate_analytics_dataset(args['build_id'], args['test_name'], args['lg_type'],
-                                            start_time, end_time, aggregation, args['sampler'],
-                                            scope, metric, args["status"])
+    data, axe, timestamps = connector.calculate_analytics(scope, metric)      
     if data:
-        return _create_dataset(timestamps, data, scope, metric, axe)
-    else:
-        return {}
+        return create_dataset(timestamps, data, scope, metric, axe)
+    return {}
+    
 
 
 # def prepare_comparison_responses(args):
@@ -272,14 +241,15 @@ def get_data_from_influx(args):
 #     return {"data": chart_data(labels, [], data, "data"), "label": y_axis}
 
 
-def engine_health(args: dict, part: str = 'all') -> dict:
+def engine_health(args: dict, connector, part: str = 'all') -> dict:
     part_mapping = {
         'cpu': engine_health_cpu,
         'memory': engine_health_memory,
         'load': engine_health_load,
     }
     d = dict(args)
-    start_time, end_time, aggregation = _timeframe(d)
+    start_time, end_time = timeframe(d)
+    aggregation = connector.calculate_auto_aggregation()
     d.update({
         'start_time': start_time,
         'end_time': end_time,

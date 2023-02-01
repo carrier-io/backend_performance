@@ -4,7 +4,7 @@ const getOrCreateLegendList = (chart, id) => {
 
     if (!listContainer) {
         listContainer = document.createElement('div');
-        listContainer.classList.add('d-grid', 'grid-column-6');
+        listContainer.classList.add('d-grid', 'grid-column-6', 'mt-4');
         legendContainer.appendChild(listContainer);
     }
 
@@ -48,7 +48,7 @@ const htmlLegendPlugin = {
 
             const span = document.createElement('span');
             span.classList.add('legend-span');
-            // span.style.width = '120px'
+            span.style.width = '200px';
 
             const text = document.createTextNode(item.text);
             span.appendChild(text);

@@ -24,8 +24,7 @@
         <div class="card card-12 p-28 mt-3" id="under-summary-controller">
             <div class="d-flex justify-content-between pb-4">
                 <div class="d-flex align-items-center">
-                    <h3 class="text-gray mr-4">Requests summary</h3>
-
+                    <p class="font-h3 font-bold mr-4">Requests summary</p>
                     {% if test_data['test_status']['status'].lower() not in ['finished', 'error', 'failed', 'success'] %}
                         <div class="selectpicker-titled">
                             <span class="font-h6 font-semibold px-3 item__left">AUTOUPDATE</span>
@@ -158,7 +157,7 @@
                         </analytic-filter>
                     </div>
                 </div>
-                <div class="row pl-2 pb-4 w-100">
+                <div class="row pl-2 mt-4 w-100">
                     <div class="col">
                         <label class="w-100 mb-0 font-h5 font-semibold">
                             Time picker

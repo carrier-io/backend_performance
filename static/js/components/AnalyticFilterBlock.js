@@ -38,6 +38,10 @@ const AnalyticFilterBlock = {
                 }
                 analyticLabels.splice(removingIdx, 1);
             })
+            analyticsLine.data.datasets = analyticsLine.data.datasets
+                .filter(item => {
+                    return analyticLabels.includes(item.label);
+                })
         },
         fillCurrentBlock() {
             let blockItems = [];
@@ -47,6 +51,10 @@ const AnalyticFilterBlock = {
             filtersBlock.set(this.blockIndex, blockItems);
         },
         handlerSubmit() {
+            if (!this.selectedTransactions.length || !this.selectedMetrics.length) {
+                showNotify('INFO', 'Select filter\`s options.');
+                return;
+            }
             $('#analytic-chart-loader').show();
             const blockLabels = filtersBlock.get(this.blockIndex);
             if (blockLabels !== undefined) {

@@ -164,6 +164,9 @@ const SummaryController = {
         async handle_slider_change(values) {
             [this.slider.low, this.slider.high] = values
             await this.handle_tab_load(this.active_tab_id)
+            if (this.active_tab_id === 'AN') {
+                vueVm.registered_components.analyticFilter.recalculateChartBySlider();
+            }
             this.fill_error_table()
             await window.engine_health?.reload()
         },

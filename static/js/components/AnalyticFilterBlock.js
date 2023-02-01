@@ -2,7 +2,7 @@ const AnalyticFilterBlock = {
     components: {
         'analytic-filter-dropdown': AnalyticFilterDropdown,
     },
-    props: ['analyticsData', 'blockIndex'],
+    props: ['analyticsData', 'blockIndex', 'instance_name'],
     data() {
         return {
             transactionItems: null,
@@ -27,50 +27,78 @@ const AnalyticFilterBlock = {
         setMetrics(payload) {
             this.selectedMetrics = [ ...payload];
         },
-        handlerSubmit() {
+        clearBlockData(blockLabels) {
+            blockLabels.forEach(blockLabel => {
+                let removingIdx = null;
+                for (let i in analyticLabels) {
+                    if (analyticLabels[i] === blockLabel) {
+                        removingIdx = i;
+                        break;
+                    }
+                }
+                analyticLabels.splice(removingIdx, 1);
+            })
+        },
+        fillCurrentBlock() {
             let blockItems = [];
             this.selectedMetrics.forEach(metric => {
                 blockItems.push(...this.selectedTransactions.map(transaction => `${transaction}_${metric}`));
-            })
-            if(filtersBlock.get(this.blockIndex)) {
-                analyticsLine.data.datasets = analyticsLine.data.datasets
-                    .filter(item => !filtersBlock.get(this.blockIndex).includes(item.label))
+            });
+            filtersBlock.set(this.blockIndex, blockItems);
+        },
+        handlerSubmit() {
+            $('#analytic-chart-loader').show();
+            const blockLabels = filtersBlock.get(this.blockIndex);
+            if (blockLabels !== undefined) {
+                this.clearBlockData(blockLabels);
             }
-            filtersBlock.set(this.blockIndex, blockItems)
-
+            this.fillCurrentBlock();
+            this.prepareRequest();
+        },
+        prepareRequest() {
             if (this.selectedMetrics.length && this.selectedTransactions.length) {
-                const allRequests = []
+                const allRequests = [];
+                const requestPairs = new Map();
                 this.selectedMetrics.forEach(metric => {
-                    allRequests.push(getDataForAnalysis(metric, this.selectedTransactions));
+                    requestPairs.set(metric, this.selectedTransactions);
+                    const closureRequest = getDataForAnalysis(metric, [...this.selectedTransactions])
+                    allRequests.push(closureRequest);
                 })
-                this.fetchChartData(allRequests)
+                filtersArgsForRequest.set(this.blockIndex, requestPairs)
+                this.fetchChartData(allRequests);
             }
         },
         fetchChartData(allRequests) {
             this.loadingData = true;
             Promise.all(allRequests).then(data => {
-                if(analyticsLine.data.labels.length === 0 || analyticsLine.data.labels.length !== data[0].labels.length) {
-                    const firstDatasets = []
-                    data.forEach(item => {
-                        firstDatasets.push(...item.datasets);
-                    })
-                    analyticsData.datasets = firstDatasets;
-                    analyticsData.labels = data[0].labels;
-                    analyticsLine.update();
-                } else {
-                    data.forEach(item => {
-                        analyticsLine.data.datasets.push(...item.datasets);
-                    })
-                    analyticsLine.update();
-                }
-                turnOnAllLine();
-                document.getElementById('chartjs-custom-legend-analytic').innerHTML = analyticsLine.generateLegend();
+                data.forEach(chartData => {
+                    if (Object.keys(chartData).length === 0) {
+                        return;
+                    }
+                    if (analyticsLine.data.labels.length === 0 || analyticsLine.data.labels.length !== chartData.labels.length) {
+                        analyticsCanvas(chartData);
+                        chartData.datasets.forEach(dataset => {
+                            analyticLabels.push(dataset.label);
+                        })
+                    } else {
+                        const uniqueDatasets = chartData.datasets.filter(item => {
+                            const isValueNotExist = analyticsLine.data.datasets.some(currentItem => currentItem.label === item.label)
+                            if (!isValueNotExist) return item
+                        });
+                        chartData.datasets.forEach(dataset => {
+                                analyticLabels.push(dataset.label);
+                        })
+                        analyticsLine.data.datasets.push(...uniqueDatasets);
+                        analyticsLine.update();
+                    }
+                    turnOnAllLine();
+                })
+                $('#analytic-chart-loader').hide();
+                this.loadingData = false;
             }).catch(error => {
                 console.log('ERROR', error)
-            }).finally(() => {
-                this.loadingData = false;
-            });
-        }
+            })
+        },
     },
     template: `
         <div v-if="loaded">

@@ -143,11 +143,16 @@
 
                 <div id="analytics" class="hidden">
                     <div class="d-flex mt-3">
-                        <div class="chart flex-grow-1 chart-container">
+                        <div class="chart flex-grow-1 chart-container" style="position: relative;">
+                            <div id="analytic-chart-loader"
+                                 class="layout-spinner">
+                                <i class="spinner-loader__32x32 spinner-centered"></i>
+                            </div>
                             <canvas id="chart-analytics" height="100%"></canvas>
                         </div>
                         <analytic-filter
                                 :analytics-data='{{ analytics_control | tojson }}'
+                                instance_name="analyticFilter"
                                 @register="register"
                         >
                         </analytic-filter>
@@ -165,7 +170,7 @@
                         </div>
                     </div>
                 </div>
-                <div id="chartjs-custom-legend-analytic" class="d-grid grid-column-7">
+                <div id="chartjs-custom-legend-analytic" style="width: calc(100% - 290px);">
                 </div>
             </div>
         </div>

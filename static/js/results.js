@@ -150,7 +150,6 @@ const SummaryController = {
                     break
                 case 'AN':
                     // todo: check if disabled??? or wtf was that function
-                    console.log('AN')
                     displayAnalytics()
                     break
                 case 'RT':

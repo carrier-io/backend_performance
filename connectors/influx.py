@@ -13,6 +13,7 @@
 #   limitations under the License.
 
 from datetime import datetime, timezone
+from typing import Optional, Tuple
 
 from tools import influx_tools
 from tools import constants as c
@@ -184,16 +185,16 @@ def get_backend_requests_for_analytics(build_id, test_name, lg_type, start_time,
             f"build_id='{build_id}' {scope_addon} group by {group_by}time({aggregation})"
     res = influx_tools.get_client(project_id).query(query)
     res = res.items()
-    data = []
+    data = {}
 
     for each in res:
         req_name = each[0][1]["request_name"]
-        results = {req_name: {}}
-        for _ in timestamps:
-            results[req_name][_] = None
+        data[req_name] = {}
+        # for ts in timestamps:
+        #     data[req_name][_] = None
         for _ in each[1]:
-            results[req_name][_['time']] = _['rt']
-        data.append(results)
+            data[req_name][_['time']] = _['rt']
+
     return timestamps, data, users
 
 
@@ -316,16 +317,16 @@ def get_tps_for_analytics(build_id, test_name, lg_type, start_time, end_time, ag
                       f"{scope_addon} group by request_name, time({aggregation})"
     res = influx_tools.get_client(project_id).query(responses_query)
     res = res.items()
-    data = []
-
+    data = {}
     for each in res:
         req_name = each[0][1]["request_name"]
-        results = {req_name: {}}
-        for _ in timestamps:
-            results[req_name][_] = None
+        data[req_name] = {}
+        # for ts in timestamps:
+        #     data[req_name][ts] = None
         for _ in each[1]:
-            results[req_name][_['time']] = _['sum']
-        data.append(results)
+            data[req_name][_['time']] = _['sum']
+    # log.info('=======get_tps influx')
+    # log.info(data)
     return timestamps, data, users
 
 
@@ -414,16 +415,16 @@ def get_errors_for_analytics(build_id, test_name, lg_type, start_time, end_time,
                   f" build_id='{build_id}' and status='KO' {scope_addon} group by request_name, time({aggregation})"
     res = influx_tools.get_client(project_id).query(error_query)
     res = res.items()
-    data = []
+    data = {}
 
     for each in res:
         req_name = each[0][1]["request_name"]
-        results = {req_name: {}}
-        for _ in timestamps:
-            results[req_name][_] = None
+        data[req_name] = {}
+        # for ts in timestamps:
+        #     data[req_name][ts] = None
         for _ in each[1]:
-            results[req_name][_['time']] = _['count']
-        data.append(results)
+            data[req_name][_['time']] = _['count']
+
     return timestamps, data, users
 
 
@@ -471,16 +472,16 @@ def get_response_codes_for_analytics(build_id, test_name, lg_type, start_time, e
                   f"{scope_addon} group by request_name, time({aggregation})"
     res = influx_tools.get_client(project_id).query(rcode_query)
     res = res.items()
-    data = []
+    data = {}
 
     for each in res:
         req_name = each[0][1]["request_name"]
-        results = {req_name: {}}
-        for _ in timestamps:
-            results[req_name][_] = None
+        data[req_name] = {}
+        # for ts in timestamps:
+        #     data[req_name][ts] = None
         for _ in each[1]:
-            results[req_name][_['time']] = _['sum']
-        data.append(results)
+            data[req_name][_['time']] = _['sum']
+
     return timestamps, data, users
 
 

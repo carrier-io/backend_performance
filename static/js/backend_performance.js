@@ -448,7 +448,7 @@ const TestCreateModal = {
                                 <div class="card-header">
                                     <div class="d-flex flex-row">
                                         <div class="flex-fill">
-                                            <p class="flex-grow-1 font-h5 font-semibold">Split CSV</h9>
+                                            <p class="flex-grow-1 font-h5 font-semibold">Split CSV</p>
                                             <p class="font-h6 font-weight-400">Distribute CSV data across load generators</p>
                                         </div>
                                         <div>
@@ -609,10 +609,15 @@ const TestCreateModal = {
         },
         async handleCreate(run_test = false) {
             this.clearErrors()
+            data = new FormData()
+            data.append('data', JSON.stringify({...this.get_data(), run_test}))
+            const source = this.source.get().file
+            if (typeof source === 'object'){
+                data.append('file', source)
+            }
             const resp = await fetch(`/api/v1/backend_performance/tests/${getSelectedProjectId()}`, {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({...this.get_data(), run_test})
+                body: data
             })
             if (resp.ok) {
                 this.hide()

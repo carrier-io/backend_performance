@@ -1,3 +1,4 @@
+import json
 from queue import Empty
 
 from sqlalchemy import and_
@@ -73,15 +74,15 @@ class API(Resource):
         """
         Create test and run on demand
         """
-        run_test_ = request.json.pop('run_test', False)
-        compile_tests_flag = request.json.pop('compile_tests', False)
-        engagement_id = request.json.get('integrations', {}).get('reporters', {})\
+        data = json.loads(request.form.get('data'))
+        run_test_ = data.pop('run_test', False)
+        compile_tests_flag = data.pop('compile_tests', False)
+        engagement_id = data.get('integrations', {}).get('reporters', {})\
             .get('reporter_engagement', {}).get('id')
-
 
         test_data, errors = parse_test_data(
             project_id=project_id,
-            request_data=request.json,
+            request_data=data,
             rpc=self.module.context.rpc_manager,
         )
 
@@ -106,10 +107,11 @@ class API(Resource):
         )
 
         if test_data['source']['name'] == 'artifact':
+            file = request.files.get('file')
             project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
             bucket = "tests"
-            api_tools.upload_file(bucket, test_data['source']['file'], project, create_if_not_exists=True)
-            compile_file_name = test_data['source']['file'].filename
+            api_tools.upload_file(bucket, file, project, create_if_not_exists=True)
+            compile_file_name = file.filename
 
             if compile_tests_flag:  # compiling tests only if source is artifact
                 if not project:

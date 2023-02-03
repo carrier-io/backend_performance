@@ -216,6 +216,7 @@ const SummaryController = {
         fill_error_table() {
             $('#errors').bootstrapTable('refresh', {
                 url: '/api/v1/backend_performance/charts/errors/table?' + new URLSearchParams({
+                    build_id: this.build_id,
                     test_name: this.test_name,
                     start_time: this.start_time,
                     end_time: this.end_time,

@@ -8,11 +8,11 @@ class BaseConnector(ABC):
     def __init__(self, **args):
         self.build_id = args['build_id']
         self.test_name = args['test_name']
-        self.lg_type = args['lg_type']
+        self.lg_type = args.get('lg_type')
         self.project_id = self._get_project_id(self.build_id)
         self.start_time, self.end_time = timeframe(args)
         self.aggregation = args.get('aggregator')
-        self.sampler=args['sampler']
+        self.sampler=args.get('sampler')
         self.status=args.get("status", 'all')
     
     @abstractmethod

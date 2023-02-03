@@ -132,8 +132,9 @@ def summary_table(args: dict, connector):
 
 
 def get_issues(args: dict, connector):
-    start_time, end_time = timeframe(args, time_as_ts=True)
-    return list(get_results(args['test_name'], start_time, end_time).values())
+    # start_time, end_time = timeframe(args, time_as_ts=True)
+    # issues_loki = list(get_results(args['test_name'], start_time, end_time).values())
+    return connector.get_issues()
 
 
 def get_data_for_analytics(args, connector):

@@ -8,6 +8,7 @@ from pylon.core.tools import log
 from ...models.reports import Report
 from ...connectors.minio_connector import MinioConnector
 from ...connectors.influx_connector import InfluxConnector
+from ...connectors.loki_connector import LokiConnector
 from ...utils.charts_utils import requests_summary, requests_hits, avg_responses, summary_table, \
     get_data_for_analytics, get_issues, engine_health
 
@@ -48,12 +49,11 @@ class API(Resource):
         for i in request.args.keys():
             if i.endswith('[]'):
                 args[i] = request.args.getlist(i)
-        if args.get('build_id'):
-            connector = self._get_connector(args)
+        connector = self._get_connector(args, source)
         return self.mapping[source][target](args, connector)
     
     
-    def _get_connector(self, args):
+    def _get_connector(self, args, source):
         test_status = Report.query.with_entities(Report.test_status).filter(
             Report.build_id == args['build_id']
             ).first()[0]['status'].lower()        
@@ -61,5 +61,9 @@ class API(Resource):
             log.info('Using MinioConnector')
             return MinioConnector(**args)
         else:
-            log.info('Using InfluxConnector')
-            return InfluxConnector(**args)
+            if source == "errors":
+                log.info('Using LokiConnector')
+                return LokiConnector(**args)            
+            else:
+                log.info('Using InfluxConnector')
+                return InfluxConnector(**args)

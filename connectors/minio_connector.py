@@ -344,3 +344,8 @@ class MinioConnector(BaseConnector):
             data[line['request_name']][line['time']] = \
                 data[line['request_name']].get(line['time'], 0) + int(line[aggr])
         return timestamps, data, users
+
+
+    def get_issues(self):
+        file_name = f'errors_{self.build_id}.csv.gz'
+        return self.client.select_object_content(self.bucket_name, file_name)

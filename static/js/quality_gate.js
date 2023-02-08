@@ -41,30 +41,30 @@ const QualityGate = {
     },
     template: `
     <div class="row">
-        <div class="d-flex" 
+        <div class="d-flex gap-3" 
             ref="settings"
         >
-            <div class="col-4 pl-0">
-                <h9>Error rate, %</h9>
-                <input type="number" class="form-control" placeholder="Error rate"
+            <div>
+                <p class="font-h6 font-semibold">Error rate, %</p>
+                <input type="number" class="form-control mt-1" placeholder="Error rate"
                     v-model="error_rate"
                     :class="{ 'is-invalid': errors.error_rate }"
                 >
                 <div class="invalid-feedback">[[ errors.error_rate ]]</div>
             </div>
             
-            <div class="col-4 pl-0">
-                <h9>Degradation rate, %</h9>
-                <input type="number" class="form-control" placeholder="Degradation rate"
+            <div>
+                <p class="font-h6 font-semibold">Degradation rate, %</p>
+                <input type="number" class="form-control mt-1" placeholder="Degradation rate"
                     v-model="degradation_rate"
                     :class="{ 'is-invalid': errors.degradation_rate }"
                 >
                 <div class="invalid-feedback">[[ errors.degradation_rate ]]</div>
             </div>
             
-            <div class="col-4 pl-0">
-                <h9>Missed thresholds, %</h9>
-                <input type="number" class="form-control" placeholder="Missed thresholds"
+            <div>
+                <p class="font-h6 font-semibold">Missed thresholds, %</p>
+                <input type="number" class="form-control mt-1" placeholder="Missed thresholds"
                     v-model="missed_thresholds"
                     :class="{ 'is-invalid': errors.missed_thresholds }"
                 >

@@ -1,14 +1,17 @@
+from datetime import datetime
 from typing import Optional, Union
 
-from tools import rpc_tools
-from ..models.reports import Report
-from pylon.core.tools import web, log
 from pydantic import ValidationError
+from pylon.core.tools import web
+from sqlalchemy import desc
 
-from ..models.tests import Test
+from tools import rpc_tools
 from ..models.pd.performance_test import TestCommon, TestOverrideable
-from ..models.pd.test_parameters import PerformanceTestParams, PerformanceTestParamsCreate, PerformanceTestParamsRun
 from ..models.pd.quality_gate import QualityGate
+from ..models.pd.test_parameters import PerformanceTestParams, PerformanceTestParamsCreate, \
+    PerformanceTestParamsRun
+from ..models.reports import Report
+from ..models.tests import Test
 from ..utils.utils import run_test
 
 
@@ -80,3 +83,31 @@ class RPC:
         # no extra data to add to execution json
         # but rpc needs to exist
         return integration_data
+
+    @web.rpc('backend_performance_get_tests')
+    @rpc_tools.wrap_exceptions(RuntimeError)
+    def get_tests(self, project_id: int) -> list[Test]:
+        """ Gets all created tests """
+        return Test.query.filter_by(project_id=project_id).all()
+
+    @web.rpc('backend_performance_get_reports')
+    @rpc_tools.wrap_exceptions(RuntimeError)
+    def get_reports(
+            self, project_id: int,
+            start_time: datetime | None = None,
+            end_time: datetime | None = None
+    ) -> list[Report]:
+        """ Gets all reports filtered by time"""
+        query = Report.query.filter(
+            Report.project_id == project_id,
+        ).order_by(
+            desc(Report.start_time)
+        )
+
+        if start_time:
+            query = query.filter(Report.start_time >= start_time.isoformat())
+
+        if end_time:
+            query = query.filter(Report.end_time <= end_time.isoformat())
+
+        return query.all()

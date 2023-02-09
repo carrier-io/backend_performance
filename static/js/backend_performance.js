@@ -550,7 +550,7 @@ const TestCreateModal = {
                 return acc === '' ? item.msg : [acc, item.msg].join('; ')
             }, '')
         },
-        compareObjectsDiff(o1, o2={}, required_fields) {
+        compareObjectsDiff(o1, o2 = {}, required_fields) {
             return Object.keys(o2).reduce((diff, key) => {
                 if (o1[key] !== o2[key] || required_fields.includes(key)) {
                     return {
@@ -612,7 +612,7 @@ const TestCreateModal = {
             data = new FormData()
             data.append('data', JSON.stringify({...this.get_data(), run_test}))
             const source = this.source.get().file
-            if (typeof source === 'object'){
+            if (typeof source === 'object') {
                 data.append('file', source)
             }
             const resp = await fetch(`/api/v1/backend_performance/tests/${getSelectedProjectId()}`, {
@@ -622,7 +622,9 @@ const TestCreateModal = {
             if (resp.ok) {
                 this.hide()
                 vueVm.registered_components.table_tests?.table_action('refresh')
+                vueVm.registered_components.table_tests_overview?.table_action('refresh')
                 run_test && vueVm.registered_components.table_results?.table_action('refresh')
+                run_test && vueVm.registered_components.table_reports_overview?.table_action('refresh')
             } else {
                 await this.handleError(resp)
             }
@@ -637,7 +639,9 @@ const TestCreateModal = {
             if (resp.ok) {
                 this.hide()
                 vueVm.registered_components.table_tests?.table_action('refresh')
+                vueVm.registered_components.table_tests_overview?.table_action('refresh')
                 run_test && vueVm.registered_components.table_results?.table_action('refresh')
+                run_test && vueVm.registered_components.table_reports_overview?.table_action('refresh')
             } else {
                 await this.handleError(resp)
             }
@@ -919,8 +923,8 @@ const TestRunModal = {
             })
             if (resp.ok) {
                 this.hide()
-                // vueVm.registered_components.table_tests?.table_action('refresh')
                 vueVm.registered_components.table_results?.table_action('refresh')
+                vueVm.registered_components.table_reports_overview?.table_action('refresh')
             } else {
                 await this.handleError(resp)
             }
@@ -966,7 +970,14 @@ const test_delete = ids => {
     const url = `/api/v1/backend_performance/tests/${getSelectedProjectId()}?` + $.param({"id[]": ids})
     fetch(url, {
         method: 'DELETE'
-    }).then(response => response.ok && vueVm.registered_components.table_tests?.table_action('refresh'))
+    }).then(
+        response => {
+            if (response.ok) {
+                vueVm.registered_components.table_tests?.table_action('refresh')
+                vueVm.registered_components.table_tests_overview?.table_action('refresh')
+            }
+        }
+    )
 }
 
 const results_delete = ids => {

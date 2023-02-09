@@ -111,8 +111,10 @@
         </template>
     </Table-Card>
 
-    {% with modal_id=modal_id %}
+    {% with modal_id=modal_id, source_container_id = "source_card_id" %}
         {% include 'backend_performance:backend_performance/create.html' %}
+    {% endwith %}
+    {% with modal_id='run_modal' %}
         {% include 'backend_performance:backend_performance/runtest.html' %}
     {% endwith %}
     <Docker-Command-Modal

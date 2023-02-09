@@ -1,14 +1,15 @@
 {% set instance_name_prefix = 'runmodal_' %}
 <Test-Run-Modal
     @register="register"
-    instance_name="run_modal"
-    test_params_id="runner_test_params"
+    instance_name="{{ modal_id }}"
+    modal_id="{{ modal_id }}"
+    test_params_id="{{ modal_id }}_test_params"
     instance_name_prefix="{{ instance_name_prefix }}"
 >
     <template #test_parameters>
         {{ template_slot("params_table_content", payload={
             "caption": "TEST PARAMETERS",
-            "modal_id": "runner",
+            "modal_id": modal_id,
             'custom_formatters': {
                 'name': 'custom_params_table_formatters.input',
                 'action': 'custom_params_table_formatters.action'

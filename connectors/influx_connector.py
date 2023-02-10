@@ -26,7 +26,8 @@ class InfluxConnector(BaseConnector):
     
     def __init__(self, **args) -> None:
         super().__init__(**args)
-        self.client = self._get_client(self.project_id)
+        self.db_name = args.get('db_name')
+        self.client = self._get_client(self.project_id, self.db_name)
         if self.aggregation == 'auto':
             self.aggregation = self.calculate_auto_aggregation()
         
@@ -34,9 +35,11 @@ class InfluxConnector(BaseConnector):
     def _get_project_id(self, build_id: str) -> int:
         resp = Report.query.with_entities(Report.project_id).filter(Report.build_id == build_id).first()
         return resp[0]
-    
-    def _get_client(self, project_id: int):
-        return influx_tools.get_client(project_id)
+
+
+    def _get_client(self, project_id: int, db_name: str=None):
+        return influx_tools.get_client(project_id, db_name)
+
 
     def calculate_auto_aggregation(self):
         aggregation = "1s"
@@ -306,3 +309,59 @@ class InfluxConnector(BaseConnector):
                 data[req_name][_['time']] = _['sum']
 
         return timestamps, data, users
+
+
+    def _get_engine_health(self, query: str):
+        result = self.client.query(query)
+        log.info(f'health result {result}')
+        data = dict()
+        for (_, groups), series in result.items():
+            data[groups['host']] = list(series)
+        log.info(f'health data {data}')
+        return data
+
+
+    def get_engine_health_cpu(self):
+        query = f'''
+            SELECT 
+                mean(usage_system) as "system",
+                mean(usage_user) as "user",
+                mean(usage_softirq) as "softirq",
+                mean(usage_iowait) as "iowait"
+            FROM "cpu" 
+            WHERE "build_id" = '{self.build_id}'
+            AND cpu = 'cpu-total' 
+            AND time >= '{self.start_time}'
+            AND time <= '{self.end_time}'
+            GROUP BY time({self.aggregation}), host
+        '''
+        return self._get_engine_health(query)
+
+
+    def get_engine_health_memory(self):
+        query = f'''
+            SELECT 
+                HeapMemoryUsage.used as "heap memory", 
+                NonHeapMemoryUsage.used as "non-heap memory"
+            FROM "java_memory" 
+            WHERE "build_id" = '{self.build_id}'
+            AND time >= '{self.start_time}'
+            AND time <= '{self.end_time}'
+            GROUP BY host
+        '''
+        return self._get_engine_health(query)
+
+
+    def get_engine_health_load(self):
+        query = f'''
+            SELECT 
+                mean(load1) as "load1",
+                mean(load5) as "load5",
+                mean(load15) as "load15"
+            FROM "system" 
+            WHERE "build_id" = '{self.build_id}'
+            AND time >= '{self.start_time}'
+            AND time <= '{self.end_time}'
+            GROUP BY time({self.aggregation}), host
+        '''
+        return self._get_engine_health(query)

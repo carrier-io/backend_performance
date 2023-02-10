@@ -7,7 +7,7 @@ from collections import OrderedDict, defaultdict
 
 from pylon.core.tools import web, log
 
-from ..connectors.minio import get_client
+from ..connectors.minio_connector import MinioConnector
 from ..models.baselines import Baseline
 from ..models.reports import Report
 
@@ -183,7 +183,7 @@ class RPC:
 
     @web.rpc('get_backend_results', 'get_backend_results')
     def get_ui_results(self, bucket: str, file_name: str, project_id: int) -> list:
-        client = get_client(project_id)
+        client = MinioConnector.get_client(project_id)
         return client.select_object_content(bucket, file_name)
 
     @web.rpc('backend_performance_compile_builder_data', 'compile_builder_data')

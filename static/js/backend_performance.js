@@ -153,26 +153,23 @@ const CustomizationItem = {
     props: ['file', 'path', 'i_index'],
     emits: ['update:file', 'update:path', 'delete'],
     template: `
-    <div class="d-flex flex-row">
+    <div class="d-flex mb-3">
         <div class="flex-fill">
             <input type="text" class="form-control form-control-alternative" placeholder="bucket/file"
                 @change="$emit('update:file', $event.target.value)"
                 :value="file"
             >
         </div>
-        <div class="flex-fill pl-3">
+        <div class="flex-fill px-3">
             <input type="text" class="form-control form-control-alternative" placeholder="path/to/file"
                 @change="$emit('update:path', $event.target.value)"
                 :value="path"
             >
         </div>
-        <div class="m-auto pl-3">
-            <button type="button" class="btn btn-32 btn-action" 
-                @click="$emit('delete', i_index)"
-            >
-                <i class="fas fa-minus"></i>
-            </button>
-        </div>
+        <button class="btn btn-default btn-xs btn-icon__xs align-self-center"
+             @click="$emit('delete', i_index)">
+            <i class="icon__18x18 icon-remove-element"></i>
+        </button>
     </div>
     `,
     methods: {
@@ -197,20 +194,17 @@ const Customization = {
         }
     },
     template: `
-    <div class="card card-x card-row-1">
-        <div class="card-header">
-            <div class="d-flex flex-row">
+    <div class="card card-x pt-3 pb-2 px-4">
+        <div>
+            <div class="d-flex mb-3">
                 <div class="flex-fill">
                     <p class="flex-grow-1 font-h5 font-semibold">Custom plugins and extensions</p>
                     <p class="font-h6 font-weight-400">Bucket and file for your customizations</p>
                 </div>
-                <div>
-                    <button type="button" class="btn btn-32 btn-action mt-1"
-                        @click="handle_add_item"
-                    >
-                        <i class="fas fa-plus"></i>
-                    </button>
-                </div>
+                <button class="btn btn-default btn-xs btn-icon__xs align-self-center"
+                    @click="handle_add_item">
+                    <i class="icon__18x18 icon-create-element"></i>
+                </button>
             </div>
             <div class="d-flex flex-row invalid-feedback">[[ errors?.length > 0 ? errors[0]?.msg : '']]</div>
             <CustomizationItem
@@ -444,19 +438,16 @@ const TestCreateModal = {
                                 ref="customization_component"
                                 :errors="errors.customization"
                             ></Customization>
-                            <div class="card card-x card-row-1" id="splitCSV">
-                                <div class="card-header">
-                                    <div class="d-flex flex-row">
-                                        <div class="flex-fill">
-                                            <p class="flex-grow-1 font-h5 font-semibold">Split CSV</p>
-                                            <p class="font-h6 font-weight-400">Distribute CSV data across load generators</p>
-                                        </div>
-                                        <div>
-                                            <button type="button" class="btn btn-32 btn-action mt-1"
-                                                    onclick="addCSVSplit('splitCSV')"><i class="fas fa-plus"></i>
-                                            </button>
-                                        </div>
+                            <div class="card card-x pt-3 pb-2 px-4 mt-3" id="splitCSV">
+                                <div class="d-flex mb-3">
+                                    <div class="flex-fill">
+                                        <p class="flex-grow-1 font-h5 font-semibold">Split CSV</p>
+                                        <p class="font-h6 font-weight-400">Distribute CSV data across load generators</p>
                                     </div>
+                                    <button class="btn btn-default btn-xs btn-icon__xs align-self-center"
+                                        onclick="addCSVSplit('splitCSV')">
+                                        <i class="icon__18x18 icon-create-element"></i>
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -753,19 +744,22 @@ register_component('TestCreateModal', TestCreateModal)
 
 
 function addCSVSplit(id, key = "", is_header = "") {
-    $(`#${id}`).append(`<div class="d-flex flex-row">
-    <div class="flex-fill">
+    $(`#${id}`).append(`<div class="d-flex flex-row mb-3">
+    <div class="flex-grow-1 align-items-center">
         <input type="text" class="form-control form-control-alternative" placeholder="File Path" value="${key}">
     </div>
-    <div class="flex-fill m-auto pl-3">
+    <div class="px-3">
         <div class="form-check">
-          <input class="form-check-input" type="checkbox" value="">
-          <label class="form-check-label">Ignore first line</label>
+            <label class="w-100 d-flex align-items-center custom-checkbox">
+                <input type="checkbox" class="mr-2 form-check-input" value="">
+                <p class="font-h5 mt-1 font-weight-400">Ignore first line</p>
+            </label>
         </div>
     </div>
-    <div class="m-auto">
-        <button type="button" class="btn btn-32 btn-action" onclick="removeParam(event)"><i class="fas fa-minus"></i></button>
-    </div>
+    <button class="btn btn-default btn-xs btn-icon__xs align-self-center"
+         onclick="ParamsTable.removeParam(event)">
+        <i class="icon__18x18 icon-remove-element"></i>
+    </button>
 </div>`)
 }
 

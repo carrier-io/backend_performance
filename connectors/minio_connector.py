@@ -27,7 +27,7 @@ class MinioConnector(BaseConnector):
     
     def __init__(self, **args) -> None:
         super().__init__(**args)
-        self.client = self._get_client(self.project_id)
+        self.client = self.get_client(self.project_id)
         self.bucket_name = f'p--{self.project_id}.{self.test_name}'.replace("_", "").lower()
         if self.aggregation == 'auto':
             self.aggregation = self.calculate_auto_aggregation()
@@ -42,7 +42,8 @@ class MinioConnector(BaseConnector):
         return resp[0]
     
     
-    def _get_client(self, project_id: int) -> MinioClient:
+    @staticmethod
+    def get_client(project_id: int) -> MinioClient:
         rpc = rpc_tools.RpcMixin().rpc
         return MinioClient(rpc.call.project_get_or_404(project_id))
 
@@ -346,6 +347,32 @@ class MinioConnector(BaseConnector):
         return timestamps, data, users
 
 
-    def get_issues(self):
+    def get_issues(self) -> list:
         file_name = f'errors_{self.build_id}.csv.gz'
         return self.client.select_object_content(self.bucket_name, file_name)
+
+
+    def _get_engine_health(self, file_name) -> dict:
+        response = self.client.select_object_content(self.bucket_name, file_name)
+        data = dict()
+        for line in response:
+            host_name = line.pop('host')
+            for k, v in line.items():
+                if v == '': line[k] = None
+            data.setdefault(host_name, []).append(line)
+        return data
+
+
+    def get_engine_health_cpu(self) -> dict:
+        file_name = f'health_cpu_{self.build_id}_{self.aggregation}.csv.gz'
+        return self._get_engine_health(file_name)
+
+
+    def get_engine_health_memory(self) -> dict:
+        file_name = f'health_memory_{self.build_id}.csv.gz'
+        return self._get_engine_health(file_name)
+
+    
+    def get_engine_health_load(self) -> dict:
+        file_name = f'health_load_{self.build_id}_{self.aggregation}.csv.gz'
+        return self._get_engine_health(file_name)

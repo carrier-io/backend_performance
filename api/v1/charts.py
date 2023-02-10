@@ -42,6 +42,7 @@ class API(Resource):
     def __init__(self, module):
         self.module = module
 
+
     def get(self, source: str, target: str):
         connector = None
         args = request.args.to_dict(flat=True)
@@ -56,7 +57,7 @@ class API(Resource):
     def _get_connector(self, args, source):
         test_status = Report.query.with_entities(Report.test_status).filter(
             Report.build_id == args['build_id']
-            ).first()[0]['status'].lower()        
+            ).first()[0]['status'].lower()
         if test_status in self.statuses:
             log.info('Using MinioConnector')
             return MinioConnector(**args)
@@ -64,6 +65,13 @@ class API(Resource):
             if source == "errors":
                 log.info('Using LokiConnector')
                 return LokiConnector(**args)            
+            elif source == "engine_health":
+                project_id = Report.query.with_entities(Report.project_id).filter(
+                    Report.build_id == args['build_id']
+                    ).first()[0]
+                args['db_name'] = f'telegraf_{project_id}'
+                log.info(f'Using InfluxConnector with DB telegraf_{project_id}')
+                return InfluxConnector(**args)
             else:
                 log.info('Using InfluxConnector')
-                return InfluxConnector(**args)
+                return InfluxConnector(**args)                

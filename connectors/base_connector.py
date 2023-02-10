@@ -14,14 +14,6 @@ class BaseConnector(ABC):
         self.aggregation = args.get('aggregator')
         self.sampler=args.get('sampler')
         self.status=args.get("status", 'all')
-    
-    @abstractmethod
-    def _get_project_id(self, build_id: str) -> int:
-        raise NotImplementedError
-    
-    @abstractmethod
-    def _get_client(self, project_id: int):
-        raise NotImplementedError
 
     @abstractmethod
     def calculate_auto_aggregation(self) -> str:
@@ -50,11 +42,7 @@ class BaseConnector(ABC):
         raise NotImplementedError
     
     @abstractmethod
-    def calculate_analytics(
-            self, 
-            scope: str, 
-            metric: str, 
-    ) -> Tuple[dict, str, list]:
+    def calculate_analytics(self, scope: str, metric: str) -> Tuple[dict, str, list]:
         raise NotImplementedError
     
     @abstractmethod
@@ -62,7 +50,7 @@ class BaseConnector(ABC):
             self, 
             timestamps=None, 
             users=None, 
-            scope=None, 
+            scope=None
         ) -> Tuple[list, dict, dict]:
         raise NotImplementedError
     
@@ -81,7 +69,7 @@ class BaseConnector(ABC):
             timestamps=None, 
             users=None, 
             scope=None, 
-            aggr='pct95', 
+            aggr='pct95'
         ) -> Tuple[list, dict, dict]:
         raise NotImplementedError
     
@@ -91,6 +79,18 @@ class BaseConnector(ABC):
             timestamps=None, 
             users=None, 
             scope=None, 
-            aggr="2xx", 
+            aggr="2xx"
         ) -> Tuple[list, dict, dict]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_engine_health_cpu(self) -> dict:
+        raise NotImplementedError
+    
+    @abstractmethod
+    def get_engine_health_memory(self) -> dict:
+        raise NotImplementedError
+    
+    @abstractmethod
+    def get_engine_health_load(self) -> dict:
         raise NotImplementedError

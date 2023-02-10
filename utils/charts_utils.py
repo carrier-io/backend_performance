@@ -4,22 +4,14 @@ from typing import Callable, Optional, Generator, Union
 from pydantic import BaseModel, validator
 from .utils import str_to_timestamp
 from ..models.reports import Report
-from ..connectors.influx import (
-    get_build_data, get_engine_health_cpu, get_project_id, 
-    get_engine_health_memory, get_engine_health_load
-)
+from ..connectors.influx import get_build_data
 
-# from ..connectors.minio import (
-#     get_requests_summary_data, get_average_responses, get_tps, get_backend_users as get_backend_users_minio,
-#     get_tps_analytics, get_errors_analytics, get_backend_requests_analytics, get_response_codes_analytics    
-# )
-from ..connectors.loki import get_results
 from .report_utils import (
     calculate_proper_timeframe, chart_data, create_dataset, comparison_data
 )
 from pylon.core.tools import log
 
-from tools import constants as c, influx_tools, data_tools
+from tools import data_tools
 
 
 class TimeframeArgs(BaseModel):
@@ -132,13 +124,10 @@ def summary_table(args: dict, connector):
 
 
 def get_issues(args: dict, connector):
-    # start_time, end_time = timeframe(args, time_as_ts=True)
-    # issues_loki = list(get_results(args['test_name'], start_time, end_time).values())
     return connector.get_issues()
 
 
 def get_data_for_analytics(args, connector):
-    # start_time, end_time = timeframe(args)
     metric = args.get('metric', '')
     scope = args.get("scope[]", [])
     axe = 'count'
@@ -248,20 +237,10 @@ def engine_health(args: dict, connector, part: str = 'all') -> dict:
         'memory': engine_health_memory,
         'load': engine_health_load,
     }
-    d = dict(args)
-    start_time, end_time = timeframe(d)
-    aggregation = connector.calculate_auto_aggregation()
-    d.update({
-        'start_time': start_time,
-        'end_time': end_time,
-        'aggregation': aggregation,
-    })
     func = part_mapping.get(part)
     if not func:  # e.g. part == 'all'
-        project_id = get_project_id(args['build_id'])
-        d['influx_client'] = influx_tools.get_client(project_id, f'telegraf_{project_id}')
-        return {k: v(**d) for k, v in part_mapping.items()}
-    return func(**d)
+        return {k: v(connector) for k, v in part_mapping.items()}
+    return func(connector)
 
 
 def generate_engine_health_dataset(host_name: str, series_data: list, data_structure: dict,
@@ -304,8 +283,8 @@ def format_engine_health_data(health_data: dict, data_structure: dict) -> dict:
     }
 
 
-def engine_health_cpu(**kwargs) -> dict:
-    health_data = get_engine_health_cpu(**kwargs)
+def engine_health_cpu(connector) -> dict:
+    health_data = connector.get_engine_health_cpu()
     structure = {
         'system': {
             'hidden': True
@@ -321,8 +300,8 @@ def engine_health_cpu(**kwargs) -> dict:
     return format_engine_health_data(health_data, structure)
 
 
-def engine_health_memory(**kwargs) -> dict:
-    health_data = get_engine_health_memory(**kwargs)
+def engine_health_memory(connector) -> dict:
+    health_data = connector.get_engine_health_memory()
     structure = {
         'heap memory': {},
         'non-heap memory': {},
@@ -330,8 +309,8 @@ def engine_health_memory(**kwargs) -> dict:
     return format_engine_health_data(health_data, structure)
 
 
-def engine_health_load(**kwargs) -> dict:
-    health_data = get_engine_health_load(**kwargs)
+def engine_health_load(connector) -> dict:
+    health_data = connector.get_engine_health_load()
     structure = {
         'load1': {},
         'load5': {},

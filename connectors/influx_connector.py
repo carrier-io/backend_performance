@@ -365,3 +365,26 @@ class InfluxConnector(BaseConnector):
             GROUP BY time({self.aggregation}), host
         '''
         return self._get_engine_health(query)
+    
+    
+    def get_build_data(self, status='all'):
+        status_addon = ""
+        if status != 'all':
+            status_addon = f" and status='{status.upper()}'"
+        # requests_in_range = f"select time, request_name, max(pct95) from {lg_type}_{project_id}..{test_name}_5s " \
+        #                     f"where time>='{start_time}' " \
+        #                     f"and time<='{end_time}' and sampler_type='{sampler}'{status_addon} and " \
+        #                     f"build_id='{build_id}' group by request_name"
+        requests_in_range = f"select time, request_name, max(pct95) from {self.lg_type}_{self.project_id}..{self.test_name}_5s " \
+                            f"where sampler_type='{self.sampler}'{status_addon} and " \
+                            f"build_id='{self.build_id}' group by request_name"
+        res = self.client.query(requests_in_range)[f"{self.test_name}_5s"]
+        requests_names = [f"'{each['request_name']}'" for each in res]
+        if len(requests_names) > 1:
+            requests = f'[{"|".join(requests_names)}]'
+        elif requests_names:
+            requests = requests_names[0].replace("'", "")
+        else:
+            return []
+        query = f"select * from comparison_{self.project_id}..api_comparison where build_id='{self.build_id}' and request_name=~/^{requests}/"
+        return list(self.client.query(query)['api_comparison'])

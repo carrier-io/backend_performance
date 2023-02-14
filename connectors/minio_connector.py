@@ -376,3 +376,8 @@ class MinioConnector(BaseConnector):
     def get_engine_health_load(self) -> dict:
         file_name = f'health_load_{self.build_id}_{self.aggregation}.csv.gz'
         return self._get_engine_health(file_name)
+
+
+    def get_build_data(self) -> list:
+        file_name = f'summary_table_{self.build_id}.csv.gz'
+        return self.client.select_object_content(self.bucket_name, file_name)

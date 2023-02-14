@@ -119,8 +119,9 @@ def avg_responses(args: dict, connector):
 
 
 def summary_table(args: dict, connector):
-    start_time, end_time = timeframe(args)
-    return get_build_data(args['build_id'], args['test_name'], args['lg_type'], start_time, end_time, args['sampler'])
+    return connector.get_build_data()
+    # start_time, end_time = timeframe(args)
+    # return get_build_data(args['build_id'], args['test_name'], args['lg_type'], start_time, end_time, args['sampler'])
 
 
 def get_issues(args: dict, connector):

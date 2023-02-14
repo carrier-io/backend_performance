@@ -4,7 +4,6 @@ from typing import Callable, Optional, Generator, Union
 from pydantic import BaseModel, validator
 from .utils import str_to_timestamp
 from ..models.reports import Report
-from ..connectors.influx import get_build_data
 
 from .report_utils import (
     calculate_proper_timeframe, chart_data, create_dataset, comparison_data

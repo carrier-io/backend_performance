@@ -1,11 +1,7 @@
 from collections import defaultdict
-from datetime import datetime
-from functools import partial
-from typing import Tuple, Union
-
-from .utils import str_to_timestamp
-# from ..connectors.minio import calculate_auto_aggregation as calculate_auto_aggregation_minio
-# from ..connectors.influx import calculate_auto_aggregation as calculate_auto_aggregation_influx
+from datetime import datetime, timezone
+from typing import Tuple, Union, Optional
+from pydantic import BaseModel, validator, ValidationError
 
 from tools import data_tools, constants as c
 
@@ -225,3 +221,64 @@ def calculate_proper_timeframe(build_id: str, test_name: str, lg_type: str, low_
     _start_time = datetime.utcfromtimestamp(start_time_ts).isoformat(sep=' ', timespec='seconds')
     _end_time = datetime.utcfromtimestamp(end_time_ts).isoformat(sep=' ', timespec='seconds')
     return _start_time, _end_time
+
+
+class TimeframeArgs(BaseModel):
+    start_time: datetime
+    end_time: Optional[datetime]
+    low_value: Union[int, float, str, None] = 0
+    high_value: Union[int, float, str, None] = 100
+    test_name: str
+    build_id: Optional[str]
+    lg_type: Optional[str]
+    aggregation: Optional[str] = 'auto'
+    source: Optional[str] = 'influx'
+
+    @validator('end_time', pre=True)
+    def clear_null(cls, value):
+        if value == 'null':
+            return
+        return value
+
+    @validator('end_time', always=True)
+    def set_end_time(cls, value, values: dict):
+        if not value:
+            values['high_value'] = 100
+            return datetime.utcnow()
+        return value
+
+    @validator('start_time', 'end_time')
+    def ensure_tz(cls, value: datetime):
+        if value.tzinfo:
+            return value.astimezone(timezone.utc)
+        return value.replace(tzinfo=timezone.utc)
+
+    @validator('low_value', 'high_value')
+    def convert(cls, value, values, field):
+        try:
+            return int(value)
+        except TypeError:
+            return field.default
+
+    class Config:
+        fields = {
+            'aggregator': 'aggregation'
+        }
+
+
+def timeframe(args: dict, time_as_ts: bool = False) -> tuple:
+    log.info(f"timeframe args {args}")
+    try:
+        _parsed_args = TimeframeArgs.parse_obj(args)
+    except ValidationError:
+        return None, None
+    # end_time = args.get('end_time')
+    # high_value = args.get('high_value', 100)
+    # if not end_time or end_time == 'null':
+    #     end_time = datetime.utcnow()
+    #     high_value = 100
+    # return calculate_proper_timeframe(args.get('build_id', None), args['test_name'], args.get('lg_type', None),
+    #                                   args.get('low_value', 0),
+    #                                   high_value, args['start_time'], end_time, args.get('aggregator', 'auto'),
+    #                                   time_as_ts=time_as_ts)
+    return calculate_proper_timeframe(**_parsed_args.dict(), time_as_ts=time_as_ts)

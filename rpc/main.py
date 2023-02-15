@@ -3,6 +3,7 @@ from typing import Optional, Union
 
 from pydantic import ValidationError
 from pylon.core.tools import web
+from pylon.core.tools import log
 from sqlalchemy import desc
 
 from tools import rpc_tools
@@ -21,10 +22,12 @@ class RPC:
     def backend_results_or_404(self, run_id):
         return Report.query.get_or_404(run_id)
 
-    @web.rpc('backend_performance_test_create_common_parameters', 'parse_common_test_parameters')
+    @web.rpc('backend_performance_test_create_common_parameters',
+             'parse_common_test_parameters')
     # @rpc_tools.wrap_exceptions(RuntimeError)
     # @rpc_tools.wrap_exceptions(ValidationError)
-    def parse_common_test_parameters(self, project_id: int, test_params: dict, **kwargs) -> dict:
+    def parse_common_test_parameters(self, project_id: int, test_params: dict, **kwargs
+    ) -> dict:
         overrideable_only = kwargs.pop('overrideable_only', False)
         if overrideable_only:
             pd_object = TestOverrideable(
@@ -70,7 +73,9 @@ class RPC:
 
     @web.rpc(f'backend_performance_test_create_integration_validate_quality_gate')
     @rpc_tools.wrap_exceptions(ValidationError)
-    def backend_performance_test_create_integration_validate(self, data: dict, pd_kwargs: Optional[dict] = None, **kwargs) -> dict:
+    def backend_performance_test_create_integration_validate(self, data: dict,
+            pd_kwargs: Optional[dict] = None, **kwargs
+    ) -> dict:
         if not pd_kwargs:
             pd_kwargs = {}
         pd_object = QualityGate(**data)
@@ -95,9 +100,21 @@ class RPC:
     def get_reports(
             self, project_id: int,
             start_time: datetime | None = None,
-            end_time: datetime | None = None
+            end_time: datetime | None = None,
+            unique: bool = False,
     ) -> list[Report]:
         """ Gets all reports filtered by time"""
+
+        def _get_unique_reports(objects: list[Report]) -> list[Report]:
+            unique_combinations = {}
+            for obj in objects:
+                combination = (obj.test_uid, obj.environment, obj.type)
+                stored_obj = unique_combinations.get(combination)
+                if stored_obj is None or obj.start_time > stored_obj.start_time:
+                    unique_combinations[combination] = obj
+
+            return list(unique_combinations.values())
+
         query = Report.query.filter(
             Report.project_id == project_id,
         ).order_by(
@@ -110,4 +127,8 @@ class RPC:
         if end_time:
             query = query.filter(Report.end_time <= end_time.isoformat())
 
-        return query.all()
+        reports = query.all()
+        if unique:
+            reports = _get_unique_reports(reports)
+
+        return reports

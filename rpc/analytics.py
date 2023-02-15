@@ -1,17 +1,15 @@
+from collections import OrderedDict, defaultdict
 from datetime import datetime
 from typing import Optional, List
 
 from pydantic import BaseModel, validator, parse_obj_as
-from sqlalchemy import String, literal_column, asc, func, and_, not_
-from collections import OrderedDict, defaultdict
+from pylon.core.tools import web
+from sqlalchemy import String, literal_column, asc, func, not_
 
-from pylon.core.tools import web, log
-
+from tools import rpc_tools, influx_tools
 from ..connectors.minio_connector import MinioConnector
 from ..models.baselines import Baseline
 from ..models.reports import Report
-
-from tools import rpc_tools, influx_tools
 
 
 class ReportBuilderReflection(BaseModel):
@@ -78,6 +76,7 @@ columns = OrderedDict((
     ('name', Report.name),
     ('start_time', Report.start_time),
     ('test_type', Report.type),
+    ('test_uid', Report.test_uid),
     ('test_env', Report.environment),
     ('aggregation_min', Report._min),
     ('aggregation_max', Report._max),
@@ -157,7 +156,8 @@ class RPC:
 
     @web.rpc('backend_performance_get_baseline_report_id')
     @rpc_tools.wrap_exceptions(RuntimeError)
-    def get_baseline_report_id(self, project_id: int, test_name: str, test_env: str) -> Optional[int]:
+    def get_baseline_report_id(self, project_id: int, test_name: str, test_env: str) -> \
+    Optional[int]:
         result = Baseline.query.with_entities(Baseline.report_id).filter(
             Baseline.project_id == project_id,
             Baseline.test == test_name,
@@ -216,9 +216,11 @@ class RPC:
                     result_model = ReportResultsModel.parse_obj(r)
 
                     try:
-                        data[report_reflection.id][time_aggregation][request_name].append(result_model.dict())
+                        data[report_reflection.id][time_aggregation][request_name].append(
+                            result_model.dict())
                     except KeyError:
-                        data[report_reflection.id][time_aggregation][request_name] = [result_model.dict()]
+                        data[report_reflection.id][time_aggregation][request_name] = [
+                            result_model.dict()]
 
                     current_date = datetime.fromisoformat(result_model.time)
                     if earliest_date is None or earliest_date > current_date:
@@ -228,6 +230,6 @@ class RPC:
             'datasets': data,
             'all_requests': list(all_requests),
             'earliest_date': earliest_date.isoformat(),
-            'aggregated_requests_data': _get_requests_aggregations_from_influx(project_id, reports)
+            'aggregated_requests_data': _get_requests_aggregations_from_influx(project_id,
+                                                                               reports)
         }
-

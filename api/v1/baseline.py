@@ -2,7 +2,7 @@ from flask import request
 from flask_restful import Resource
 from ...models.baselines import Baseline
 from ...models.reports import Report
-from ...connectors.influx import get_aggregated_test_results
+from ...connectors.minio_connector import MinioConnector
 
 
 class API(Resource):
@@ -37,9 +37,9 @@ class API(Resource):
         ).first()
         if not report:
             return 'Not found', 404
-        test = get_aggregated_test_results(report.name, report.build_id)
-        summary = [i for i in test[0]]
-
+        connector = MinioConnector(build_id=report.build_id, test_name=report.name)
+        summary = connector.get_aggregated_test_results()
+        
         baseline = Baseline(
             test=report.name,
             environment=report.environment,

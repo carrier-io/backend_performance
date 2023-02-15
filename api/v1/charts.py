@@ -51,7 +51,7 @@ class API(Resource):
             if i.endswith('[]'):
                 args[i] = request.args.getlist(i)
         connector = self._get_connector(args, source)
-        return self.mapping[source][target](args, connector)
+        return self.mapping[source][target](connector)
     
     
     def _get_connector(self, args, source):

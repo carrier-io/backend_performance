@@ -1,83 +1,18 @@
 from datetime import datetime, timezone
 from typing import Callable, Optional, Generator, Union
 
-from pydantic import BaseModel, validator
 from .utils import str_to_timestamp
 from ..models.reports import Report
+from ..connectors.minio_connector import MinioConnector
+from ..connectors.influx_connector import InfluxConnector
+from ..connectors.loki_connector import LokiConnector
 
 from .report_utils import (
-    calculate_proper_timeframe, chart_data, create_dataset, comparison_data
+    chart_data, create_dataset, comparison_data
 )
 from pylon.core.tools import log
 
 from tools import data_tools
-
-
-class TimeframeArgs(BaseModel):
-    start_time: datetime
-    end_time: Optional[datetime]
-    low_value: Union[int, float, str, None] = 0
-    high_value: Union[int, float, str, None] = 100
-    test_name: str
-    build_id: Optional[str]
-    lg_type: Optional[str]
-    aggregation: Optional[str] = 'auto'
-    source: Optional[str] = 'influx'
-
-    @validator('end_time', pre=True)
-    def clear_null(cls, value):
-        if value == 'null':
-            return
-        return value
-
-    @validator('end_time', always=True)
-    def set_end_time(cls, value, values: dict):
-        if not value:
-            values['high_value'] = 100
-            return datetime.utcnow()
-        return value
-
-    @validator('start_time', 'end_time')
-    def ensure_tz(cls, value: datetime):
-        if value.tzinfo:
-            return value.astimezone(timezone.utc)
-        return value.replace(tzinfo=timezone.utc)
-
-    @validator('low_value', 'high_value')
-    def convert(cls, value, values, field):
-        try:
-            return int(value)
-        except TypeError:
-            return field.default
-
-    class Config:
-        fields = {
-            'aggregator': 'aggregation'
-        }
-
-
-def timeframe(args: dict, time_as_ts: bool = False) -> tuple:
-    log.info(f"timeframe args {args}")
-    _parsed_args = TimeframeArgs.parse_obj(args)
-    # end_time = args.get('end_time')
-    # high_value = args.get('high_value', 100)
-    # if not end_time or end_time == 'null':
-    #     end_time = datetime.utcnow()
-    #     high_value = 100
-    # return calculate_proper_timeframe(args.get('build_id', None), args['test_name'], args.get('lg_type', None),
-    #                                   args.get('low_value', 0),
-    #                                   high_value, args['start_time'], end_time, args.get('aggregator', 'auto'),
-    #                                   time_as_ts=time_as_ts)
-    return calculate_proper_timeframe(**_parsed_args.dict(), time_as_ts=time_as_ts)
-
-
-# def _query_only(args: dict, query_func: Callable, connector) -> dict:
-#     # start_time, end_time, aggregation = _timeframe(args, connector)
-#     timeline, results, users = query_func(
-#         # start_time, end_time, aggregation,
-#         # sampler=args['sampler'], status=args["status"]
-#     )
-#     return chart_data(timeline, users, results, convert_time=args.get('convert_time', True))
 
 
 def get_tests_metadata(tests):
@@ -99,41 +34,39 @@ def get_tests_metadata(tests):
     return labels, rps_data, errors_data, users_data, responses_data
 
 
-def requests_summary(args: dict, connector):
+def requests_summary(connector: Union[MinioConnector, InfluxConnector]):
     # args['convert_time'] = False
     timeline, results, users = connector.get_requests_summary_data()
     return chart_data(timeline, users, results, convert_time=False)
 
 
-def requests_hits(args: dict, connector):
+def requests_hits(connector: Union[MinioConnector, InfluxConnector]):
     # args['convert_time'] = False
     timeline, results, users = connector.get_tps()
     return chart_data(timeline, users, results, convert_time=False)
 
 
-def avg_responses(args: dict, connector):
+def avg_responses(connector: Union[MinioConnector, InfluxConnector]):
     # args['convert_time'] = False
     timeline, results, users = connector.get_average_responses()
     return chart_data(timeline, users, results, convert_time=False)
 
 
-def summary_table(args: dict, connector):
+def summary_table(connector: Union[MinioConnector, InfluxConnector]):
     return connector.get_build_data()
     # start_time, end_time = timeframe(args)
     # return get_build_data(args['build_id'], args['test_name'], args['lg_type'], start_time, end_time, args['sampler'])
 
 
-def get_issues(args: dict, connector):
+def get_issues(connector: LokiConnector):
     return connector.get_issues()
 
 
-def get_data_for_analytics(args, connector):
-    metric = args.get('metric', '')
-    scope = args.get("scope[]", [])
+def get_data_for_analytics(connector: Union[MinioConnector, InfluxConnector]):
     axe = 'count'
-    data, axe, timestamps = connector.calculate_analytics(scope, metric)      
+    data, axe, timestamps = connector.calculate_analytics()      
     if data:
-        return create_dataset(timestamps, data, scope, metric, axe)
+        return create_dataset(timestamps, data, connector.scope, connector.metric, axe)
     return {}
     
 
@@ -231,7 +164,7 @@ def get_data_for_analytics(args, connector):
 #     return {"data": chart_data(labels, [], data, "data"), "label": y_axis}
 
 
-def engine_health(args: dict, connector, part: str = 'all') -> dict:
+def engine_health(connector: Union[MinioConnector, InfluxConnector], part: str = 'all') -> dict:
     part_mapping = {
         'cpu': engine_health_cpu,
         'memory': engine_health_memory,
@@ -283,7 +216,7 @@ def format_engine_health_data(health_data: dict, data_structure: dict) -> dict:
     }
 
 
-def engine_health_cpu(connector) -> dict:
+def engine_health_cpu(connector: Union[MinioConnector, InfluxConnector]) -> dict:
     health_data = connector.get_engine_health_cpu()
     structure = {
         'system': {
@@ -300,7 +233,7 @@ def engine_health_cpu(connector) -> dict:
     return format_engine_health_data(health_data, structure)
 
 
-def engine_health_memory(connector) -> dict:
+def engine_health_memory(connector: Union[MinioConnector, InfluxConnector]) -> dict:
     health_data = connector.get_engine_health_memory()
     structure = {
         'heap memory': {},
@@ -309,7 +242,7 @@ def engine_health_memory(connector) -> dict:
     return format_engine_health_data(health_data, structure)
 
 
-def engine_health_load(connector) -> dict:
+def engine_health_load(connector: Union[MinioConnector, InfluxConnector]) -> dict:
     health_data = connector.get_engine_health_load()
     structure = {
         'load1': {},

@@ -1,6 +1,6 @@
 from pylon.core.tools import web, log  # pylint: disable=E0611,E0401
 from tools import auth, theme  # pylint: disable=E0401
-from ..connectors.influx import get_sampler_types
+from ..connectors.minio_connector import MinioConnector
 from ..models.reports import Report
 from ..utils.report_utils import render_analytics_control
 
@@ -18,8 +18,10 @@ class Slot:  # pylint: disable=E1101,R0903
 
             # TODO set tags in model
             test_data["tags"] = []
-            test_data["samplers"] = get_sampler_types(test_data["project_id"], test_data["build_id"],
-                                                      test_data["name"], test_data["lg_type"])
+            
+            connector = MinioConnector(build_id=test_data["build_id"], test_name=test_data["name"])
+            test_data["samplers"] = connector.get_sampler_types()
+            
             analytics_control = render_analytics_control(test_data["requests"])
 
             with context.app.app_context():

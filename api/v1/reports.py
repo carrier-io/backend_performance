@@ -18,7 +18,7 @@ from ...models.pd.test_parameters import PerformanceTestParamsRun
 from ...models.baselines import Baseline
 from ...models.reports import Report
 from ...models.tests import Test
-from ...connectors.influx import get_test_details, delete_test_data
+from ...connectors.influx_connector import InfluxConnector
 from tools import MinioClient, api_tools
 from influxdb.exceptions import InfluxDBClientError
 
@@ -119,8 +119,9 @@ class API(Resource):
     def put(self, project_id: int):
         args = request.json
         project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
-        test_data = get_test_details(project_id=project_id, build_id=args["build_id"], test_name=args["test_name"],
-                                     lg_type=args["lg_type"])
+        connector = InfluxConnector(project_id=project_id, build_id=args["build_id"], test_name=args["test_name"],
+                                    lg_type=args["lg_type"])
+        test_data = connector.get_test_details()
         response_times = loads(args["response_times"])
         report = Report.query.filter(
             Report.project_id == project.id,
@@ -168,7 +169,8 @@ class API(Resource):
         ).all()
         for build_id, name, lg_type in query_result:
             try:
-                delete_test_data(build_id, name, lg_type)
+                connector = InfluxConnector(build_id=build_id, test_name=name, lg_type=lg_type)
+                connector.delete_test_data()
             except InfluxDBClientError as e:
                 log.warning('InfluxDBClientError %s', e)
 

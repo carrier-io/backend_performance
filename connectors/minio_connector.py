@@ -13,7 +13,7 @@
 #   limitations under the License.
 
 from datetime import datetime, timedelta
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List, Dict
 
 from pylon.core.tools import log
 from tools import constants as c
@@ -180,25 +180,20 @@ class MinioConnector(BaseConnector):
         return timestamps, results, users
 
 
-    def calculate_analytics(
-            self, 
-            scope: str, 
-            metric: str, 
-        ) -> Tuple[dict, str, list]:
-        
+    def calculate_analytics(self) -> Tuple[dict, str, list]:
         data = None
         axe = 'count'
-        if metric == "Users":
+        if self.metric == "Users":
             timestamps, data = self.get_backend_users(self.aggregation)        
-        elif metric == "Throughput":
-            timestamps, data, _ = self.get_tps_analytics(scope=scope)
-        elif metric == "Errors":
-            timestamps, data, _ = self.get_errors_analytics(scope=scope)
-        elif metric in ["Min", "Median", "Max", "pct90", "pct95", "pct99"]:
-            timestamps, data, _ = self.get_backend_requests_analytics(scope=scope, aggr=metric)
+        elif self.metric == "Throughput":
+            timestamps, data, _ = self.get_tps_analytics(scope=self.scope)
+        elif self.metric == "Errors":
+            timestamps, data, _ = self.get_errors_analytics(scope=self.scope)
+        elif self.metric in ["Min", "Median", "Max", "pct90", "pct95", "pct99"]:
+            timestamps, data, _ = self.get_backend_requests_analytics(scope=self.scope, aggr=self.metric)
             axe = 'time'
-        elif "xx" in metric:
-            timestamps, data, _ = self.get_response_codes_analytics(scope=scope, aggr=metric)
+        elif "xx" in self.metric:
+            timestamps, data, _ = self.get_response_codes_analytics(scope=self.scope, aggr=self.metric)
         return data, axe, timestamps
 
 
@@ -372,7 +367,7 @@ class MinioConnector(BaseConnector):
         file_name = f'health_memory_{self.build_id}.csv.gz'
         return self._get_engine_health(file_name)
 
-    
+
     def get_engine_health_load(self) -> dict:
         file_name = f'health_load_{self.build_id}_{self.aggregation}.csv.gz'
         return self._get_engine_health(file_name)
@@ -381,3 +376,34 @@ class MinioConnector(BaseConnector):
     def get_build_data(self) -> list:
         file_name = f'summary_table_{self.build_id}.csv.gz'
         return self.client.select_object_content(self.bucket_name, file_name)
+
+
+    @staticmethod
+    def _str_to_digits(data: List[Dict]) -> List[Dict]:
+        summary = []
+        for line in data:
+            for k, v in line.items():
+                try:
+                    line[k] = float(v)
+                    if line[k].is_integer():
+                        line[k] = int(v)
+                except ValueError:
+                    pass
+            summary.append(line)
+        return summary
+
+
+    def get_aggregated_test_results(self) -> list:
+        file_name = f'summary_table_{self.build_id}.csv.gz'
+        expression_addon = f" where simulation='{self.test_name}'"
+        response = self.client.select_object_content(self.bucket_name, file_name, expression_addon)
+        return self._str_to_digits(response)
+    
+    
+    def get_sampler_types(self) -> list:
+        file_name = f'{self.build_id}_1s.csv.gz'
+        response = self.client.select_object_content(self.bucket_name, file_name)
+        sampler_types = set()
+        for line in response:
+            sampler_types.add(line['method'] if line['method'] == 'TRANSACTION' else 'REQUEST')
+        return sorted(sampler_types)

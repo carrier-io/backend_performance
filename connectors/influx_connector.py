@@ -20,6 +20,7 @@ from ..models.reports import Report
 from pylon.core.tools import log
 
 from ..connectors.base_connector import BaseConnector
+from ..utils.utils import str_to_timestamp
 
 
 class InfluxConnector(BaseConnector):
@@ -167,20 +168,20 @@ class InfluxConnector(BaseConnector):
         return timestamps, results, users
 
 
-    def calculate_analytics(self, scope: str, metric: str):
+    def calculate_analytics(self) -> Tuple[dict, str, list]:
         data = None
         axe = 'count'
-        if metric == "Users":
+        if self.metric == "Users":
             timestamps, data = self.get_backend_users(self.aggregation)        
-        elif metric == "Throughput":
-            timestamps, data, _ = self.get_tps_analytics(scope=scope)
-        elif metric == "Errors":
-            timestamps, data, _ = self.get_errors_analytics(scope=scope)
-        elif metric in ["Min", "Median", "Max", "pct90", "pct95", "pct99"]:
-            timestamps, data, _ = self.get_backend_requests_analytics(scope=scope, aggr=metric)
+        elif self.metric == "Throughput":
+            timestamps, data, _ = self.get_tps_analytics(scope=self.scope)
+        elif self.metric == "Errors":
+            timestamps, data, _ = self.get_errors_analytics(scope=self.scope)
+        elif self.metric in ["Min", "Median", "Max", "pct90", "pct95", "pct99"]:
+            timestamps, data, _ = self.get_backend_requests_analytics(scope=self.scope, aggr=self.metric)
             axe = 'time'
-        elif "xx" in metric:
-            timestamps, data, _ = self.get_response_codes_analytics(scope=scope, aggr=metric)
+        elif "xx" in self.metric:
+            timestamps, data, _ = self.get_response_codes_analytics(scope=self.scope, aggr=self.metric)
         return data, axe, timestamps
 
 
@@ -388,3 +389,78 @@ class InfluxConnector(BaseConnector):
             return []
         query = f"select * from comparison_{self.project_id}..api_comparison where build_id='{self.build_id}' and request_name=~/^{requests}/"
         return list(self.client.query(query)['api_comparison'])
+
+
+    def get_aggregated_test_results(self):
+        query = f"SELECT * from api_comparison where simulation='{self.test_name}' and build_id='{self.build_id}'"
+        return list(self.client.query(query))
+
+
+    def get_sampler_types(self):
+        q_samplers = f"show tag values on {self.lg_type}_{self.project_id} with key=sampler_type where build_id='{self.build_id}'"
+        return [each["value"] for each in list(self.client.query(q_samplers)[f"{self.test_name}_1s"])]
+    
+
+    def delete_test_data(self):
+        query_one = f"DELETE from {self.test_name} where build_id='{self.build_id}'"
+        query_two = f"DELETE from api_comparison where build_id='{self.build_id}'"
+        client = self._get_client(self.project_id, f"{self.lg_type}_{self.project_id}")
+        client.query(query_one)
+        client.close()
+        client = self._get_client(self.project_id, f"{self.lg_type}_{self.project_id}")
+        client.query(query_two)
+        client.close()
+        return True
+
+
+    def get_test_details(self):
+        test = {
+            "start_time": 0,
+            "name": self.test_name,
+            "environment": "",
+            "type": "",
+            "end_time": 0,
+            "failures": 0,
+            "total": 0,
+            "thresholds_missed": 0,
+            "throughput": 0,
+            "vusers": 0,
+            "duration": 0,
+            "1xx": 0,
+            "2xx": 0,
+            "3xx": 0,
+            "4xx": 0,
+            "5xx": 0,
+            "build_id": self.build_id,
+            "lg_type": self.lg_type,
+            "requests": []
+        }
+        q_start_time = f"select time, active from {self.lg_type}_{self.project_id}..\"users\" " \
+                    f"where build_id='{self.build_id}' order by time asc limit 1"
+        q_end_time = f"select time, active from {self.lg_type}_{self.project_id}..\"users\" " \
+                    f"where build_id='{self.build_id}' order by time desc limit 1"
+        q_response_codes = f"select \"1xx\", \"2xx\", \"3xx\", \"4xx\", \"5xx\", \"ko\" as KO, " \
+                        f"\"total\" as Total, \"throughput\" from comparison_{self.project_id}..api_comparison " \
+                        f"where build_id='{self.build_id}' and request_name='All'"
+        q_total_users = f"show tag values on comparison_{self.project_id} with key=\"users\" where build_id='{self.build_id}'"
+        q_env = f"show tag values on comparison_{self.project_id} with key=\"env\" where build_id='{self.build_id}'"
+        q_type = f"show tag values on comparison_{self.project_id} with key=\"test_type\" where build_id='{self.build_id}'"
+        q_requests_name = f"show tag values on comparison_{self.project_id} with key=\"request_name\" " \
+                        f"where build_id='{self.build_id}'"
+        test["start_time"] = list(self.client.query(q_start_time)["users"])[0]["time"]
+        test["end_time"] = list(self.client.query(q_end_time)["users"])[0]["time"]
+        test["duration"] = round(str_to_timestamp(test["end_time"]) - str_to_timestamp(test["start_time"]), 1)
+        test["vusers"] = list(self.client.query(q_total_users)["api_comparison"])[0]["value"]
+        test["environment"] = list(self.client.query(q_env)["api_comparison"])[0]["value"]
+        test["type"] = list(self.client.query(q_type)["api_comparison"])[0]["value"]
+        test["requests"] = [name["value"] for name in self.client.query(q_requests_name)["api_comparison"]]
+        response_data = list(self.client.query(q_response_codes)['api_comparison'])[0]
+        test['total'] = response_data['Total']
+        test['failures'] = response_data['KO']
+        test['throughput'] = round(response_data['throughput'], 1)
+        test['1xx'] = response_data['1xx']
+        test['2xx'] = response_data['2xx']
+        test['3xx'] = response_data['3xx']
+        test['4xx'] = response_data['4xx']
+        test['5xx'] = response_data['5xx']
+        return test

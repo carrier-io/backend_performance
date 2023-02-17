@@ -22,7 +22,6 @@ class API(Resource):
             Report.environment == args.get('environment'),
             Report.project_id == project.id
         ).all()
-        log.info(f'query_result {query_result}')
         for i in query_result:
             requests_data.update(set(i[0]))
         try:

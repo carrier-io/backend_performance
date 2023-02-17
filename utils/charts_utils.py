@@ -58,7 +58,7 @@ def summary_table(connector: Union[MinioConnector, InfluxConnector]):
     # return get_build_data(args['build_id'], args['test_name'], args['lg_type'], start_time, end_time, args['sampler'])
 
 
-def get_issues(connector: LokiConnector):
+def get_issues(connector: Union[MinioConnector, LokiConnector]):
     return connector.get_issues()
 
 

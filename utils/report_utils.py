@@ -215,12 +215,14 @@ def calculate_proper_timeframe(build_id: str, test_name: str, lg_type: str, low_
     start_time_ts += start_shift
     if time_as_ts:
         return int(start_time_ts), int(end_time_ts)
-    # t_format = "%Y-%m-%dT%H:%M:%S.000Z"
-    # start_time = datetime.fromtimestamp(start_time_ts).strftime(t_format)
-    # end_time = datetime.fromtimestamp(end_time).strftime(t_format)
-    _start_time = datetime.utcfromtimestamp(start_time_ts).isoformat(sep=' ', timespec='seconds')
-    _end_time = datetime.utcfromtimestamp(end_time_ts).isoformat(sep=' ', timespec='seconds')
+    
+    t_format = "%Y-%m-%dT%H:%M:%SZ"
+    _start_time = datetime.fromtimestamp(start_time_ts).strftime(t_format)
+    _end_time = datetime.fromtimestamp(end_time_ts).strftime(t_format)
     return _start_time, _end_time
+    # _start_time = datetime.utcfromtimestamp(start_time_ts).isoformat(sep=' ', timespec='seconds')
+    # _end_time = datetime.utcfromtimestamp(end_time_ts).isoformat(sep=' ', timespec='seconds')
+    # return _start_time, _end_time
 
 
 class TimeframeArgs(BaseModel):

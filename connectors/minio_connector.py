@@ -31,6 +31,7 @@ class MinioConnector(BaseConnector):
         self.bucket_name = f'p--{self.project_id}.{self.test_name}'.replace("_", "").lower()
         if self.aggregation == 'auto':
             self.aggregation = self.calculate_auto_aggregation()
+        self.time_addon = f" where time>='{self.start_time}' and time<='{self.end_time}'"
         # self.timestamps = self._calculate_timestamps(
         #     datetime.fromisoformat(self.start_time.strip('Z')),
         #     datetime.fromisoformat(self.end_time.strip('Z'))
@@ -75,7 +76,7 @@ class MinioConnector(BaseConnector):
     
     def get_backend_users(self, aggregation: str) -> Tuple[list, dict]:
         file_name = f'users_{self.build_id}_{aggregation}.csv.gz'
-        response = self.client.select_object_content(self.bucket_name, file_name)
+        response = self.client.select_object_content(self.bucket_name, file_name, self.time_addon)
         timestamps = []
         results = {"users": {}}
         # aggregation of users
@@ -101,20 +102,22 @@ class MinioConnector(BaseConnector):
             aggr='pct95', 
         ) -> Tuple[list, dict, dict]:
         
-        scope_addon = ""
-        status_addon = ""
         group_by = False
         file_name = f'{self.build_id}_{self.aggregation}.csv.gz'
         aggr = aggr.lower()
         
+        scope_addon = ""
+        status_addon = ""
+        
         if scope and scope != 'All':
-            scope_addon = f" where request_name='{scope}'"
+            scope_addon = f" and request_name='{scope}'"
         if scope != 'All':
             group_by = True
         if self.status != 'all':
-            status_addon = f" {'and' if scope_addon else 'where'} status='{self.status.upper()}'"
+            # status_addon = f" {'and' if scope_addon else 'where'} status='{self.status.upper()}'"
+            status_addon = f" and status='{self.status.upper()}'"
         
-        expression_addon = scope_addon + status_addon
+        expression_addon = self.time_addon + scope_addon + status_addon
         log.info(expression_addon)
         
         if not (timestamps and users):
@@ -344,11 +347,20 @@ class MinioConnector(BaseConnector):
 
     def get_issues(self) -> list:
         file_name = f'errors_{self.build_id}.csv.gz'
-        return self.client.select_object_content(self.bucket_name, file_name)
+        response = self.client.select_object_content(self.bucket_name, file_name, self.time_addon)
+        issues = {}
+        for line in response:
+            line.pop('time')
+            if line['Error key'] in issues:
+                issues[line['Error key']]["count"] += 1
+            else: 
+                issues[line['Error key']] = line
+                issues[line['Error key']]["count"] = 1
+        return list(issues.values())
 
 
     def _get_engine_health(self, file_name) -> dict:
-        response = self.client.select_object_content(self.bucket_name, file_name)
+        response = self.client.select_object_content(self.bucket_name, file_name, self.time_addon)
         data = dict()
         for line in response:
             host_name = line.pop('host')

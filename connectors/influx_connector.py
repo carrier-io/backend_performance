@@ -21,6 +21,7 @@ from pylon.core.tools import log
 
 from ..connectors.base_connector import BaseConnector
 from ..utils.utils import str_to_timestamp
+from ..utils.report_utils import timeframe
 
 
 class InfluxConnector(BaseConnector):
@@ -314,11 +315,9 @@ class InfluxConnector(BaseConnector):
 
     def _get_engine_health(self, query: str):
         result = self.client.query(query)
-        log.info(f'health result {result}')
         data = dict()
         for (_, groups), series in result.items():
             data[groups['host']] = list(series)
-        log.info(f'health data {data}')
         return data
 
 

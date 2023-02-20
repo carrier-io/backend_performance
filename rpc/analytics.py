@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Optional, List
 
 from pydantic import BaseModel, validator, parse_obj_as
-from pylon.core.tools import web
+from pylon.core.tools import web, log
 from sqlalchemy import String, literal_column, asc, func, not_
 
 from tools import rpc_tools, influx_tools
@@ -45,6 +45,8 @@ class ReportResultsModel(BaseModel):
     threexx: int
     fourxx: int
     fivexx: int
+    throughput: Optional[float]
+    users: Optional[int]
 
     class Config:
         fields = {
@@ -60,6 +62,13 @@ class ReportResultsModel(BaseModel):
         if isinstance(value, datetime):
             return value.isoformat(timespec='seconds')
         return value.strip('Z')
+
+    def set_users(self, user_data: list):
+        for u in user_data:
+            formatted_time = self.convert_time(u['time'])
+            if formatted_time == self.time:
+                self.users = u['sum']
+                # user_data.remove(u)
 
 
 class ReportRequestMetricsInfluxModel(ReportResultsModel):
@@ -96,7 +105,7 @@ columns = OrderedDict((
     ('duration', Report.duration),
     ('total', Report.total),
     ('failures', Report.failures),
-    ('tags', Report.tags)
+    ('tags', Report.tags),
 ))
 
 
@@ -156,8 +165,7 @@ class RPC:
 
     @web.rpc('backend_performance_get_baseline_report_id')
     @rpc_tools.wrap_exceptions(RuntimeError)
-    def get_baseline_report_id(self, project_id: int, test_name: str, test_env: str) -> \
-    Optional[int]:
+    def get_baseline_report_id(self, project_id: int, test_name: str, test_env: str) -> Optional[int]:
         result = Baseline.query.with_entities(Baseline.report_id).filter(
             Baseline.project_id == project_id,
             Baseline.test == test_name,
@@ -182,9 +190,9 @@ class RPC:
         return tuple(zip(columns.keys(), i) for i in query.all())
 
     @web.rpc('get_backend_results', 'get_backend_results')
-    def get_ui_results(self, bucket: str, file_name: str, project_id: int) -> list:
+    def get_ui_results(self, bucket: str, file_name: str, project_id: int, expression_addon: str = '') -> list:
         client = MinioConnector.get_client(project_id)
-        return client.select_object_content(bucket, file_name)
+        return client.select_object_content(bucket, file_name, expression_addon)
 
     @web.rpc('backend_performance_compile_builder_data', 'compile_builder_data')
     @rpc_tools.wrap_exceptions(RuntimeError)
@@ -209,11 +217,23 @@ class RPC:
                     report_file_name,
                     project_id
                 )
+                users_file_name = f'users_{report_reflection.build_id}_{time_aggregation}.csv.gz'
+                user_results = self.get_backend_results(
+                    report_reflection.bucket_name,
+                    users_file_name,
+                    project_id,
+                    expression_addon=" where s['sum'] != 'None' "
+                )
+                # log.info('Backend users %s', user_results)
+                # if user_results:
+                    # all_requests.add('Users')
+                    # data[report_reflection.id][time_aggregation]['Users'] = user_results
 
                 for r in results:
                     request_name = r.pop('request_name')
                     all_requests.add(request_name)
                     result_model = ReportResultsModel.parse_obj(r)
+                    result_model.set_users(user_results)
 
                     try:
                         data[report_reflection.id][time_aggregation][request_name].append(
@@ -230,6 +250,5 @@ class RPC:
             'datasets': data,
             'all_requests': list(all_requests),
             'earliest_date': earliest_date.isoformat(),
-            'aggregated_requests_data': _get_requests_aggregations_from_influx(project_id,
-                                                                               reports)
+            'aggregated_requests_data': _get_requests_aggregations_from_influx(project_id, reports),
         }

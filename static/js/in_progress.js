@@ -2,32 +2,26 @@ const PerformanceTestProgress = {
     delimiters: ['[[', ']]'],
     props: ['test_status', 'project_id', 'test_id'],
     template: `
-    <div class="card-body p-4 m-4 space-progress">
-        <div class="row justify-content-center">
-            <div class="col-12 text-center">
-                <h4 id="test_status_status">
-                    [[ status ]]
-                </h4>
-            </div>
-            <div class="col-6">
-                <div class="progress">
-                    <div
-                            class="progress-bar progress-bar-striped bg-success progress-bar-animated"
-                            role="progressbar"
-                            aria-valuenow="percentage"
-                            :style="{ width: percentage + '%' }"
-                            aria-valuemin="0"
-                            aria-valuemax="100"
-                    >
-                    </div>
+    <div class="card-body space-progress mt-24 p-3">
+        <div style="width: 400px" class="d-flex flex-column m-auto">
+            <p class="font-h5 font-bold mb-1" id="test_status_status">
+                [[ status ]]
+            </p>
+            <div class="progress mb-3">
+                <div
+                    class="progress-bar progress-bar-striped bg-success progress-bar-animated"
+                    role="progressbar"
+                    aria-valuenow="percentage"
+                    :style="{ width: percentage + '%' }"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                >
                 </div>
             </div>
-            <div class="col-12 text-center m-2 p-2">
-                <h12 class="test_status_description">
-                    [[ description ]]
-                </h12>
-            </div>
         </div>
+        <p class="font-h5 font-weight-400 text-gray-700 test_status_description text-center">
+            [[ description ]]
+        </p>
     </div>
     `,
     data() {

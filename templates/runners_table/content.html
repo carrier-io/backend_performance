@@ -1,0 +1,47 @@
+<div class="flex-item-2">
+    <Table-Card
+            @register="register"
+            instance_name="table_runners"
+
+            header='Backend runners'
+            :table_attributes="{
+                'data-url': '/api/v1/backend_performance/runners/{{ tools.session_project.get() }}',
+                'data-pagination': 'false',
+                'data-page-size': 15,
+                'data-side-pagination': 'client',
+            }"
+            container_classes="mt-3"
+    >
+        <template #actions="{master}">
+            <div class="d-flex justify-content-end">
+                <button type="button" class="btn btn-secondary btn-sm btn-icon__sm mr-2"><i class="fas fa-plus"></i></button>
+                <button type="button" class="btn btn-secondary btn-sm btn-icon__sm mr-2"><i class="fas fa-sync"></i></button>
+                <button type="button" class="btn btn-secondary btn-sm btn-icon__sm mr-2"><i class="fas fa-trash-alt"></i></button>    
+            </div>
+        </template>
+        <template #table_headers>
+            <th scope="col" data-checkbox="true"></th>
+            <th data-visible="false" data-field="id">index</th>
+            <th scope="col" data-sortable="true"
+                data-field="container_type"
+            >
+                Container type
+            </th>
+            <th scope="col" data-sortable="true"
+
+                data-field="name">
+                Name
+            </th>
+            <th scope="col" data-sortable="true"
+                data-field="container"
+
+            >
+                Container
+            </th>
+        </template>
+    </Table-Card>
+    <button type="button" class="btn btn-sm btn-secondary"
+            onclick="ParamsTable.addEmptyParamsRow(this)">
+        <i class="fas fa-plus mr-2"></i>Add Parameter
+    </button>
+</div>

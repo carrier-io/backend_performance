@@ -6,14 +6,16 @@ from pylon.core.tools import web
 from pylon.core.tools import log
 from sqlalchemy import desc
 
-from tools import rpc_tools
+from tools import rpc_tools, db_tools
 from ..models.pd.performance_test import TestCommon, TestOverrideable
 from ..models.pd.quality_gate import QualityGate
 from ..models.pd.test_parameters import PerformanceTestParams, PerformanceTestParamsCreate, \
     PerformanceTestParamsRun
 from ..models.reports import Report
 from ..models.tests import Test
+from ..models.runners import Runner
 from ..utils.utils import run_test
+from ..constants import JMETER_MAPPING, GATLING_MAPPING, EXECUTABLE_MAPPING
 
 
 class RPC:
@@ -132,3 +134,19 @@ class RPC:
             reports = _get_unique_reports(reports)
 
         return reports
+
+    @web.rpc('populate_backend_runners_table')
+    def populate_runners_table(self, project_id):
+        runners = []
+        def _create_runner_objects(mapping, container_type):
+            for runner in mapping:
+                runners.append(Runner(project_id=project_id,
+                                    container_type=container_type, 
+                                    config={runner: mapping[runner]},
+                                    is_active=True,
+                                    is_default=True
+                                    ))
+        _create_runner_objects(JMETER_MAPPING, 'jmeter')
+        _create_runner_objects(GATLING_MAPPING, 'gatling')
+        _create_runner_objects(EXECUTABLE_MAPPING, 'executable_jar')
+        db_tools.bulk_save(runners)

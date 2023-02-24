@@ -21,6 +21,7 @@ class Slot:  # pylint: disable=E1101,R0903
             
             connector = MinioConnector(build_id=test_data["build_id"], test_name=test_data["name"])
             test_data["samplers"] = connector.get_sampler_types()
+            test_data["aggregations"] = connector.get_aggregations_list()
             
             analytics_control = render_analytics_control(test_data["requests"])
 

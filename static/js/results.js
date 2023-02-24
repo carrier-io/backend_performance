@@ -48,7 +48,7 @@ const stopTest = async () => {
 
 
 const SummaryController = {
-    props: ['initial_samplers', 'start_time', 'end_time', 'test_name', 'initial_status_percentage', 'lg_type', 'build_id'],
+    props: ['initial_samplers', 'initial_aggregations', 'start_time', 'end_time', 'test_name', 'initial_status_percentage', 'lg_type', 'build_id'],
     delimiters: ['[[', ']]'],
     data() {
         return {
@@ -71,6 +71,7 @@ const SummaryController = {
     },
     async mounted() {
         this.samplers = this.initial_samplers
+        this.aggregations = this.initial_aggregations
         this.status_percentage = this.initial_status_percentage
         this.sampler_type = this.samplers.length > 0 ? this.samplers[0] : ''
         $(() => {

@@ -1,9 +1,11 @@
 from queue import Empty
+from sqlalchemy import and_
 
 from pylon.core.tools import web, log  # pylint: disable=E0611,E0401
 from tools import auth  # pylint: disable=E0401
 
 from ..constants import JMETER_MAPPING, GATLING_MAPPING, EXECUTABLE_MAPPING
+from ..models.runners import Runner
 
 
 class Slot:  # pylint: disable=E1101,R0903
@@ -11,6 +13,23 @@ class Slot:  # pylint: disable=E1101,R0903
     def content(self, context, slot, payload):
         project_id = context.rpc_manager.call.project_get_id()
         public_regions = context.rpc_manager.call.get_rabbit_queues("carrier")
+        runners_query = Runner.query.with_entities(
+            Runner.container_type, Runner.config
+        ).filter(
+            and_(Runner.project_id == project_id, Runner.is_active == True)
+        ).all()
+        log.info(f'runners_query {runners_query}')
+        if runners_query:
+            runners = {}
+            for container_type, config in runners_query:
+                runners.setdefault(container_type, {}).update(config)
+            jmeter_runners = list(map(lambda i: {'version': i}, runners['jmeter'].keys()))
+            gatling_runners = list(map(lambda i: {'version': i}, runners['gatling'].keys()))
+            executable_runners = list(map(lambda i: {'version': i}, runners['executable_jar'].keys()))
+        else:
+            jmeter_runners = list(map(lambda i: {'version': i}, JMETER_MAPPING.keys()))
+            gatling_runners = list(map(lambda i: {'version': i}, GATLING_MAPPING.keys()))
+            executable_runners = list(map(lambda i: {'version': i}, EXECUTABLE_MAPPING.keys()))              
         try:
             public_regions.remove("__internal")
         except:
@@ -24,9 +43,9 @@ class Slot:  # pylint: disable=E1101,R0903
             return self.descriptor.render_template(
                 'backend_performance/content.html',
                 runners={
-                    'jMeter': list(map(lambda i: {'version': i}, JMETER_MAPPING.keys())),
-                    'Gatling': list(map(lambda i: {'version': i}, GATLING_MAPPING.keys())),
-                    'Executable JAR (BETA)': list(map(lambda i: {'version': i}, EXECUTABLE_MAPPING.keys()))
+                    'jMeter': jmeter_runners,
+                    'Gatling': gatling_runners,
+                    'Executable JAR (BETA)': executable_runners
                 },
                 locations={
                     'public_regions': public_regions,

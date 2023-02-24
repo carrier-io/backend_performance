@@ -413,9 +413,22 @@ class MinioConnector(BaseConnector):
     
     
     def get_sampler_types(self) -> list:
-        file_name = f'{self.build_id}_1s.csv.gz'
-        response = self.client.select_object_content(self.bucket_name, file_name)
-        sampler_types = set()
-        for line in response:
-            sampler_types.add(line['method'] if line['method'] == 'TRANSACTION' else 'REQUEST')
-        return sorted(sampler_types)
+        aggr_list = ["1s", "5s", "30s", "1m", "5m", "10m"]
+        for aggr in aggr_list:
+            file_name = f'{self.build_id}_{aggr}.csv.gz'
+            if self.client.is_file_exist(self.bucket_name, file_name):
+                response = self.client.select_object_content(self.bucket_name, file_name)
+                sampler_types = set()
+                for line in response:
+                    sampler_types.add(line['method'] if line['method'] == 'TRANSACTION' else 'REQUEST')
+                return sorted(sampler_types)
+        return []
+
+    def get_aggregations_list(self) -> list:
+        aggr_list = ["1s", "5s", "30s", "1m", "5m", "10m"]
+        existing_aggr = []
+        for aggr in aggr_list:
+            file_name = f'{self.build_id}_{aggr}.csv.gz'
+            if self.client.is_file_exist(self.bucket_name, file_name):
+                existing_aggr.append(aggr)
+        return existing_aggr

@@ -110,3 +110,11 @@ class BaseConnector(ABC):
     @abstractmethod
     def get_engine_health_load(self) -> dict:
         raise NotImplementedError
+
+    @abstractmethod
+    def get_sampler_types(self) -> list:
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_aggregations_list(self) -> list:
+        raise NotImplementedError

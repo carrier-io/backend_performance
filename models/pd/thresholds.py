@@ -38,7 +38,7 @@ class ThresholdPD(BaseModel):
 
         assert Report.query.filter(
             Report.project_id == values['project_id'],
-            Report.requests.contains(value)
+            Report.requests.contains("{{{}}}".format(value.rstrip()),)
         ).first(), 'Such scope does not exist'
         return value
 

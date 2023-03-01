@@ -1,8 +1,24 @@
 from pylon.core.tools import web, log  # pylint: disable=E0611,E0401
 from tools import auth, theme  # pylint: disable=E0401
 from ..connectors.minio_connector import MinioConnector
+from ..connectors.influx_connector import InfluxConnector
 from ..models.reports import Report
 from ..utils.report_utils import render_analytics_control
+
+
+def _get_connector(test_data):
+    test_status = Report.query.with_entities(Report.test_status).filter(
+        Report.build_id == test_data['build_id']
+        ).first()[0]['status'].lower()
+    if test_status in ('finished', 'error', 'failed', 'success'):
+        log.info('Using MinioConnector in slot')
+        return MinioConnector(build_id=test_data["build_id"], 
+                              test_name=test_data["name"])
+    else:
+        log.info('Using InfluxConnector in slot')
+        return InfluxConnector(build_id=test_data["build_id"], 
+                               test_name=test_data["name"], 
+                               lg_type=test_data["lg_type"])
 
 
 class Slot:  # pylint: disable=E1101,R0903
@@ -19,7 +35,7 @@ class Slot:  # pylint: disable=E1101,R0903
             # TODO set tags in model
             test_data["tags"] = []
             
-            connector = MinioConnector(build_id=test_data["build_id"], test_name=test_data["name"])
+            connector = _get_connector(test_data)
             test_data["samplers"] = connector.get_sampler_types()
             test_data["aggregations"] = connector.get_aggregations_list()
             

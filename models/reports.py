@@ -13,7 +13,8 @@
 #     limitations under the License.
 from uuid import uuid4
 
-from sqlalchemy import String, Column, Integer, Float, Text, ARRAY, JSON
+from sqlalchemy import String, Column, Integer, Float, Text, JSON
+from sqlalchemy.dialects.postgresql import ARRAY
 
 from tools import db_tools, db
 

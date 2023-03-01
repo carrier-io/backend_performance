@@ -313,7 +313,7 @@ class InfluxConnector(BaseConnector):
         return timestamps, data, users
 
 
-    def _get_engine_health(self, query: str):
+    def _get_engine_health(self, query: str) -> dict:
         result = self.client.query(query)
         data = dict()
         for (_, groups), series in result.items():
@@ -367,7 +367,7 @@ class InfluxConnector(BaseConnector):
         return self._get_engine_health(query)
     
     
-    def get_build_data(self, status='all'):
+    def get_build_data(self, status='all') -> list:
         status_addon = ""
         if status != 'all':
             status_addon = f" and status='{status.upper()}'"
@@ -390,14 +390,18 @@ class InfluxConnector(BaseConnector):
         return list(self.client.query(query)['api_comparison'])
 
 
-    def get_aggregated_test_results(self):
+    def get_aggregated_test_results(self) -> list:
         query = f"SELECT * from api_comparison where simulation='{self.test_name}' and build_id='{self.build_id}'"
         return list(self.client.query(query))
 
 
-    def get_sampler_types(self):
+    def get_sampler_types(self) -> list:
         q_samplers = f"show tag values on {self.lg_type}_{self.project_id} with key=sampler_type where build_id='{self.build_id}'"
         return [each["value"] for each in list(self.client.query(q_samplers)[f"{self.test_name}_1s"])]
+
+
+    def get_aggregations_list(self) -> list:
+        return ["1s", "5s", "30s", "1m", "5m", "10m"]
     
 
     def delete_test_data(self):

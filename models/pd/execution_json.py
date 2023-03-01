@@ -1,5 +1,6 @@
 from pydantic import BaseModel, validator, AnyUrl, parse_obj_as, root_validator, constr
 from typing import Optional
+from json import dumps
 
 from .test_parameters import PerformanceTestParams
 
@@ -112,14 +113,17 @@ class CcEnvVars(BaseModel):
 
     @classmethod
     def from_orm(cls, db_object: 'Test'):
+        cc_env_vars = db_object.cc_env_vars
+        if "csv_files" in cc_env_vars.keys():
+            cc_env_vars["csv_files"] = dumps(cc_env_vars["csv_files"])
         public_queues = db_object.rpc.call.get_rabbit_queues("carrier")
         if db_object.location not in public_queues:
             return cls(
-                cc_env_vars=db_object.cc_env_vars,
+                cc_env_vars=cc_env_vars,
                 RABBIT_USER="{{secret.rabbit_project_user}}",
                 RABBIT_PASSWORD="{{secret.rabbit_project_password}}",
                 RABBIT_VHOST="{{secret.rabbit_project_vhost}}"
             )
         return cls(
-            cc_env_vars=db_object.cc_env_vars
+            cc_env_vars=cc_env_vars
         )

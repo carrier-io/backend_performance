@@ -150,7 +150,7 @@ var custom_params_table_formatters = {
 
 const CustomizationItem = {
     delimiters: ['[[', ']]'],
-    props: ['file', 'path', 'i_index'],
+    props: ['file', 'path'],
     emits: ['update:file', 'update:path', 'delete'],
     template: `
     <div class="d-flex mb-3">
@@ -167,31 +167,19 @@ const CustomizationItem = {
             >
         </div>
         <button class="btn btn-default btn-xs btn-icon__xs align-self-center"
-             @click="$emit('delete', i_index)">
+             @click="$emit('delete')">
             <i class="icon__18x18 icon-remove-element"></i>
         </button>
     </div>
-    `,
-    methods: {
-        initial_state() {
-            return {
-                file: '',
-                path: '',
-            }
-        }
-    }
+    `
 }
+
 const Customization = {
     delimiters: ['[[', ']]'],
-    props: ['customization', 'errors'],
-    emits: ['update:modelValue'],
+    props: ['modelValue', 'errors'],
+    emits: ['update:modelValue', 'add_item', 'delete_item'],
     components: {
         CustomizationItem: CustomizationItem
-    },
-    data() {
-        return {
-            cc_items: []
-        }
     },
     template: `
     <div class="card card-x pt-3 pb-2 px-4">
@@ -202,53 +190,32 @@ const Customization = {
                     <p class="font-h6 font-weight-400">Bucket and file for your customizations</p>
                 </div>
                 <button class="btn btn-default btn-xs btn-icon__xs align-self-center"
-                    @click="handle_add_item">
+                    @click="$emit('add_item')">
                     <i class="icon__18x18 icon-create-element"></i>
                 </button>
             </div>
             <div class="d-flex flex-row invalid-feedback">[[ errors?.length > 0 ? errors[0]?.msg : '']]</div>
             <CustomizationItem
-                v-for="(item, index) in cc_items"
+                v-for="(item, index) in modelValue"
                 :key="index"
-                :i_index="index"
                 v-model:file="item.file"
                 v-model:path="item.path"
-                @delete="handle_delete_item"
+                @delete="$emit('delete_item', index)"
             ></CustomizationItem>
         </div>
     </div>
     `,
-    computed: {
-        converted() {
-            return this.cc_items.reduce((acc, i) => {
-                acc[i.file] = i.path
-                return acc
-            }, {})
-        }
-    },
-    methods: {
-        handle_add_item() {
-            this.cc_items.push(CustomizationItem.methods.initial_state())
-            // this.$emit('update:modelValue', this.converted)
-        },
-        handle_delete_item(item_id) {
-            this.cc_items.splice(item_id, 1)
-            // this.$emit('update:modelValue', this.converted)
-        },
-        clear() {
-            this.cc_items = []
-        }
-    },
-    watch: {
-        cc_items: {
-            handler(newValue, oldValue) {
-                this.$emit('update:modelValue', this.converted)
-            },
-            deep: true
-        }
-    },
-
 }
+
+const format_customization = customization_object => Object.entries(customization_object || {}).map(
+    ([k, v]) => ({file: k, path: v})
+)
+
+const format_customization_for_api = customization_list => customization_list.reduce((accum, {file, path}) => {
+    accum[file] = path
+    return accum
+}, {})
+
 
 const TestCreateModal = {
     delimiters: ['[[', ']]'],
@@ -435,7 +402,8 @@ const TestCreateModal = {
                         <div class="col">
                             <Customization
                                 v-model="customization"
-                                ref="customization_component"
+                                @add_item="customization.push({file: '', path: ''})"
+                                @delete_item="idx => customization.splice(idx, 1)"
                                 :errors="errors.customization"
                             ></Customization>
                             <div class="card card-x pt-3 pb-2 px-4 mt-3" id="splitCSV">
@@ -574,7 +542,7 @@ const TestCreateModal = {
                     },
                     parallel_runners: this.parallel_runners,
                     cc_env_vars: {},
-                    customization: this.customization,
+                    customization: format_customization_for_api(this.customization),
                     location: this.location
                 },
                 test_parameters: this.test_parameters.get(),
@@ -582,7 +550,7 @@ const TestCreateModal = {
                 scheduling: this.scheduling?.get() || [],
             }
             let csv_files = {}
-            $("#splitCSV .flex-row").slice(1,).each(function (_, item) {
+            $("#splitCSV .csv_item").each(function (_, item) {
                 const file = $(item).find('input[type=text]')
                 const header = $(item).find('input[type=checkbox]')
                 if (file[0].value) {
@@ -673,7 +641,7 @@ const TestCreateModal = {
                 entrypoint: '',
                 runner: this.default_runner,
                 env_vars: {},
-                customization: {},
+                customization: [],
                 cc_env_vars: {},
 
                 compile_tests: false,
@@ -685,7 +653,9 @@ const TestCreateModal = {
             }
         },
         set(data) {
-            const {test_parameters, integrations, scheduling, source, env_vars: all_env_vars, ...rest} = data
+            const {test_parameters, integrations, scheduling,
+                source, env_vars: all_env_vars, customization, ...rest} = data
+            const formatted_customization = format_customization(customization)
 
             const {cpu_quota, memory_quota, cloud_settings, ...env_vars} = all_env_vars
 
@@ -704,7 +674,10 @@ const TestCreateModal = {
 
             })
             // common fields
-            Object.assign(this.$data, {...rest, cpu_quota, memory_quota, cloud_settings, env_vars, test_type, env_type})
+            Object.assign(this.$data, {...rest, cpu_quota, memory_quota,
+                cloud_settings, env_vars, test_type, env_type,
+                customization: formatted_customization
+            })
 
             // special fields
             this.test_parameters.set(test_parameters_filtered)
@@ -712,7 +685,11 @@ const TestCreateModal = {
             integrations && this.integrations?.set(integrations)
             scheduling && this.scheduling.set(scheduling)
 
-            rest?.customization && $(this.$refs.advanced_params).collapse('show')
+            formatted_customization && $(this.$refs.advanced_params).collapse('show')
+
+            rest?.cc_env_vars?.csv_files && Object.entries(rest?.cc_env_vars?.csv_files).forEach(([k, v]) => {
+                addCSVSplit('splitCSV', k, v)
+            })
 
             this.show()
         },
@@ -725,7 +702,7 @@ const TestCreateModal = {
             $('#backend_parallel').text(this.parallel_runners)
             $('#backend_cpu').text(this.cpu_quota)
             $('#backend_memory').text(this.memory_quota)
-            this.$refs.customization_component.clear()
+            $(`#splitCSV > div.flex-row`).remove()
         },
         clearErrors() {
             this.errors = {}
@@ -744,14 +721,14 @@ register_component('TestCreateModal', TestCreateModal)
 
 
 function addCSVSplit(id, key = "", is_header = "") {
-    $(`#${id}`).append(`<div class="d-flex flex-row mb-3">
+    $(`#${id}`).append(`<div class="d-flex flex-row mb-3 csv_item">
     <div class="flex-grow-1 align-items-center">
         <input type="text" class="form-control form-control-alternative" placeholder="File Path" value="${key}">
     </div>
     <div class="px-3">
         <div class="form-check">
             <label class="w-100 d-flex align-items-center custom-checkbox">
-                <input type="checkbox" class="mr-2 form-check-input" value="">
+                <input type="checkbox" class="mr-2 form-check-input" ${is_header && 'checked'}>
                 <p class="font-h5 mt-1 font-weight-400">Ignore first line</p>
             </label>
         </div>
@@ -762,17 +739,6 @@ function addCSVSplit(id, key = "", is_header = "") {
     </button>
 </div>`)
 }
-
-// function toggleRows(id) {
-//     $(`#${id}`).append(`<div class="d-flex flex-row">
-//     <div class="flex-fill">
-//         <input type="text" class="form-control form-control-alternative" placeholder="Failed thresholds rate" value="20">
-//         <label class="form-check-label">Failed thresholds rate. If the failed thresholds rate in the test is higher than this number, the test will be considered as failed</label>
-//     </div>
-//
-// </div>`)
-// }
-
 
 const TestRunModal = {
     delimiters: ['[[', ']]'],
@@ -847,7 +813,6 @@ const TestRunModal = {
                 cloud_settings: {},
 
                 env_vars: {},
-                customization: {},
                 cc_env_vars: {},
 
                 compile_tests: false,

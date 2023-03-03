@@ -164,12 +164,13 @@ const SummaryController = {
         },
         async handle_slider_change(values) {
             [this.slider.low, this.slider.high] = values
-            await this.handle_tab_load(this.active_tab_id)
             if (this.active_tab_id === 'AN') {
                 vueVm.registered_components.analyticFilter.recalculateChartBySlider();
+            } else {
+                await this.handle_tab_load(this.active_tab_id);
+                this.fill_error_table()
+                await window.engine_health?.reload()
             }
-            this.fill_error_table()
-            await window.engine_health?.reload()
         },
         handle_tab_change(event) {
             this.active_tab_id = event.target.id
@@ -250,9 +251,6 @@ const SummaryController = {
                     analyticsLine.destroy();
                 }
             }
-            // if ($("#end_time").html() != "") {
-            //     $("#PP").hide();
-            // }
             const resp = await fetch(url + '?' + new URLSearchParams({
                 build_id: this.build_id,
                 test_name: this.test_name,
@@ -274,16 +272,8 @@ const SummaryController = {
                     window.presetLine.data = data
                     window.presetLine.update()
                 }
-                // if (window.presetLine != null) {
-                //     // window.presetLine.destroy();
-                // } else {
-                //     //
-                // }
-                // drawCanvas(y_label, data);
 
                 $('#chart-loader').hide();
-                // document.getElementById('chartjs-custom-legend').innerHTML = window.presetLine.generateLegend();
-                // document.getElementById('chartjs-custom-legend').innerHTML = Chart.defaults.plugins.legend.labels.generateLabels(window.presetLine)
             } else {
                 // todo: handle fetch error
             }

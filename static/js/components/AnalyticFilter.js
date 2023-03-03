@@ -10,6 +10,7 @@ const AnalyticFilter = {
     },
     mounted() {
         $('#analytic-chart-loader').hide();
+        $('#chart-analytics').hide();
     },
     methods: {
         addBlock() {
@@ -27,16 +28,29 @@ const AnalyticFilter = {
                         break;
                     }
                 }
-                analyticLabels.splice(removingIdx, 1);
+                if (removingIdx) analyticLabels.splice(removingIdx, 1);
             })
             analyticsLine.data.datasets = analyticsLine.data.datasets
                 .filter(item => {
                     return analyticLabels.includes(item.label);
                 })
-
+            this.switchCartGrid();
             filtersArgsForRequest.delete(blockId);
             filtersBlock.delete(blockId);
             analyticsLine.update();
+        },
+        switchCartGrid() {
+            const hasTimeAxis = analyticsLine.data.datasets.some(ds => ds.yAxisID === "time");
+            const hasCountAxis = analyticsLine.data.datasets.some(ds => ds.yAxisID === "count");
+            analyticsLine.options.scales.time.display = hasTimeAxis;
+            analyticsLine.options.scales.count.display = hasCountAxis;
+            if (hasTimeAxis) {
+                analyticsLine.options.scales.count.grid.drawOnChartArea = !hasTimeAxis;
+                analyticsLine.options.scales.time.grid.drawOnChartArea = hasTimeAxis;
+            } else {
+                analyticsLine.options.scales.count.grid.drawOnChartArea = hasTimeAxis;
+                analyticsLine.options.scales.time.grid.drawOnChartArea = !hasTimeAxis;
+            }
         },
         generateBlockId() {
             return 'blockId_'+Math.round(Math.random() * 1000);
@@ -48,8 +62,15 @@ const AnalyticFilter = {
             filtersArgsForRequest = new Map();
             analyticLabels = [];
         },
+        reDrawChart() {
+            if (filtersArgsForRequest.size === 0) return;
+            analyticsCanvas(analyticsLine.data);
+            this.switchCartGrid();
+            analyticsLine.update();
+        },
         recalculateChartBySlider() {
             const allRequests = [];
+            if (filtersArgsForRequest.size === 0) return;
             filtersArgsForRequest.forEach((filterBlock, blockId, map) => {
                 const blockPairs = map.get(blockId);
                 blockPairs.forEach((transactions, metric, map) => {
@@ -60,21 +81,17 @@ const AnalyticFilter = {
             this.fetchChartDataForAllBlocks(allRequests);
         },
         fetchChartDataForAllBlocks(allRequests) {
+            $('#analytic-chart-loader').show();
             Promise.all(allRequests).then(data => {
-                data.forEach(chartData => {
-                    if (Object.keys(chartData).length === 0) {
-                        return;
-                    }
-                    if (analyticsLine.data.labels.length === 0) {
-                        analyticsCanvas(chartData);
-                    } else {
-                        analyticsLine.data.datasets.push(...chartData.datasets)
-                    }
-                    analyticsLine.update();
-                    turnOnAllLine();
-                })
-                this.loadingData = false;
-            }).then(() => {
+                analyticsLine.destroy();
+                const ds = {
+                    labels: data[0].labels,
+                    datasets: data.map(ds => ds.datasets).flat().filter(ds => !!ds)
+                };
+                analyticsCanvas(ds);
+                this.switchCartGrid();
+                analyticsLine.update();
+                $('#analytic-chart-loader').hide();
             }).catch(error => {
                 console.log('ERROR', error)
             })

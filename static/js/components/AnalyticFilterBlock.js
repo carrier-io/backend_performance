@@ -78,16 +78,20 @@ const AnalyticFilterBlock = {
         },
         fetchChartData(allRequests) {
             this.loadingData = true;
+            if (analyticsLine === undefined) {
+                $('#chart-analytics').show();
+                $('#layout_empty-chart').hide();
+            }
             Promise.all(allRequests).then(data => {
                 data.forEach(chartData => {
                     if (Object.keys(chartData).length === 0) {
                         return;
                     }
-                    if (analyticsLine.data.labels.length === 0 || analyticsLine.data.labels.length !== chartData.labels.length) {
+                    if (!analyticsLine) {
                         analyticsCanvas(chartData);
                         chartData.datasets.forEach(dataset => {
                             analyticLabels.push(dataset.label);
-                        })
+                        });
                     } else {
                         const uniqueDatasets = chartData.datasets.filter(item => {
                             const isValueNotExist = analyticsLine.data.datasets.some(currentItem => currentItem.label === item.label)
@@ -97,16 +101,30 @@ const AnalyticFilterBlock = {
                                 analyticLabels.push(dataset.label);
                         })
                         analyticsLine.data.datasets.push(...uniqueDatasets);
-                        analyticsLine.update();
                     }
                     turnOnAllLine();
                 })
+                this.switchCartGrid();
+                analyticsLine.update();
                 $('#analytic-chart-loader').hide();
                 this.loadingData = false;
             }).catch(error => {
                 console.log('ERROR', error)
             })
         },
+        switchCartGrid() {
+            const hasTimeAxis = analyticsLine.data.datasets.some(ds => ds.yAxisID === "time");
+            const hasCountAxis = analyticsLine.data.datasets.some(ds => ds.yAxisID === "count");
+            analyticsLine.options.scales.time.display = hasTimeAxis;
+            analyticsLine.options.scales.count.display = hasCountAxis;
+            if (hasTimeAxis) {
+                analyticsLine.options.scales.count.grid.drawOnChartArea = !hasTimeAxis;
+                analyticsLine.options.scales.time.grid.drawOnChartArea = hasTimeAxis;
+            } else {
+                analyticsLine.options.scales.count.grid.drawOnChartArea = hasTimeAxis;
+                analyticsLine.options.scales.time.grid.drawOnChartArea = !hasTimeAxis;
+            }
+        }
     },
     template: `
         <div v-if="loaded">

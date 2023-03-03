@@ -48,7 +48,7 @@ const htmlLegendPlugin = {
 
             const span = document.createElement('span');
             span.classList.add('legend-span');
-            span.style.width = '200px';
+            span.style.width = '120px';
 
             const text = document.createTextNode(item.text);
             span.appendChild(text);

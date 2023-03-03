@@ -23,7 +23,7 @@
 {#        <br/>#}
 
         <div class="card card-12 p-28 mt-3" id="under-summary-controller">
-            <div class="d-flex justify-content-between pb-4">
+            <div class="d-flex justify-content-between pb-3">
                 <div class="d-flex align-items-center">
                     <p class="font-h3 font-bold mr-4">Requests summary</p>
                     {% if test_data['test_status']['status'].lower() not in ['finished', 'error', 'failed', 'success'] %}
@@ -149,6 +149,14 @@
                                  class="layout-spinner">
                                 <i class="spinner-loader__32x32 spinner-centered"></i>
                             </div>
+                            <div id="layout_empty-chart" style="background: #FAFBFD;" class="h-100 rounded-lg">
+                                <div class="d-flex justify-content-center align-items-center h-100">
+                                    <div class="d-flex flex-column align-items-center">
+                                        <p class="font-h5 text-gray-500 pb-2">Select request and metrics to build graph analytics</p>
+                                        <img src="/design-system/static/assets/ico/icon_empty-chart.svg">
+                                    </div>
+                                </div>
+                            </div>
                             <canvas id="chart-analytics" height="100%"></canvas>
                         </div>
                         <analytic-filter
@@ -159,19 +167,19 @@
                         </analytic-filter>
                     </div>
                 </div>
-                <div class="row pl-2 mt-4 w-100">
+                <div class="row pl-2 mt-4" style="width: calc(100% - 290px);">
                     <div class="col">
                         <label class="w-100 mb-0 font-h5 font-semibold">
                             Time picker
                         </label>
-                        <div style="width: calc(100% - 290px);">
+                        <div>
                             <div class="slider-holder">
                                 <div id="vuh-performance-time-picker"></div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div id="chartjs-custom-legend-analytic" style="width: calc(100% - 290px);">
+                <div id="chartjs-custom-legend-analytic">
                 </div>
             </div>
         </div>

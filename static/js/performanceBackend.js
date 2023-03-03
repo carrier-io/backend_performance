@@ -2,13 +2,9 @@ window.analyticsLine = undefined
 
 function displayAnalytics() {
     $("#preset").hide();
-    analyticsCanvas();
     $("#analytics").show();
     $("#chartjs-custom-legend-analytic").show();
-    if (!$("#analytics").is(":visible")) {
-        console.log("Here")
-    }
-
+    vueVm.registered_components.analyticFilter.reDrawChart();
 }
 
 function getData(scope, request_name) {
@@ -45,11 +41,11 @@ function turnOnAllLine() {
     window.analyticsLine.data.datasets.forEach((item, index) => {
         window.analyticsLine.setDatasetVisibility(index, true)
     })
-    window.analyticsLine.update();
+    // window.analyticsLine.update();
 }
 
 function analyticsCanvas(data) {
-    window.analyticsLine !== undefined && window.analyticsLine.destroy()
+    console.log(data)
     window.analyticsLine = new Chart('chart-analytics', {
         type: 'line',
         data: data,
@@ -77,7 +73,7 @@ function analyticsCanvas(data) {
                     position: 'right',
                     beginAtZero: true,
                     grid: {
-                        drawOnChartArea: false, // only want the grid lines for one axis to show up
+                        drawOnChartArea: false,
                     },
                 },
             },
@@ -135,4 +131,6 @@ function clearAnalyticChart() {
     analyticsLine.data.datasets = [];
     analyticsLine.update();
     document.getElementById('chartjs-custom-legend-analytic').innerHTML = '';
+    $('#chart-analytics').hide();
+    $('#layout_empty-chart').show();
 }

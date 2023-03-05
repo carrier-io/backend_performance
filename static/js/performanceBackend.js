@@ -45,7 +45,6 @@ function turnOnAllLine() {
 }
 
 function analyticsCanvas(data) {
-    console.log(data)
     window.analyticsLine = new Chart('chart-analytics', {
         type: 'line',
         data: data,
@@ -128,8 +127,10 @@ function shareTestReport() {
 
 
 function clearAnalyticChart() {
-    analyticsLine.data.datasets = [];
-    analyticsLine.update();
+    if (analyticsLine !== null){
+        analyticsLine.destroy();
+        window.analyticsLine = null;
+    }
     document.getElementById('chartjs-custom-legend-analytic').innerHTML = '';
     $('#chart-analytics').hide();
     $('#layout_empty-chart').show();

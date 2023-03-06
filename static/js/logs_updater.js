@@ -9,7 +9,8 @@ const PerformanceLogsApp = {
             connection_retries: 5,
             connection_retry_timeout: 2000,
             logs: [],
-            tags_mapper: []
+            tags_mapper: [],
+            isShowLastLogs: true,
         }
 
     },
@@ -26,8 +27,14 @@ const PerformanceLogsApp = {
     template: `
         <div class="card card-12 pb-4 card-table">
             <div class="card-header">
-                <div class="row">
-                    <div class="col-2"><h3>Logs</h3></div>
+                <div class="d-flex justify-content-between">
+                    <p class="font-h3 font-bold">Logs</p>
+                    <label class="custom-checkbox d-flex align-items-center">
+                        <input type="checkbox" 
+                            :checked="isShowLastLogs"
+                            @click="setShowLastLogs">
+                            <span class="ml-2">Show last logs</span>
+                    </label>
                 </div>
             </div>
             <div class="card-body card-table">
@@ -39,6 +46,17 @@ const PerformanceLogsApp = {
         </div>
     `,
     methods: {
+        setShowLastLogs() {
+            this.isShowLastLogs = !this.isShowLastLogs;
+            if (this.isShowLastLogs) {
+                const elem = document.querySelector('.container-logs');
+                elem.scrollTop = elem.scrollHeight;
+            }
+        },
+        scrollLogsToEnd() {
+            const elem = document.querySelector('.container-logs');
+            elem.scrollTop = elem.scrollHeight;
+        },
         init_websocket() {
             console.log("Logs: init_websocket()")
             fetch(this.websocket_api_url, {
@@ -110,9 +128,7 @@ const PerformanceLogsApp = {
                         $('#tableLogs').append(row)
                         $(`.log-message__${streamIndex}-${messageIndex}`).append(`<plaintext>${message}`)
                     }
-                    const elem = document.querySelector('.container-logs');
-                    elem.scrollTop = elem.scrollHeight;
-
+                    if (this.isShowLastLogs) this.scrollLogsToEnd()
                 })
             })
         },

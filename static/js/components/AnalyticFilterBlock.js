@@ -78,7 +78,7 @@ const AnalyticFilterBlock = {
         },
         fetchChartData(allRequests) {
             this.loadingData = true;
-            if (analyticsLine === undefined) {
+            if (!analyticsLine) {
                 $('#chart-analytics').show();
                 $('#layout_empty-chart').hide();
             }

@@ -23,7 +23,7 @@ class API(Resource):
         try:
             return {"baseline": baseline.summary, "report_id": baseline.report_id}, 200
         except AttributeError:
-            return 'Baseline not found', 404
+            return {"baseline": {}, "report_id": None}, 404
 
     def post(self, project_id: int):
         try:

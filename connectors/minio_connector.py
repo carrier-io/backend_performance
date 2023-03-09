@@ -75,8 +75,9 @@ class MinioConnector(BaseConnector):
     
     
     def get_backend_users(self, aggregation: str) -> Tuple[list, dict]:
-        file_name = f'users_{self.build_id}_{aggregation}.csv.gz'
+        file_name = f'users_{self.build_id}_1s.csv.gz'
         response = self.client.select_object_content(self.bucket_name, file_name, self.time_addon)
+        log.info(f'response {response}')
         timestamps = []
         results = {"users": {}}
         # aggregation of users
@@ -118,13 +119,13 @@ class MinioConnector(BaseConnector):
             status_addon = f" and status='{self.status.upper()}'"
         
         expression_addon = self.time_addon + scope_addon + status_addon
-        log.info(expression_addon)
         
         if not (timestamps and users):
             timestamps, users = self.get_backend_users(self.aggregation)
+            log.info(f'users {users}')
         
         response = self.client.select_object_content(self.bucket_name, file_name, expression_addon)
-        log.info('get_requests_summary_data resp %s', response)
+        # log.info('get_requests_summary_data resp %s', response)
 
         results = {}
         
@@ -140,7 +141,7 @@ class MinioConnector(BaseConnector):
             for line in response:
                 results['response'][line['time']] = int(line[aggr])
 
-        log.info('get_requests_summary_data results %s', results)
+        # log.info('get_requests_summary_data results %s', results)
         
         return timestamps, results, users
 

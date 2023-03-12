@@ -206,9 +206,7 @@ def format_engine_health_data(health_data: dict, data_structure: dict) -> dict:
     for host, series in health_data.items():
         if not labels:
             labels = list(map(lambda x: x['time'], series))
-
         datasets.extend(generate_engine_health_dataset(host, series, data_structure, palette))
-
     return {
         'datasets': datasets,
         'labels': labels,

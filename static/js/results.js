@@ -57,7 +57,7 @@ const SummaryController = {
                 high: 100
             },
             samplers: [],
-            sampler_type: '',
+            sampler_type: 'REQUEST',
             status_type: 'all',
             // todo: change to 'auto'
             // aggregator: '30s',
@@ -70,10 +70,10 @@ const SummaryController = {
         }
     },
     async mounted() {
-        this.samplers = this.initial_samplers
+        this.samplers = this.samplers.initial_samplers > 0 ? this.samplers : ['REQUEST',]
         this.aggregations = this.initial_aggregations
         this.status_percentage = this.initial_status_percentage
-        this.sampler_type = this.samplers.length > 0 ? this.samplers[0] : ''
+        this.sampler_type = this.samplers.length > 0 ? this.samplers[0] : 'REQUEST'
         $(() => {
             // init slider
             noUiSlider.create($("#vuh-performance-time-picker")[0], {

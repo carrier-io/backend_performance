@@ -366,7 +366,9 @@ const EngineHealthMetricsLegend = {
     },
     computed: {
         visible_metrics() {
-            return this.metric_select?.selected_items
+            return this.metric_select?.list_items.filter(
+                (el, index) => this.metric_select.selected_indexes.includes(index)
+            )
         },
         hidden_groups() {
             return this.legend ? this.legend.labels.filter(

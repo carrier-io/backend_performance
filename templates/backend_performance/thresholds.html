@@ -1,11 +1,12 @@
 <Table-Card
         @register="register"
         instance_name="table_thresholds"
-
+        :wide-table-row="true"
+        :adaptive-height="true"
         header='Thresholds'
         :table_attributes="{
                         'data-url': '/api/v1/backend_performance/thresholds/{{ tools.session_project.get() }}',
-                        'data-page-size': 5,
+                        'data-page-size': 4,
                         id: 'threshold-list'
                     }"
         container_classes="h-100"
@@ -26,12 +27,12 @@
     <template #table_headers>
         <th scope="col" data-checkbox="true"></th>
         <th data-visible="false" data-field="id">index</th>
-        <th scope="col" data-sortable="true" data-field="test">Test</th>
-        <th scope="col" data-sortable="true" data-field="environment">Env</th>
-        <th scope="col" data-sortable="true" data-field="scope">Scope</th>
-        <th scope="col" data-sortable="true" data-formatter=threshold_formatters.rules>Rule</th>
-        <th scope="col" data-sortable="true" data-field="value">Value</th>
-        <th scope="col" data-formatter=threshold_formatters.actions data-events="threshold_formatters.action_events">Actions</th>
+        <th scope="col" data-sortable="true" data-formatter=threshold_formatters.test_env>Test</th>
+        <th scope="col" data-sortable="true" class="align-top" data-field="scope">Scope</th>
+        <th scope="col" data-sortable="true" class="w-100" data-formatter=threshold_formatters.rules>Rule</th>
+        <th scope="col" data-align="right"
+            data-formatter=threshold_formatters.actions
+            data-events="threshold_formatters.action_events">Actions</th>
     </template>
 </Table-Card>
 <Threshold-Modal

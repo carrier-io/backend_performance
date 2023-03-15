@@ -1,4 +1,13 @@
 var test_formatters = {
+    name_uid(value, row) {
+        console.log(value, row)
+        return `
+            <div>
+                <p class="mb-0">${row.name}</p>
+                <span class="font-weight-400 text-gray-500 font-h6">${row.uid}</span>
+            </div>
+        `
+    },
     job_type(value, row, index) {
         if (row.job_type === "perfmeter") {
             return '<img src="/design-system/static/assets/ico/jmeter.png" width="20">'

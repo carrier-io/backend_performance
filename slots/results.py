@@ -26,7 +26,9 @@ class Slot:  # pylint: disable=E1101,R0903
     def content(self, context, slot, payload):
         result_id = payload.request.args.get('result_id')
         if result_id:
-            test_data = Report.query.get_or_404(result_id).to_json()
+            report = Report.query.get_or_404(result_id)
+            test_data = report.to_json()
+            test_data["is_baseline_report"] = report.is_baseline_report
             try:
                 test_data["failure_rate"] = round((test_data["failures"] / test_data["total"]) * 100, 2)
             except:

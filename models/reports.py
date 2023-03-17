@@ -53,7 +53,7 @@ class Report(db_tools.AbstractBaseMixin, db.Base):
     fourxx = Column(Integer, unique=False)
     fivexx = Column(Integer, unique=False)
     requests = Column(ARRAY(String), default=[])
-    tags = Column(ARRAY(String), default=[])
+    tags = Column(JSON, unique=False, default=[{}])
     test_status = Column(
         JSON,
         default={
@@ -85,17 +85,22 @@ class Report(db_tools.AbstractBaseMixin, db.Base):
             ).first().api_json()
         super().insert()
         
-    def add_tag(self, tag_name: str) -> str:
-        if tag_name in self.tags:
+    def add_tag(self, tag_title: str, tag_color: str) -> str:
+        if tag_title in [tag.get('title') for tag in self.tags]:
             return ''
-        tags = self.tags + [tag_name]
+        tags = list(self.tags)
+        tags.append({'title': tag_title, 'hex': tag_color})
         self.tags = tags
         self.commit()
-        return tag_name
+        return tag_title
     
-    def delete_tag(self, tag_name: str) -> str:
-        if tag_name not in self.tags:
+    def delete_tag(self, tag_title: str) -> str:
+        if tag_title not in [tag.get('title') for tag in self.tags]:
             return ''        
-        self.tags = [tag for tag in self.tags if tag != tag_name]
+        self.tags = [tag for tag in self.tags if tag['title'] != tag_title]
         self.commit() 
-        return tag_name
+        return tag_title
+
+    @property
+    def is_baseline_report(self):
+        return 'baseline' in [tag['title'] for tag in self.tags]

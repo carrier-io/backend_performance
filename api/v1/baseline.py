@@ -49,15 +49,15 @@ class API(Resource):
             summary=summary
         )
         baseline.insert()
-        added_tag = report.add_tag('baseline')
+        added_tag = report.add_tag(tag_title='baseline', tag_color='f54290')
         if added_tag:
-            old_baseline_report = Report.query.filter(
+            other_reports = Report.query.filter(
                 Report.project_id == project.id,
-                Report.id != report_id,
-                Report.tags.contains(['baseline'])
-            ).first()
-            if old_baseline_report:
-                old_baseline_report.delete_tag('baseline')
+                Report.id != report_id
+            ).all()
+            for report in other_reports:
+                if report.is_baseline_report:
+                    report.delete_tag(tag_title='baseline')
         return baseline.to_json(), 200
 
     def delete(self, project_id: int, report_id: int):
@@ -73,5 +73,5 @@ class API(Resource):
             Baseline.test == report.name,
             Baseline.environment == report.environment
         ).delete()
-        report.delete_tag('baseline')
+        report.delete_tag(tag_title='baseline')
         return {"message": f"baseline was deleted"}, 204

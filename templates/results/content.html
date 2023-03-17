@@ -15,7 +15,7 @@
                             title="Download report">
                         <i class="icon__18x18 icon-download"></i>
                     </button>
-                    {% if 'baseline' in test_data['tags'] %}
+                    {% if test_data['is_baseline_report'] %}
                         <button class="btn btn-secondary mr-2" id="set_baseline" onclick="deleteBaseline()"
                                 data-toggle="tooltip" data-placement="top" title="Set current report as baseline">
                             Remove from baseline
@@ -151,7 +151,7 @@
                                         class="btn btn-xs btn-painted mr-2 rounded-pill" 
                                         style="--text-color:var(--success); --brd-color:var(--green-underline);"
                                     >
-                                        {{ tag }}
+                                        {{ tag.title }}
                                     </button>
                                 {% endfor %}
                                     <button type="button" class="btn btn-default btn-xs btn-table btn-icon__xs tags_edit"

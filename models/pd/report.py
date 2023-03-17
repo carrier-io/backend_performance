@@ -39,7 +39,7 @@ class ReportDefaultSerializer(BaseModel):
     threexx: int
     fourxx: int
     fivexx: int
-    tags: List[str] = []
+    tags: List[dict]
     test_status: Optional[StatusField] = StatusField()
     test_config: dict
 

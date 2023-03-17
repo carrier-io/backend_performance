@@ -8,7 +8,6 @@ from pylon.core.tools import log
 
 class API(Resource):
     url_params = [
-        '<int:project_id>',
         '<int:project_id>/<int:report_id>',
     ]
     SERVICE_TAGS = ('baseline',)
@@ -16,33 +15,40 @@ class API(Resource):
     def __init__(self, module):
         self.module = module
 
-    def get(self, project_id: int, report_id: Optional[int] = None):
+    def get(self, project_id: int, report_id: int):
         project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
-        if not report_id:
-            query_result = Report.query.with_entities(Report.tags).filter(
+        get_all_tags = request.args.get("global")
+        if get_all_tags:
+            current_report = Report.query.filter_by(project_id=project.id, id=report_id).first()
+            current_tag_titles = [tag['title'] for tag in current_report.tags]
+            reporters = Report.query.with_entities(Report.tags).filter(
                 Report.project_id == project.id,
-                Report.tags != '{}'
             ).all()
-            all_tags = set()
-            for tags in query_result:
-                all_tags.update(*tags)
-            return {"tags": list(all_tags)}, 200
+            all_tags, titles = [], []
+            for tags in reporters:
+                for tag in tags[0]:
+                    if tag['title'] not in titles:
+                        tag['is_selected'] = tag['title'] in current_tag_titles
+                        titles.append(tag['title'])
+                        all_tags.append(tag)
+            return {"tags": all_tags}, 200
         report = Report.query.filter_by(project_id=project.id, id=report_id).first()
         return {"tags": report.tags}, 200
 
     def post(self, project_id: int, report_id: int):
-        new_tag = request.json["tag"]
-        if new_tag in self.SERVICE_TAGS:
-            return {"message": f"provided name {new_tag} cannot be used as a tag name"}, 400
+        new_tag_title = request.json["title"]
+        new_tag_color = request.json["hex"]
+        if new_tag_title in self.SERVICE_TAGS:
+            return {"message": f"provided name {new_tag_title} cannot be used as a tag name"}, 400
         project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
         report = Report.query.filter_by(project_id=project.id, id=report_id).first()
-        added_tag = report.add_tag(new_tag)
-        if not added_tag:
-            return {"message": f"provided tag {new_tag} is already exist"}, 400
-        return {"message": f"tag {added_tag} was added"}, 200
+        added_tag_title = report.add_tag(new_tag_title, new_tag_color)
+        if not added_tag_title:
+            return {"message": f"provided tag {new_tag_title} is already exist"}, 400
+        return {"message": f"tag {added_tag_title} was added"}, 200
 
     def delete(self, project_id: int, report_id: int):
-        tag_to_delete = request.args["tag"]
+        tag_to_delete = request.args["title"]
         if tag_to_delete in self.SERVICE_TAGS:
             return {"message": f"provided tag {tag_to_delete} cannot be deleted"}, 400
         project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)

@@ -84,3 +84,18 @@ class Report(db_tools.AbstractBaseMixin, db.Base):
                 Test.uid == self.test_uid
             ).first().api_json()
         super().insert()
+        
+    def add_tag(self, tag_name: str) -> str:
+        if tag_name in self.tags:
+            return ''
+        tags = self.tags + [tag_name]
+        self.tags = tags
+        self.commit()
+        return tag_name
+    
+    def delete_tag(self, tag_name: str) -> str:
+        if tag_name not in self.tags:
+            return ''        
+        self.tags = [tag for tag in self.tags if tag != tag_name]
+        self.commit() 
+        return tag_name

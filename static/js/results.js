@@ -31,6 +31,14 @@ const setBaseline = async () => {
     resp.ok ? showNotify('SUCCESS', 'Baseline set') : showNotify('ERROR', 'Error settings baseline')
 }
 
+const deleteBaseline = async () => {
+    const resp = await fetch(`/api/v1/backend_performance/baseline/${getSelectedProjectId()}/${result_test_id}`, {
+        method: 'DELETE',
+        headers: {'Content-Type': 'application/json'}
+    })
+    resp.ok ? showNotify('SUCCESS', 'Baseline deleted') : showNotify('ERROR', 'Error deleting baseline')
+}
+
 const stopTest = async () => {
     const resp = await fetch(`/api/v1/backend_performance/report_status/${getSelectedProjectId()}/${result_test_id}`, {
         method: 'PUT',

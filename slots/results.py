@@ -31,10 +31,7 @@ class Slot:  # pylint: disable=E1101,R0903
                 test_data["failure_rate"] = round((test_data["failures"] / test_data["total"]) * 100, 2)
             except:
                 test_data["failure_rate"] = 0
-
-            # TODO set tags in model
-            test_data["tags"] = []
-            
+                
             connector = _get_connector(test_data)
             test_data["samplers"] = connector.get_sampler_types()
             test_data["aggregations"] = connector.get_aggregations_list()

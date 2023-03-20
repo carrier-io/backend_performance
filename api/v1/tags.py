@@ -36,8 +36,8 @@ class API(Resource):
         return {"tags": report.tags}, 200
 
     def post(self, project_id: int, report_id: int):
-        new_tag_title = request.json["title"]
-        new_tag_color = request.json["hex"]
+        new_tag_title = request.json["title"].lower()
+        new_tag_color = request.json["hex"].lower()
         if new_tag_title in self.SERVICE_TAGS:
             return {"message": f"provided name {new_tag_title} cannot be used as a tag name"}, 400
         project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)

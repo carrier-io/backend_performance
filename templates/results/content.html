@@ -7,8 +7,7 @@
                 <p class="font-h3 font-bold">{{ test_data["name"] }} (back) </p>
             </div>
             <div class="d-flex justify-content-end">
-                {% if test_data['test_status']['status'].lower() in ['finished', 'error', 'failed',
-            'success'] %}
+                {% if test_data['test_status']['status'].lower() in ['finished', 'error', 'failed','success'] %}
                     <button hidden class="btn btn-secondary btn-icon btn-icon__purple mr-2"
                             onclick="downloadReport()"
                             data-toggle="tooltip"
@@ -16,10 +15,17 @@
                             title="Download report">
                         <i class="icon__18x18 icon-download"></i>
                     </button>
-                    <button class="btn btn-secondary mr-2" id="set_baseline" onclick="setBaseline()"
-                            data-toggle="tooltip" data-placement="top" title="Set current report as baseline">
-                        Set as baseline
-                    </button>
+                    {% if test_data['is_baseline_report'] %}
+                        <button class="btn btn-secondary mr-2" id="set_baseline" onclick="deleteBaseline()"
+                                data-toggle="tooltip" data-placement="top" title="Set current report as baseline">
+                            Remove from baseline
+                        </button>
+                    {% else %}
+                        <button class="btn btn-secondary mr-2" id="set_baseline" onclick="setBaseline()"
+                                data-toggle="tooltip" data-placement="top" title="Set current report as baseline">
+                            Set as baseline
+                        </button>
+                    {% endif %}
                 {% endif %}
                 <button hidden class="btn btn-secondary mr-2" id="not_worse_than" onclick="setThresholds()"
                         data-toggle="tooltip" data-placement="top" title="Set current report as thresholds">
@@ -38,8 +44,7 @@
                         data-toggle="tooltip" data-placement="top" title="Show config for current test run">
                     <i class="icon__18x18 icon-settings"></i>
                 </button>
-                {% if test_data['test_status']['status'].lower() not in ['finished', 'error', 'failed',
-            'success'] %}
+                {% if test_data['test_status']['status'].lower() not in ['finished', 'error', 'failed', 'success'] %}
                 <button class="btn btn-painted ml-2"
                         id="stop-test" onclick="stopTest()"
                         style="--text-color:rgb(243, 38, 38); --brd-color:rgb(242, 180, 180);">
@@ -140,9 +145,21 @@
                         <tr>
                             <td class="text-gray-500 font-h6 font-semibold pr-3">TAGS</td>
                             <td>
+                                <div class="d-flex">
                                 {% for tag in test_data["tags"] %}
-                                    <span class="badge badge-primary">{{ tag }}</span>
+                                    <button 
+                                        class="btn btn-xs btn-painted mr-2 rounded-pill" 
+                                        style="--text-color:var(--success); --brd-color:var(--green-underline);"
+                                    >
+                                        {{ tag.title }}
+                                    </button>
                                 {% endfor %}
+                                    <button type="button" class="btn btn-default btn-xs btn-table btn-icon__xs tags_edit"
+                                            id="edit_tags"
+                                            data-toggle="tooltip" data-placement="top" title="Edit tags">
+                                        <i class="icon__18x18 icon-edit"></i>
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     </table>

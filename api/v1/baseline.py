@@ -8,6 +8,7 @@ from ...connectors.minio_connector import MinioConnector
 class API(Resource):
     url_params = [
         '<int:project_id>',
+        '<int:project_id>/<int:report_id>',
     ]
 
     def __init__(self, module):
@@ -48,4 +49,29 @@ class API(Resource):
             summary=summary
         )
         baseline.insert()
+        added_tag = report.add_tags([{'title': 'Baseline', 'hex': 'f54290'},])
+        if added_tag:
+            other_reports = Report.query.filter(
+                Report.project_id == project.id,
+                Report.id != report_id
+            ).all()
+            for report in other_reports:
+                if report.is_baseline_report:
+                    report.delete_tags(['Baseline',])
         return baseline.to_json(), 200
+
+    def delete(self, project_id: int, report_id: int):
+        project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
+        report: Report = Report.query.filter(
+            Report.project_id == project.id,
+            Report.id == report_id
+        ).first()
+        if not report:
+            return 'Not found', 404
+        Baseline.query.filter(
+            Baseline.project_id == project.id,
+            Baseline.test == report.name,
+            Baseline.environment == report.environment
+        ).delete()
+        report.delete_tag(tag_title='baseline')
+        return {"message": f"baseline was deleted"}, 204

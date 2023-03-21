@@ -49,7 +49,7 @@ class API(Resource):
             summary=summary
         )
         baseline.insert()
-        added_tag = report.add_tag(tag_title='baseline', tag_color='f54290')
+        added_tag = report.add_tags([{'title': 'Baseline', 'hex': 'f54290'},])
         if added_tag:
             other_reports = Report.query.filter(
                 Report.project_id == project.id,
@@ -57,7 +57,7 @@ class API(Resource):
             ).all()
             for report in other_reports:
                 if report.is_baseline_report:
-                    report.delete_tag(tag_title='baseline')
+                    report.delete_tags(['Baseline',])
         return baseline.to_json(), 200
 
     def delete(self, project_id: int, report_id: int):

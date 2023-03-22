@@ -18,7 +18,6 @@ class Slot:  # pylint: disable=E1101,R0903
         ).filter(
             and_(Runner.project_id == project_id, Runner.is_active == True)
         ).all()
-        log.info(f'runners_query {runners_query}')
         if runners_query:
             runners = {}
             for container_type, config in runners_query:

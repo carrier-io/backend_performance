@@ -40,12 +40,13 @@ class API(Resource):
     
     def post(self, project_id: int, report_id: int):
         new_tags = request.json.get("tags")
-        if not new_tags:
+        if new_tags is None:
             return {"message": "Provided incorrect data"}, 400
-        if {tag_key for tag in new_tags for tag_key in tag.keys()} != {'title', 'hex'}:
-            return {"message": "You should use 'title' and 'hex' as keys to describe tags"}, 400
-        if {tag['title'].lower() for tag in new_tags} & set(self.SERVICE_TAGS):
-            return {"message": "You cannot add this names to tags"}, 400
+        if new_tags:
+            if {tag_key for tag in new_tags for tag_key in tag.keys()} != {'title', 'hex'}:
+                return {"message": "You should use 'title' and 'hex' as keys to describe tags"}, 400
+            if {tag['title'].lower() for tag in new_tags} & set(self.SERVICE_TAGS):
+                return {"message": "You cannot add this names to tags"}, 400
         report = Report.query.filter_by(project_id=project_id, id=report_id).first()
         report.replace_tags(new_tags)
         return {"message": f"Tags was updated"}, 200

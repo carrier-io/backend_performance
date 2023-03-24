@@ -53,7 +53,7 @@ class Report(db_tools.AbstractBaseMixin, db.Base):
     fourxx = Column(Integer, unique=False)
     fivexx = Column(Integer, unique=False)
     requests = Column(ARRAY(String), default=[])
-    tags = Column(JSON, unique=False, default=[{}])
+    tags = Column(JSON, unique=False, default=[])
     test_status = Column(
         JSON,
         default={
@@ -110,4 +110,4 @@ class Report(db_tools.AbstractBaseMixin, db.Base):
 
     @property
     def is_baseline_report(self):
-        return 'baseline' in [tag['title'] for tag in self.tags]
+        return 'Baseline' in [tag.get('title') for tag in self.tags]

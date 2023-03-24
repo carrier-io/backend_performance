@@ -66,13 +66,18 @@ function analyticsCanvas(data) {
                     display: true,
                     position: 'left',
                     beginAtZero: true,
+                    grid: {
+                        borderDash: [2, 1],
+                        color: "#D3D3D3"
+                    },
                 },
                 count: {
                     display: true,
                     position: 'right',
                     beginAtZero: true,
                     grid: {
-                        drawOnChartArea: false,
+                        borderDash: [2, 1],
+                        color: "#D3D3D3"
                     },
                 },
             },

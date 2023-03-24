@@ -44,7 +44,8 @@
                         data-toggle="tooltip" data-placement="top" title="Show config for current test run">
                     <i class="icon__18x18 icon-settings"></i>
                 </button>
-                {% if test_data['test_status']['status'].lower() not in ['finished', 'error', 'failed', 'success'] %}
+                {% if test_data['test_status']['status'].lower() not in ['finished', 'error', 'failed',
+            'success'] %}
                 <button class="btn btn-painted ml-2"
                         id="stop-test" onclick="stopTest()"
                         style="--text-color:rgb(243, 38, 38); --brd-color:rgb(242, 180, 180);">
@@ -62,119 +63,11 @@
                 ></performancetestprogress>
             {% endif %}
         </div>
-        <div id="backend-small-cards" class="mt-24">
-            <div class="d-grid grid-column-5 gap-3">
-                <div class="">
-                    <div class="card card-sm card-blue">
-                        <div class="card-header">{{ test_data["vusers"] }} VU</div>
-                        <div class="card-body">MAX VUSERS</div>
-                    </div>
-                </div>
-                <div class="">
-                    <div class="card card-sm card-blue">
-                        <div class="card-header">{{ test_data["throughput"] }} req/sec</div>
-                        <div class="card-body">AVG.THROUGHPUT</div>
-                    </div>
-                </div>
-                <div class="">
-                    <div class="card card-sm card-blue">
-                        <div class="card-header">{{ test_data["failure_rate"] }} %</div>
-                        <div class="card-body">ERROR RATE</div>
-                    </div>
-                </div>
-                <div class="">
-                    <div class="card card-sm card-blue">
-                        <div class="card-header">{{ test_data["pct95"] }} ms</div>
-                        <div class="card-body">95 PCT. RESP. TIME</div>
-                    </div>
-                </div>
-                <div class="">
-                    <div class="card card-sm card-blue">
-                        <div class="card-header">{{ test_data["pct50"] }} ms</div>
-                        <div class="card-body">MEDIAN RESP. TIME</div>
-                    </div>
-                </div>
-            </div>
-            <div id="processing-table" class="d-grid grid-column-2 mt-24">
-                <div class="d-flex justify-content-between">
-                    <table class="table-card-result">
-                        <tr>
-                            <td class="font-h6 text-gray-500 font-semibold font-uppercase pr-3">Status</td>
-                            <td class="font-h5">{{ test_data['test_status']['status'] }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-gray-500 font-h6 font-semibold font-uppercase pr-3">DURATION</td>
-                            <td class="font-h5">{{ test_data["duration"] }} s</td>
-                        </tr>
-                    </table>
-                    <table>
-                        <tr>
-                            <td class="text-gray-500 font-h6 font-semibold font-uppercase pr-3">STARTED</td>
-                            <td class="font-h5" id="start_time">{{ test_data["start_time"] }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-gray-500 font-h6 font-semibold font-uppercase pr-3">ENDED</td>
-                            <td class="font-h5" id="end_time">{{ test_data["end_time"] }}</td>
-                        </tr>
-                    </table>
-                    <table>
-                        <tr>
-                            <td class="text-gray-500 font-h6 font-semibold font-uppercase pr-3">TEST TYPE</td>
-                            <td class="font-h5">{{ test_data["type"] }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-gray-500 font-h6 font-semibold font-uppercase pr-3">Environment</td>
-                            <td class="font-h5">{{ test_data["environment"] }}</td>
-                        </tr>
-                    </table>
-                </div>
-                <div class="d-flex justify-content-center">
-                    <table>
-                        <tr>
-                            <td class="text-gray-500 font-h6 font-semibold pr-3">RESPONSE CODES</td>
-                            <td>
-                                <p class="font-h5 text-gray-500">
-                                    1xx: <span class="compact-format text-gray-600 mx-1">{{ test_data["onexx"] }}</span>
-                                    2xx: <span class="compact-format text-gray-600 mx-1">{{ test_data["twoxx"] }}</span>
-                                    3xx: <span class="compact-format text-gray-600 mx-1">{{ test_data["threexx"] }}</span>
-                                    4xx: <span class="compact-format text-gray-600 mx-1">{{ test_data["fourxx"] }}</span>
-                                    5xx: <span class="compact-format text-gray-600 mx-1">{{ test_data["fivexx"] }}</span>
-                                </p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="text-gray-500 font-h6 font-semibold pr-3">TAGS</td>
-                            <td>
-                                <div class="d-flex">
-                                {% for tag in test_data["tags"] %}
-                                    <button 
-                                        class="btn btn-xs btn-painted mr-2 rounded-pill" 
-                                        style="--text-color:var(--success); --brd-color:var(--green-underline);"
-                                    >
-                                        {{ tag.title }}
-                                    </button>
-                                {% endfor %}
-                                    <button type="button" class="btn btn-default btn-xs btn-table btn-icon__xs tags_edit"
-                                            id="edit_tags"
-                                            data-toggle="tooltip" data-placement="top" title="Edit tags">
-                                        <i class="icon__18x18 icon-edit"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
-            </div>
-            <div hidden class="row">
-                <div class="col-12 d-flex align-items-center mt-4" id="dropdowns">
-                    <p class="mb-0 font-h6 text-gray-500 font-semibold">LOAD CONFIG</p>
-                    <multiselect-filter :title="'Carrier default'">
-                    </multiselect-filter>
-                    <multiselect-filter :title="'Custom location'">
-                    </multiselect-filter>
-                </div>
-            </div>
-        </div>
+        <b-e-result-info
+            :test_data="{{ test_data }}"
+            instance_name="BEResultInfo"
+            @register="register">
+        </b-e-result-info>
     </div>
 
 

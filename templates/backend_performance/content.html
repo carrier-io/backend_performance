@@ -30,6 +30,7 @@
                     <th scope="col" data-checkbox="true"></th>
                     <th data-visible="false" data-field="id">index</th>
                     <th scope="col" data-sortable="true"
+                        class="w-100"
                         data-formatter=test_formatters.name_uid
                         data-cell-style="test_formatters.name_style"
                         data-field="name"
@@ -38,20 +39,18 @@
                     </th>
                     <th scope="col" data-sortable="true"
                         data-cell-style="test_formatters.name_style"
-                        class="w-100 align-top"
+                        class="min-w-44 align-top"
                         data-field="entrypoint"
                     >
                         Entrypoint
                     </th>
                     <th scope="col" data-align="center" data-sortable="true"
-                        class="max-w-28"
                         data-formatter=test_formatters.job_type
                         data-field="job_type"
                     >
                         Tool
                     </th>
                     <th scope="col" data-align="right"
-                        data-cell-style="test_formatters.cell_style"
                         data-formatter=test_formatters.actions
                         data-events="test_formatters.action_events"
                     >
@@ -97,7 +96,7 @@
             <th scope="col" data-sortable="true" data-field="type">Test Type</th>
             <th scope="col" data-sortable="true" data-field="throughput">TPS</th>
             <th scope="col" data-sortable="true" data-field="failure_rate">Fail Rate</th>
-            <th scope="col" data-sortable="true" data-field="tags">Tags</th>
+            <th scope="col" data-sortable="true" data-field="tags" data-formatter="ParamsTable.tagFormatter">Tags</th>
             <th scope="col" data-sortable="true" data-field="test_status"
                 data-formatter="report_formatters.reportsStatusFormatter">Status
             </th>

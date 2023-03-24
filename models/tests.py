@@ -20,7 +20,7 @@ from typing import List, Union, Optional
 from pylon.core.tools import log
 from sqlalchemy import Column, Integer, String, JSON, ARRAY, and_
 
-from tools import db_tools, db, rpc_tools, secrets_tools
+from tools import db_tools, db, rpc_tools, VaultClient
 from tools import constants as c
 from .pd.execution_json import ExecutionParams, CcEnvVars
 from ..constants import JOB_CONTAINER_MAPPING
@@ -99,10 +99,11 @@ class Test(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin):
     def docker_command(self):
         cmd_template = 'docker run -e project_id={project_id} -e galloper_url={galloper_url}' \
                        ' -e token={token} getcarrier/control_tower:{control_tower_version} --test_id={test_id}'
+        vault_client = VaultClient.from_project(self.project_id)
         return cmd_template.format(
             project_id=self.project_id,
-            galloper_url=secrets_tools.unsecret("{{secret.galloper_url}}", project_id=self.project_id),
-            token=secrets_tools.unsecret("{{secret.auth_token}}", project_id=self.project_id),
+            galloper_url=vault_client.unsecret("{{secret.galloper_url}}"),
+            token=vault_client.unsecret("{{secret.auth_token}}"),
             control_tower_version=c.CURRENT_RELEASE,
             test_id=self.uid
         )
@@ -111,10 +112,11 @@ class Test(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin):
         if not test_parameters:
             test_parameters = self.test_parameters
 
+        vault_client = VaultClient.from_project(self.project_id)
+
         def filter_func(item):
-            return item['default'] != secrets_tools.unsecret(
-                self.default_params_mapping.get(item['name']),
-                project_id=self.project_id
+            return item['default'] != vault_client.unsecret(
+                self.default_params_mapping.get(item['name'])
             )
         return list(filter(filter_func, test_parameters))
 
@@ -205,7 +207,8 @@ class Test(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin):
         }
         self.location = location
         if execution:
-            execution_json = secrets_tools.unsecret(execution_json, project_id=self.project_id)
+            vault_client = VaultClient.from_project(self.project_id)
+            execution_json = vault_client.unsecret(execution_json)
 
         return execution_json
 

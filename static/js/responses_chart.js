@@ -17,8 +17,7 @@ const get_responses_chart = (mount_id, y_label, chartData) => {
                 x: {
                     type: 'time',
                     grid: {
-                        display: false,
-                        drawOnChartArea: false,
+                        display: true,
                     }
                 },
                 response_time: {
@@ -40,7 +39,7 @@ const get_responses_chart = (mount_id, y_label, chartData) => {
                     beginAtZero: true,
                     min: 0,
                     grid: {
-                        display: true,
+                        display: false,
                         drawOnChartArea: true,
                     },
                 }

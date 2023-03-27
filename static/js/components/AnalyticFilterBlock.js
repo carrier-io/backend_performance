@@ -115,14 +115,15 @@ const AnalyticFilterBlock = {
         switchCartGrid() {
             const hasTimeAxis = analyticsLine.data.datasets.some(ds => ds.yAxisID === "time");
             const hasCountAxis = analyticsLine.data.datasets.some(ds => ds.yAxisID === "count");
+
             analyticsLine.options.scales.time.display = hasTimeAxis;
             analyticsLine.options.scales.count.display = hasCountAxis;
-            if (hasTimeAxis) {
-                analyticsLine.options.scales.count.grid.drawOnChartArea = !hasTimeAxis;
+
+            analyticsLine.options.scales.time.grid.drawOnChartArea = hasTimeAxis;
+            analyticsLine.options.scales.count.grid.drawOnChartArea = hasCountAxis;
+            if (hasTimeAxis && hasCountAxis) {
                 analyticsLine.options.scales.time.grid.drawOnChartArea = hasTimeAxis;
-            } else {
-                analyticsLine.options.scales.count.grid.drawOnChartArea = hasTimeAxis;
-                analyticsLine.options.scales.time.grid.drawOnChartArea = !hasTimeAxis;
+                analyticsLine.options.scales.count.grid.drawOnChartArea = !hasTimeAxis;
             }
         }
     },

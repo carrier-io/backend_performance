@@ -9,8 +9,46 @@ const QualityGate = {
     methods: {
         get_data() {
             if (this.is_selected) {
-                const {error_rate, degradation_rate, missed_thresholds} = this
-                return {error_rate, degradation_rate, missed_thresholds}
+                const {
+                    SLA, 
+                    baseline,
+                    request_check,
+                    summary_check,
+                    summary_check_response_time,
+                    summary_check_error_rate,
+                    summary_check_throughput,
+                    request_check_response_time,
+                    request_check_error_rate,
+                    request_check_throughput,
+                    summary_response_time_deviation,
+                    summary_error_rate_deviation,
+                    summary_throughput_deviation,
+                    request_response_time_deviation,
+                    request_error_rate_deviation,
+                    request_throughput_deviation,
+                    percentage_of_failed_requests,
+                    rt_baseline_comparison_mecric,
+                } = this
+                return {
+                    SLA,
+                    baseline,
+                    request_check,
+                    summary_check,
+                    summary_check_response_time,
+                    summary_check_error_rate,
+                    summary_check_throughput,
+                    request_check_response_time,
+                    request_check_error_rate,
+                    request_check_throughput,
+                    summary_response_time_deviation,
+                    summary_error_rate_deviation,
+                    summary_throughput_deviation,
+                    request_response_time_deviation,
+                    request_error_rate_deviation,
+                    request_throughput_deviation,
+                    percentage_of_failed_requests,
+                    rt_baseline_comparison_mecric,            
+                }
             }
         },
         set_data(data) {
@@ -33,42 +71,252 @@ const QualityGate = {
             this.errors = {}
         },
         initialState: () => ({
-            error_rate: 10,
-            degradation_rate: 20,
-            missed_thresholds : 50,
+            SLA: false,
+            baseline: false,
+            request_check: false,
+            summary_check: false,
+            summary_check_response_time: true,
+            summary_check_error_rate: true,
+            summary_check_throughput: true,
+            request_check_response_time: true,
+            request_check_error_rate: true,
+            request_check_throughput: true,
+            summary_response_time_deviation: 100,
+            summary_error_rate_deviation: 1,
+            summary_throughput_deviation: 1,
+            request_response_time_deviation: 100,
+            request_error_rate_deviation: 1,
+            request_throughput_deviation: 1,
+            percentage_of_failed_requests: 20,
+            rt_baseline_comparison_mecric: "pct95",
+            is_adv_settins_open: false,
             errors: {},
+
         })
     },
     template: `
-    <div class="row">
-        <div class="d-flex gap-3" 
-            ref="settings"
-        >
+    <div class="mb-2 d-flex">
+        <label class="mb-0 mt-1 w-100 d-flex align-items-center custom-checkbox">
+            <input type="checkbox"
+                v-model="SLA"
+            >
+            <p class="font-h5 ml-2">SLA</p>
+        </label>
+    </div>
+    <div class="mb-2 d-flex">
+        <label class="mb-0 mt-1 w-100 d-flex align-items-center custom-checkbox">
+            <input type="checkbox"
+                v-model="baseline"
+            >
+            <p class="font-h5 ml-2">Baseline</p>
+        </label>
+    </div>
+
+    <div class="mt-3">
+        <div class="row" 
+                data-toggle="collapse" 
+                data-target="#selector_advanced_settings" 
+                role="button" 
+                aria-expanded="false" 
+                aria-controls="selector_advanced_settings"
+                @click="is_adv_settins_open = !is_adv_settins_open"
+            >
             <div>
-                <p class="font-h6 font-semibold">Error rate, %</p>
-                <input type="number" class="form-control mt-1" placeholder="Error rate"
-                    v-model="error_rate"
-                    :class="{ 'is-invalid': errors.error_rate }"
-                >
-                <div class="invalid-feedback">[[ errors.error_rate ]]</div>
+                <p class="font-h6 font-semibold text-gray-600">ADVANCED SETTINGS 
+                    <button class="btn btn-nooutline-secondary p-0 pb-1 ml-1 collapsed">
+                        <i class="icon__16x16 icon-arrow-down__16" :class="is_adv_settins_open ? '' : 'rotate-270'"></i>
+                    </button>
+                </p>
             </div>
-            
-            <div>
-                <p class="font-h6 font-semibold">Degradation rate, %</p>
-                <input type="number" class="form-control mt-1" placeholder="Degradation rate"
-                    v-model="degradation_rate"
-                    :class="{ 'is-invalid': errors.degradation_rate }"
-                >
-                <div class="invalid-feedback">[[ errors.degradation_rate ]]</div>
+            <div class="col">
+                <div class="col-xs text-right">
+                    <button type="button" class="btn btn-nooutline-secondary mr-2"
+                            data-toggle="collapse" data-target="#selector_advanced_settings">
+                    </button>
+                </div>
             </div>
-            
-            <div>
-                <p class="font-h6 font-semibold">Missed thresholds, %</p>
-                <input type="number" class="form-control mt-1" placeholder="Missed thresholds"
-                    v-model="missed_thresholds"
-                    :class="{ 'is-invalid': errors.missed_thresholds }"
-                >
-                <div class="invalid-feedback">[[ errors.missed_thresholds ]]</div>
+        </div>
+
+        <div class="collapse" id="selector_advanced_settings">
+            <div class="d-grid grid-column-2 gap-4">
+                <div>
+                    <div class="mt-4 mb-4 d-flex">
+                        <p class="font-h5 font-semibold flex-grow-1">Summary results</p>
+                        <label class="custom-toggle">
+                            <input type="checkbox"
+                                v-model="summary_check"
+                                data-target="#selector_summary_check"
+                                aria-expanded="summary_check"
+                                data-toggle="collapse"
+                            >
+                            <span class="custom-toggle_slider round"></span>
+                        </label>
+                    </div> 
+                    <div class="mb-2 collapse" :class="{ show: summary_check }" id="selector_summary_check">
+                        <div class="row">
+                            <div class="col-7 mb-2 d-flex">
+                                <label class="mt-1 d-flex align-items-center custom-checkbox">
+                                    <input type="checkbox"
+                                        v-model="summary_check_response_time"
+                                    >
+                                    <p class="font-h5 ml-2">Check response time</p>
+                                </label>
+                            </div>
+                            <div class="col mb-2 align-items-center">
+                                <div class="font-h6 font-semibold" style="white-space: nowrap">deviation = </div>
+                                <input type="number" class="form-control mt-1" placeholder="Response time deviation"
+                                    v-model="summary_response_time_deviation"
+                                    :class="{ 'is-invalid': errors.summary_response_time_deviation }"
+                                >
+                                <div class="invalid-feedback">[[ errors.summary_response_time_deviation ]]</div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-7 mb-2 d-flex">
+                                <label class="mt-1 d-flex align-items-center custom-checkbox">
+                                    <input type="checkbox"
+                                        v-model="summary_check_error_rate"
+                                    >
+                                    <p class="font-h5 ml-2">Check error rate</p>
+                                </label>
+                            </div>
+                            <div class="col mb-2 align-items-center">
+                                <div class="font-h6 font-semibold" style="white-space: nowrap">deviation = </div>
+                                <input type="number" class="form-control mt-1" placeholder="Error rate deviation"
+                                    v-model="summary_error_rate_deviation"
+                                    :class="{ 'is-invalid': errors.summary_error_rate_deviation }"
+                                >
+                                <div class="invalid-feedback">[[ errors.summary_error_rate_deviation ]]</div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-7 mb-2 d-flex">
+                                <label class="mt-1 d-flex align-items-center custom-checkbox">
+                                    <input type="checkbox"
+                                        v-model="summary_check_throughput"
+                                    >
+                                    <p class="font-h5 ml-2">Check throughput</p>
+                                </label>
+                            </div>
+                            <div class="col mb-2 align-items-center">
+                                <div class="font-h6 font-semibold" style="white-space: nowrap">deviation = </div>
+                                <input type="number" class="form-control mt-1" placeholder="Throughput deviation"
+                                    v-model="summary_throughput_deviation"
+                                    :class="{ 'is-invalid': errors.summary_throughput_deviation }"
+                                >
+                                <div class="invalid-feedback">[[ errors.summary_throughput_deviation ]]</div>
+                            </div>
+                        </div>
+                    </div>
+                </div> 
+                
+                <div>
+                    <div class="mt-4 mb-4 d-flex">
+                        <p class="font-h5 font-semibold flex-grow-1">Per request results</p>
+                        <label class="custom-toggle">
+                            <input type="checkbox"
+                                v-model="request_check"
+                                data-target="#selector_request_check" 
+                                :aria-expanded="request_check"
+                                data-toggle="collapse"
+                            >
+                            <span class="custom-toggle_slider round"></span>
+                        </label>
+                    </div> 
+                    <div class="mb-2 collapse" :class="{ show: request_check }" id="selector_request_check">
+                        <div class="row">
+                            <div class="col-7 mb-2 d-flex">
+                                <label class="mt-1 d-flex align-items-center custom-checkbox">
+                                    <input type="checkbox"
+                                        v-model="request_check_response_time"
+                                    >
+                                    <p class="font-h5 ml-2">Check response time</p>
+                                </label>
+                            </div>
+                            <div class="col mb-2 align-items-center">
+                                <div class="font-h6 font-semibold" style="white-space: nowrap">deviation = </div>
+                                <input type="number" class="form-control mt-1" placeholder="Response time deviation"
+                                    v-model="request_response_time_deviation"
+                                    :class="{ 'is-invalid': errors.request_response_time_deviation }"
+                                >
+                                <div class="invalid-feedback">[[ errors.request_response_time_deviation ]]</div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-7 mb-2 d-flex">
+                                <label class="mt-1 d-flex align-items-center custom-checkbox">
+                                    <input type="checkbox"
+                                        v-model="request_check_error_rate"
+                                    >
+                                    <p class="font-h5 ml-2">Check error rate</p>
+                                </label>
+                            </div>
+                            <div class="col mb-2 align-items-center">
+                                <div class="font-h6 font-semibold" style="white-space: nowrap">deviation = </div>
+                                <input type="number" class="form-control mt-1" placeholder="Error rate deviation"
+                                    v-model="request_error_rate_deviation"
+                                    :class="{ 'is-invalid': errors.request_error_rate_deviation }"
+                                >
+                                <div class="invalid-feedback">[[ errors.request_error_rate_deviation ]]</div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-7 mb-2 d-flex">
+                                <label class="mt-1 d-flex align-items-center custom-checkbox">
+                                    <input type="checkbox"
+                                        v-model="request_check_throughput"
+                                    >
+                                    <p class="font-h5 ml-2">Check throughput</p>
+                                </label>
+                            </div>
+                            <div class="col mb-2 align-items-center">
+                                <div class="font-h6 font-semibold" style="white-space: nowrap">deviation = </div>
+                                <input type="number" class="form-control mt-1" placeholder="Throughput deviation"
+                                    v-model="request_throughput_deviation"
+                                    :class="{ 'is-invalid': errors.request_throughput_deviation }"
+                                >
+                                <div class="invalid-feedback">[[ errors.request_throughput_deviation ]]</div>
+                            </div>
+                        </div>
+
+                        <div class="row align-items-center">
+                            <div class="font-h5 col-7 mb-2">Percentage of failed requests</div>
+                            <div class="col mb-2">
+                                <input type="number" class="form-control mt-1" placeholder="Failed requests"
+                                    v-model="percentage_of_failed_requests"
+                                    :class="{ 'is-invalid': errors.percentage_of_failed_requests }"
+                                >
+                                <div class="invalid-feedback">[[ errors.percentage_of_failed_requests ]]</div>
+                            </div>
+                        </div>
+
+                        <div class="row align-items-center">
+                            <div class="col-7 mb-2">
+                                <div class="font-h5">Comparison metric</div>
+                                <p>
+                                <h13>Math aggregation to be applied for baseline calculation.</h13>
+                                </p>
+                            </div>
+                            <div class="col mb-2 d-flex flex-column w-100">
+                                <select class="selectpicker bootstrap-select__b" data-style="btn"
+                                    v-model="rt_baseline_comparison_mecric">
+                                    <option value="max">Maximum</option>
+                                    <option value="min">Minimum</option>
+                                    <option value="avg">Average</option>
+                                    <option value="pct95">Percentile 95</option>
+                                    <option value="pct50">Percentile 50</option>
+                                </select>
+                                <div class="invalid-feedback" style="display: block;">[[ errors.rt_baseline_comparison_mecric ]]</div>
+                            </div>
+                        </div>
+
+
+                    </div>
+                </div> 
             </div>
         </div>
     </div>

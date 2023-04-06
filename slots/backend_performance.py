@@ -12,7 +12,7 @@ class Slot:  # pylint: disable=E1101,R0903
     @web.slot('backend_performance_content')
     def content(self, context, slot, payload):
         project_id = context.rpc_manager.call.project_get_id()
-        public_regions = context.rpc_manager.call.get_rabbit_queues("carrier")
+        public_regions = context.rpc_manager.call.get_rabbit_queues("carrier", True)
         runners_query = Runner.query.with_entities(
             Runner.container_type, Runner.config
         ).filter(
@@ -29,10 +29,6 @@ class Slot:  # pylint: disable=E1101,R0903
             jmeter_runners = list(map(lambda i: {'version': i}, JMETER_MAPPING.keys()))
             gatling_runners = list(map(lambda i: {'version': i}, GATLING_MAPPING.keys()))
             executable_runners = list(map(lambda i: {'version': i}, EXECUTABLE_MAPPING.keys()))              
-        try:
-            public_regions.remove("__internal")
-        except:
-            pass
         project_regions = context.rpc_manager.call.get_rabbit_queues(f"project_{project_id}_vhost")
         try:
             cloud_regions = context.rpc_manager.timeout(3).integrations_get_cloud_integrations(project_id)

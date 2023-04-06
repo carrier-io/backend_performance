@@ -11,7 +11,7 @@ from pylon.core.tools import log
 
 from ..constants import JOB_CONTAINER_MAPPING, JOB_TYPE_MAPPING
 
-from tools import task_tools, rpc_tools
+from tools import TaskManager, rpc_tools
 
 
 def compile_tests(project_id, file_name, runner):
@@ -122,7 +122,7 @@ def run_test(test: 'Test', config_only: bool = False, execution: bool = False, e
     event["cc_env_vars"]["REPORT_ID"] = str(report.id)
     event["cc_env_vars"]["build_id"] = test_data["build_id"]
 
-    resp = task_tools.run_task(test.project_id, [event])
+    resp = TaskManager(test.project_id).run_task([event])
     resp['redirect'] = f'/task/{resp["task_id"]}/results'  # todo: where this should lead to?
 
     test.rpc.call.increment_statistics(test.project_id, 'performance_test_runs')

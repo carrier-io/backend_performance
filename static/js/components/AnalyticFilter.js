@@ -42,14 +42,15 @@ const AnalyticFilter = {
         switchCartGrid() {
             const hasTimeAxis = analyticsLine.data.datasets.some(ds => ds.yAxisID === "time");
             const hasCountAxis = analyticsLine.data.datasets.some(ds => ds.yAxisID === "count");
+
             analyticsLine.options.scales.time.display = hasTimeAxis;
             analyticsLine.options.scales.count.display = hasCountAxis;
-            if (hasTimeAxis) {
-                analyticsLine.options.scales.count.grid.drawOnChartArea = !hasTimeAxis;
+
+            analyticsLine.options.scales.time.grid.drawOnChartArea = hasTimeAxis;
+            analyticsLine.options.scales.count.grid.drawOnChartArea = hasCountAxis;
+            if (hasTimeAxis && hasCountAxis) {
                 analyticsLine.options.scales.time.grid.drawOnChartArea = hasTimeAxis;
-            } else {
-                analyticsLine.options.scales.count.grid.drawOnChartArea = hasTimeAxis;
-                analyticsLine.options.scales.time.grid.drawOnChartArea = !hasTimeAxis;
+                analyticsLine.options.scales.count.grid.drawOnChartArea = !hasTimeAxis;
             }
         },
         generateBlockId() {
@@ -98,7 +99,7 @@ const AnalyticFilter = {
         },
     },
     template: `
-        <div id="dataFilter" class="card" style=" width:280px; height: 500px; margin-left: 28px">
+        <div id="dataFilter" class="card" style=" width:280px; height: 450px; margin-left: 28px">
             <div class="d-flex justify-content-between align-items-center">
                 <p class="font-h5 font-bold py-3 px-4 text-gray-800">DATA FILTER</p>
                 <p class="text-purple font-semibold font-h5 cursor-pointer d-flex align-items-center">
@@ -106,7 +107,7 @@ const AnalyticFilter = {
                     <i class="icon__16x16 icon-plus__16-purple mx-3 mb-1" @click="addBlock"></i>
                 </p>
             </div>
-            <div style="overflow: scroll; height: 540px;">
+            <div style="overflow: scroll;">
                 <div v-for="(block, index) in blocks" :key="block">
                     <hr class="my-0">
                     <div class="py-3 pl-4 pr-3 d-flex align-items-center">

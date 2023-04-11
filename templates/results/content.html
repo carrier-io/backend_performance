@@ -1,0 +1,163 @@
+    <div class="card card-12 p-28">
+        <div class="d-flex justify-content-between">
+            <div class="d-flex align-items-center">
+                <a id="back-button" class="mr-2" href="javascript:history.back()">
+                    <i class="icon__16x16 icon-arrow-left-bold__16"></i>
+                </a>
+                <p class="font-h3 font-bold">{{ test_data["name"] }} (back) </p>
+            </div>
+            <div class="d-flex justify-content-end">
+                {% if test_data['test_status']['status'].lower() in ['finished', 'error', 'failed','success'] %}
+                    <button hidden class="btn btn-secondary btn-icon btn-icon__purple mr-2"
+                            onclick="downloadReport()"
+                            data-toggle="tooltip"
+                            data-placement="top"
+                            title="Download report">
+                        <i class="icon__18x18 icon-download"></i>
+                    </button>
+                    {% if test_data['is_baseline_report'] %}
+                        <button class="btn btn-secondary mr-2" id="set_baseline" onclick="deleteBaseline()"
+                                data-toggle="tooltip" data-placement="top" title="Set current report as baseline">
+                            Remove from baseline
+                        </button>
+                    {% else %}
+                        <button class="btn btn-secondary mr-2" id="set_baseline" onclick="setBaseline()"
+                                data-toggle="tooltip" data-placement="top" title="Set current report as baseline">
+                            Set as baseline
+                        </button>
+                    {% endif %}
+                {% endif %}
+                <button hidden class="btn btn-secondary mr-2" id="not_worse_than" onclick="setThresholds()"
+                        data-toggle="tooltip" data-placement="top" title="Set current report as thresholds">
+                    Set as threshold
+                </button>
+                <button class="btn btn-secondary btn-icon btn-icon__purple mr-2"
+                        onclick="reRunTest()"
+                        data-toggle="tooltip"
+                        data-placement="top"
+                        title="Rerun Test">
+                    <i class="icon__18x18 icon-run"></i>
+                </button>
+                <button class="btn btn-secondary btn-icon btn-icon__purple" id="show_config_btn"
+                        data-toggle="modal"
+                        data-target="#config_modal"
+                        data-toggle="tooltip" data-placement="top" title="Show config for current test run">
+                    <i class="icon__18x18 icon-settings"></i>
+                </button>
+                {% if test_data['test_status']['status'].lower() not in ['finished', 'error', 'failed',
+            'success'] %}
+                <button class="btn btn-painted ml-2"
+                        id="stop-test" onclick="stopTest()"
+                        style="--text-color:rgb(243, 38, 38); --brd-color:rgb(242, 180, 180);">
+                    Stop test
+                </button>
+                {% endif %}
+            </div>
+        </div>
+        <div id="progressbar-body">
+            {% if test_data['test_status']['status'].lower() not in ['finished', 'error', 'failed', 'success'] %}
+                <performancetestprogress
+                        :test_status='{{ test_data.test_status | tojson }}'
+                        :project_id="{{ test_data.project_id }}"
+                        :test_id="{{ test_data.id }}"
+                ></performancetestprogress>
+            {% endif %}
+        </div>
+        <b-e-result-info
+            :test_data="{{ test_data }}"
+            instance_name="BEResultInfo"
+            @register="register">
+        </b-e-result-info>
+    </div>
+
+
+    {% with test_data=test_data %}
+        {% include 'backend_performance:results/summary.html' %}
+    {% endwith %}
+
+    {% if test_data['test_status']['status'].lower() in ['finished', 'error', 'failed', 'success'] %}
+        <div class="card card-12 pb-4 card-table">
+            <div class="card-header">
+                <div class="row">
+                    <div class="col-4">
+                        <p class="font-h3 font-bold ">Summary</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <table class="table table-border"
+                       id="summary_table"
+                       data-toggle="table"
+                       data-page-size=10
+                       data-pagination="true"
+                       data-pagination-parts='["pageInfoShort", "pageList"]'>
+                    <thead class="thead-light">
+                    <tr>
+                        <th scope="col" data-sortable="true" data-field="request_name">Name</th>
+                        <th scope="col" data-sortable="true" data-field="total">Ttl req, count</th>
+                        <th scope="col" data-sortable="true" data-field="throughput">Thrghpt, req/sec</th>
+                        <th scope="col" data-sortable="true" data-field="ko">Errors, count</th>
+                        <th scope="col" data-sortable="true" data-field="min">Min, ms</th>
+                        <th scope="col" data-sortable="true" data-field="mean">Median, ms</th>
+                        <th scope="col" data-sortable="true" data-field="pct95">Pct95, ms</th>
+                        <th scope="col" data-sortable="true" data-field="max">Max, ms</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="card card-12 pb-4 card-table">
+        <div class="card-header">
+            <div class="row">
+                <div class="col-4">
+                    <p class="font-h3 font-bold">Errors</p>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <table class="table table-border"
+                   id="errors"
+                   data-toggle="table"
+                   data-url=""
+                   data-page-size=10
+                   data-pagination="true"
+                   data-pagination-parts='["pageInfoShort", "pageList"]'
+                   data-detail-view="true"
+                   data-detail-view-icon="false"
+                   data-detail-view-by-click="true"
+                   data-detail-formatter="errors_detail_formatter">
+                <thead class="thead-light">
+                <tr>
+                    <th data-sortable="true" data-field="Request name">Request name</th>
+                    <th data-sortable="true" data-field="URL">URL</th>
+                    <th data-sortable="true" data-field="Response code">Response Code</th>
+                    <th data-sortable="true" data-field="Error message">Error Message</th>
+                    <th data-sortable="true" data-field="count">Count</th>
+                </tr>
+                </thead>
+            </table>
+        </div>
+    </div>
+    <div class="mb-3">
+        {% include 'backend_performance:results/engine_health.html' %}
+
+        {% if test_data['test_status']['status'].lower() in ['finished', 'error', 'failed', 'success'] %}
+        {% with result_id=test_data.id %}
+        {% include 'backend_performance:results/artifacts_table.html' %}
+        {% endwith %}
+        {% else %}
+        <performancelogsapp
+                :project_id="{{ test_data.project_id }}"
+                :report_id="{{ test_data.id }}"
+                instance_name="perf_logs"
+                @register="register"
+        ></performancelogsapp>
+        {% endif %}
+        {% with test_config = test_data['test_config'] %}
+        {% include 'backend_performance:results/config_modal.html' %}
+        {% endwith %}
+    </div>

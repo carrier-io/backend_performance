@@ -1,0 +1,118 @@
+{% set modal_id = 'create_modal' %}
+<div class="p-3">
+    <div class="flex-container">
+        <div class="flex-item-2">
+            <Table-Card
+                    @register="register"
+                    instance_name="table_tests"
+                    :adaptive-height="true"
+                    :wide-table-row="true"
+                    header='Backend tests'
+                    :table_attributes="{
+                        'data-url': '/api/v1/backend_performance/tests/{{ tools.session_project.get() }}',
+                        'data-page-size': 5,
+                        id: 'tests-list',
+                    }"
+                    container_classes="h-100"
+            >
+                <template #actions="{master}">
+                    <div class="d-flex justify-content-end">
+                        <button type="button" class="btn btn-basic btn-icon mr-2" data-toggle="modal"
+                                data-target="#{{ modal_id }}">
+                            <i class="icon__18x18 icon-create-element icon__white"></i>
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-icon btn-icon__purple" id="delete_tests"><i
+                                class="icon__18x18 icon-delete"></i>
+                        </button>
+                    </div>
+                </template>
+                <template #table_headers>
+                    <th scope="col" data-checkbox="true"></th>
+                    <th data-visible="false" data-field="id">index</th>
+                    <th scope="col" data-sortable="true"
+                        class="w-100"
+                        data-formatter=test_formatters.name_uid
+                        data-cell-style="test_formatters.name_style"
+                        data-field="name"
+                    >
+                        Name
+                    </th>
+                    <th scope="col" data-sortable="true"
+                        data-cell-style="test_formatters.name_style"
+                        class="min-w-44 align-top"
+                        data-field="entrypoint"
+                    >
+                        Entrypoint
+                    </th>
+                    <th scope="col" data-align="center" data-sortable="true"
+                        data-formatter=test_formatters.job_type
+                        data-field="job_type"
+                    >
+                        Tool
+                    </th>
+                    <th scope="col" data-align="right"
+                        data-formatter=test_formatters.actions
+                        data-events="test_formatters.action_events"
+                    >
+                        Actions
+                    </th>
+                </template>
+            </Table-Card>
+        </div>
+        <div class="flex-item-2">
+            {% include 'backend_performance:backend_performance/thresholds.html' %}
+        </div>
+    </div>
+
+    <Table-Card
+            @register="register"
+            instance_name="table_results"
+
+            header='Results'
+            :adaptive-height="true"
+            :table_attributes="{
+                'data-url': '/api/v1/backend_performance/reports/{{ tools.session_project.get() }}',
+                id: 'results_table'
+            }"
+            container_classes="mt-3"
+    >
+        <template #actions="{master}">
+            <div class="d-flex justify-content-end">
+                <button type="button" class="btn btn-secondary btn-icon btn-icon__purple" id="delete_results">
+                    <i class="icon__18x18 icon-delete"></i>
+                </button>
+            </div>
+        </template>
+        <template #table_headers>
+            <th scope="col" data-checkbox="true"></th>
+            <th data-visible="false" data-field="id">index</th>
+            <th scope="col" data-sortable="true" data-field="name"
+                data-formatter=report_formatters.createLinkToTest>Name</th>
+            <th scope="col" data-sortable="true" data-field="start_time"
+                data-formatter="report_formatters.date_formatter">Date</th>
+            <th scope="col" data-sortable="true" data-field="duration">Duration</th>
+            <th scope="col" data-sortable="true" data-field="vusers">vUsers</th>
+            <th scope="col" data-sortable="true" data-field="environment">Env</th>
+            <th scope="col" data-sortable="true" data-field="type">Test Type</th>
+            <th scope="col" data-sortable="true" data-field="throughput">TPS</th>
+            <th scope="col" data-sortable="true" data-field="failure_rate">Fail Rate</th>
+            <th scope="col" data-sortable="true" data-field="tags" data-formatter="ParamsTable.tagFormatter">Tags</th>
+            <th scope="col" data-sortable="true" data-field="test_status"
+                data-formatter="report_formatters.reportsStatusFormatter">Status
+            </th>
+        </template>
+    </Table-Card>
+
+    {% with modal_id=modal_id, source_container_id = "source_card_id" %}
+        {% include 'backend_performance:backend_performance/create.html' %}
+    {% endwith %}
+    {% with modal_id='run_modal' %}
+        {% include 'backend_performance:backend_performance/runtest.html' %}
+    {% endwith %}
+    <Docker-Command-Modal
+        @register="register"
+        instance_name="docker_command"
+        modal_id="docker_command_modal"
+    >
+    </Docker-Command-Modal>
+</div>

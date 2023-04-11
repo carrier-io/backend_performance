@@ -1,0 +1,139 @@
+{% set modal_id = 'config_modal' %}
+{% set source_container_id = "source_card_config" %}
+{% set test_config = test_config or {} %}
+{%- macro get_test_param_by_name(name) -%}
+    {%- for i in test_config['test_parameters'] -%}
+        {%- if i['name'] == name -%}
+            {{- i['default'] | trim -}}
+        {%- endif -%}
+    {%- endfor -%}
+{%- endmacro -%}
+
+
+<div class="modal modal-base fixed-left fade shadow-sm" tabindex="-1" role="dialog" id="{{ modal_id }}">
+    <div class="modal-dialog modal-dialog-aside" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="row w-100">
+                    <div class="col">
+                        <h2>Test Run Configuration</h2>
+                    </div>
+                    <div class="col-xs">
+                        <button type="button" class="btn btn-secondary mr-2" data-dismiss="modal" aria-label="Close">
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-body">
+                <div class="section">
+                    <div class="row">
+                        <div class="col">
+                            <div class="form-group">
+                                <h9>Test Name</h9>
+                                <p>
+                                    <h13>Enter a name that describes the purpose of your test.</h13>
+                                </p>
+                                <input type="text" class="form-control form-control-alternative"
+                                       placeholder="Test Name"
+                                       disabled
+                                       value='{{- get_test_param_by_name("test_name") -}}'
+                                >
+                            </div>
+                            <div class="d-flex">
+                                <div class="flex-fill">
+                                    <div class="form-group">
+                                        <h9>Test Type</h9>
+                                        <p>
+                                            <h13>Tag to group tests by type</h13>
+                                        </p>
+                                        <input type="text" class="form-control form-control-alternative"
+                                               placeholder="Test Type"
+                                               disabled
+                                               value='{{- get_test_param_by_name("test_type") -}}'
+                                        >
+                                    </div>
+                                </div>
+                                <div class="flex-fill">
+                                    <div class="form-group">
+                                        <h9>Environment</h9>
+                                        <p>
+                                            <h13>Tag to group tests by env</h13>
+                                        </p>
+                                        <input type="text" class="form-control form-control-alternative"
+                                               placeholder="Test Environment"
+                                               disabled
+                                               value='{{- get_test_param_by_name("env_type") -}}'
+                                        >
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <h9>Test runner</h9>
+                                <p>
+                                    <h13>Choose the runner for the test.</h13>
+                                </p>
+                                <select class="selectpicker bootstrap-select__b mt-1" data-style="btn"
+                                        value='{{- test_config['runner'] -}}'
+                                        disabled
+                                >
+                                    <option
+                                            value='{{- test_config['runner'] -}}'
+                                    >
+                                        {{- test_config['runner'] -}}
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col">
+                            {{ template_slot("sources_content", payload={
+                                "chapters": [
+                                    'git' if test_config['source']['name'].startswith('git')
+                                    else test_config['source']['name']
+                                ],
+                                "container_id": source_container_id
+                            }) | safe }}
+
+                            <div class="form-group mt-3">
+                                <div class="form-group">
+                                    <h9>Entrypoint</h9>
+                                    <p>
+                                        <h13>File for jMeter and class for gatling</h13>
+                                    </p>
+                                    <input type="text" class="form-control form-control-alternative"
+                                           placeholder="Entrypoint (e.g. some.jmx or some.Test)"
+                                           value='{{- test_config['entrypoint'] -}}'
+                                           disabled
+                                    >
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <Locations
+                    location='{{ test_config['location'] }}'
+                    parallel_runners='{{ test_config['parallel_runners'] }}'
+                    cpu='{{ test_config['env_vars']['cpu_quota'] }}'
+                    memory='{{ test_config['env_vars']['memory_quota'] }}'
+                    cloud_settings='{{ test_config['env_vars']['cloud_settings'] }}'
+                ></Locations>
+
+
+                {{ template_slot("params_table_content", payload={
+                    "caption": "TEST PARAMETERS",
+                    "default_params": test_config['test_parameters'],
+                    "disabled_names": test_config['test_parameters'] | map(attribute='name'),
+                    "modal_id": modal_id,
+                    "hidden_columns": ['type'],
+                    "disable_add_params": True
+                }) | safe }}
+
+                {{ template_slot("integrations_backend_performance_content") | safe }}
+
+            </div>
+        </div>
+    </div>
+</div>

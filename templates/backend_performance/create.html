@@ -1,0 +1,40 @@
+{#{% set modal_id = modal_id | default('create_modal') %}#}
+{#{% set modal_id = 'create_modal' %}#}
+
+<Test-Create-Modal
+        @register="register"
+        instance_name="{{ modal_id }}"
+
+        modal_id="{{ modal_id }}"
+        :runners='{{ runners | tojson }}'
+        test_params_id="{{ modal_id }}_test_params"
+        source_card_id="{{ source_container_id }}"
+        :locations='{{ locations | tojson }}'
+>
+    <template #alert_bar>
+        {{ template_slot("alert_bar", payload={
+            "alert_container_id": "alertCreateTest",
+            "max_alerts": 2,
+            "overlay_max_width": "1100px"
+        }) | safe }}
+    </template>
+    <template #sources>
+        {{ template_slot("sources_content", payload={
+            "chapters": ["git", "artifact", "local"],
+            "container_id": source_container_id
+        }) | safe }}
+    </template>
+    <template #params_table>
+        {{ template_slot("params_table_content", payload={
+            "caption": "TEST PARAMETERS",
+            "modal_id": modal_id
+        }) | safe }}
+    </template>
+    <template #integrations>
+        {{ template_slot("integrations_backend_performance_content") | safe }}
+    </template>
+    <template #scheduling>
+        {{ template_slot("backend_performance_scheduling_test_create_content") | safe }}
+    </template>
+</Test-Create-Modal>
+

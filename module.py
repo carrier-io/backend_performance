@@ -1,3 +1,6 @@
+#!/usr/bin/python3
+# coding=utf-8
+
 #   Copyright 2021 getcarrier.io
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,19 +16,14 @@
 #   limitations under the License.
 
 """ Module """
-
-import flask  # pylint: disable=E0401
-import jinja2  # pylint: disable=E0401
-
-from flask import request, render_template
+from queue import Empty
 
 from pylon.core.tools import log  # pylint: disable=E0611,E0401
 from pylon.core.tools import module  # pylint: disable=E0611,E0401
 
-from ..shared.utils.api_utils import add_resource_to_api
-from .rpc_worker import backend_results_or_404
-
 from .init_db import init_db
+
+from tools import theme, shared
 
 
 class Module(module.ModuleModel):
@@ -37,29 +35,62 @@ class Module(module.ModuleModel):
 
     def init(self):
         """ Init module """
-        log.info("Initializing module Backend_performance")
+        log.info('Initializing module')
         init_db()
-        from .api.tests import TestsApi
-        add_resource_to_api(self.context.api, TestsApi, "/backend/<int:project_id>")
-        from .api.test import TestApiBackend
-        add_resource_to_api(self.context.api, TestApiBackend, "/tests/<int:project_id>/backend/<string:test_id>")
-        from .api.thresholds import BackendThresholdsAPI
-        add_resource_to_api(self.context.api, BackendThresholdsAPI, "/thresholds/<int:project_id>/backend")
-        from .api.baseline import BaselineAPI
-        add_resource_to_api(self.context.api, BaselineAPI, "/baseline/<int:project_id>")
-        from .api.reports import ReportAPI
-        add_resource_to_api(self.context.api, ReportAPI, "/reports/<int:project_id>")
-        from .api.charts import ReportChartsAPI
-        add_resource_to_api(self.context.api, ReportChartsAPI, "/chart/<string:source>/<string:target>")
-        from .api.report_status import ReportStatusAPI
-        add_resource_to_api(self.context.api, ReportStatusAPI, "/reports/<int:project_id>/<int:report_id>/status")
-        from .api.environments import EnvironmentsAPI
-        add_resource_to_api(self.context.api, EnvironmentsAPI, "/environment/<int:project_id>")
-        from .api.requests import RequestsAPI
-        add_resource_to_api(self.context.api, RequestsAPI, "/requests/<int:project_id>")
 
-        self.context.rpc_manager.register_function(backend_results_or_404, name='backend_results_or_404')
+        self.descriptor.init_api()
+
+        self.descriptor.init_rpcs()
+
+        self.descriptor.init_blueprint()
+
+        try:
+            theme.register_section(
+                "performance",
+                "Performance",
+                kind="holder",
+                location="left",
+            )
+        except:
+            ...
+
+        theme.register_subsection(
+            "performance", "backend",
+            "Backend",
+            title="Backend performance",
+            kind="slot",
+            prefix="backend_performance_",
+            weight=5,
+        )
+
+        theme.register_page(
+            "performance", "backend",
+            "results",
+            title="Test Results",
+            kind="slot",
+            prefix="results_",
+        )
+
+        try:
+            self.context.rpc_manager.timeout(3).integrations_register_section(
+                name='Processing',
+                integration_description='Manage processing',
+                test_planner_description='Specify processing tools. You may also set processors in <a '
+                                         'href="{}">Integrations</a> '.format('/-/configuration/integrations/')
+            )
+
+            self.context.rpc_manager.timeout(3).integrations_register(
+                name='quality_gate',
+                section='Processing',
+            )
+        except Empty:
+            log.warning('No integrations plugin present')
+            ...
+
+        self.descriptor.init_slots()
+
+        shared.job_type_rpcs.add('backend_performance')
 
     def deinit(self):  # pylint: disable=R0201
         """ De-init module """
-        log.info("De-initializing Backend_performance")
+        log.info('De-initializing module')

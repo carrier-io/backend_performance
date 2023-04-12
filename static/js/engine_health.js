@@ -38,10 +38,7 @@ window.engine_health = {
                     const resp = await fetch(co.url + params)
                     if (resp.ok) {
                         co.chart.data = await resp.json()
-                        // co.chart.options.scales.x.min = new Date(params.get('start_time')).valueOf()
-                        // co.chart.options.scales.x.max = new Date(params.get('end_time')).valueOf()
                         co.chart.update()
-                        // vueVm.registered_components?.[`engine_health_legend_${chart_name}`]?.load()
                     } // todo: handle resp not ok
                 }
             }
@@ -318,8 +315,10 @@ const EngineHealthMetricsLegend = {
     },
     async mounted() {
         // await wait_for('vueVm')
-        this.metric_select = await wait_for(`${this.for_chart}_metric_select`, this.$root.registered_components)
-        this.legend = await wait_for('engine_health_chart_legend', this.$root.registered_components)
+        $(document).on('vue_init', async () => {
+            this.metric_select = await wait_for(`${this.for_chart}_metric_select`, this.$root.registered_components)
+            this.legend = await wait_for('engine_health_chart_legend', this.$root.registered_components)
+        })
     },
     data() {
         return {
@@ -335,7 +334,7 @@ const EngineHealthMetricsLegend = {
         load() {
             const chart = this.get_chart()
             this.label_groups = {}
-            chart.data.datasets.forEach(({backgroundColor, borderColor, label, tag_host}, index) => {
+            chart?.data.datasets.forEach(({backgroundColor, borderColor, label, tag_host}, index) => {
                 this.label_groups[tag_host] = this.label_groups[tag_host] || []
                 const label_object = {
                     text: label,
@@ -350,7 +349,7 @@ const EngineHealthMetricsLegend = {
                 }
                 this.label_groups[tag_host].push(label_object)
             })
-            chart.update()
+            chart?.update()
         },
         handle_legend_item_change(index) {
             const chart = this.get_chart()

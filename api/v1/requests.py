@@ -1,7 +1,7 @@
 from flask import request
 from flask_restful import Resource
 from pylon.core.tools import log
-
+from tools import auth
 from ...models.reports import Report
 
 
@@ -13,9 +13,16 @@ class API(Resource):
     def __init__(self, module):
         self.module = module
 
+    @auth.decorators.check_api({
+        "permissions": ["performance.backend.thresholds.create"],
+        "recommended_roles": {
+            "default": {"admin": True, "editor": True, "viewer": False},
+        }
+    })
     def get(self, project_id: int):
         args = request.args
-        project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
+        project = self.module.context.rpc_manager.call.project_get_or_404(
+            project_id=project_id)
         requests_data = set()
         query_result = Report.query.with_entities(Report.requests).filter(
             Report.name == args.get('name'),

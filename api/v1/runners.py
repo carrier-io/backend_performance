@@ -2,6 +2,7 @@ from flask import request
 from flask_restful import Resource
 from ...models.runners import Runner
 from sqlalchemy import and_
+from tools import auth
 
 
 class API(Resource):
@@ -13,12 +14,20 @@ class API(Resource):
     def __init__(self, module):
         self.module = module
 
+    @auth.decorators.check_api({
+        "permissions": ["performance.backend.runners.view"],
+        "recommended_roles": {
+            "default": {"admin": True, "editor": True, "viewer": True},
+        }
+    })
     def get(self, project_id: int):
-        project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
+        project = self.module.context.rpc_manager.call.project_get_or_404(
+            project_id=project_id)
         query_result = Runner.query.with_entities(
-            Runner.id, Runner.container_type, Runner.config, Runner.is_active, Runner.is_default
-            ).filter(
-                and_(Runner.project_id == project.id)
+            Runner.id, Runner.container_type, Runner.config, Runner.is_active,
+            Runner.is_default
+        ).filter(
+            and_(Runner.project_id == project.id)
         ).all()
         runners = []
         for id, container_type, config, is_active, is_default in query_result:
@@ -28,11 +37,17 @@ class API(Resource):
                     'container_type': container_type,
                     'name': key,
                     **values,
-                    'is_active': is_active, 
+                    'is_active': is_active,
                     'is_default': is_default
                 })
         return {'total': len(runners), 'rows': runners}, 200
 
+    @auth.decorators.check_api({
+        "permissions": ["performance.backend.runners.create"],
+        "recommended_roles": {
+            "default": {"admin": True, "editor": True, "viewer": False},
+        }
+    })
     def post(self, project_id: int):
         try:
             container_type = request.json['container_type']
@@ -41,7 +56,8 @@ class API(Resource):
             is_active = request.json['is_active']
         except KeyError:
             return 'container_type, name, container and is_active must be provided', 400
-        project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
+        project = self.module.context.rpc_manager.call.project_get_or_404(
+            project_id=project_id)
         config = {
             name: {
                 "container": container,
@@ -59,19 +75,33 @@ class API(Resource):
         runner.insert()
         return runner.to_json(), 200
 
+    @auth.decorators.check_api({
+        "permissions": ["performance.backend.runners.edit"],
+        "recommended_roles": {
+            "default": {"admin": True, "editor": True, "viewer": False},
+        }
+    })
     def put(self, project_id: int, runner_id: int):
         try:
             is_active = request.json['is_active']
         except KeyError:
             return 'is_active must be provided', 400
-        project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
+        project = self.module.context.rpc_manager.call.project_get_or_404(
+            project_id=project_id)
         runner = Runner.query.filter_by(project_id=project.id, id=runner_id).first()
         runner.is_active = is_active
         runner.commit()
         return {"message": f"status changed to {runner.is_active}"}, 200
 
+    @auth.decorators.check_api({
+        "permissions": ["performance.backend.runners.delete"],
+        "recommended_roles": {
+            "default": {"admin": True, "editor": False, "viewer": False},
+        }
+    })
     def delete(self, project_id: int, runner_id: int):
-        project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
+        project = self.module.context.rpc_manager.call.project_get_or_404(
+            project_id=project_id)
         runner = Runner.query.filter_by(project_id=project.id, id=runner_id).first()
         if runner.is_default:
             return {"message": "Cannot delete a default runner"}, 400

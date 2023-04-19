@@ -10,6 +10,9 @@ from ..models.runners import Runner
 
 class Slot:  # pylint: disable=E1101,R0903
     @web.slot('backend_performance_content')
+    @auth.decorators.check_slot({
+        "permissions": ["performance.backend"]
+    })
     def content(self, context, slot, payload):
         project_id = context.rpc_manager.call.project_get_id()
         public_regions = context.rpc_manager.call.get_rabbit_queues("carrier", True)
@@ -24,14 +27,17 @@ class Slot:  # pylint: disable=E1101,R0903
                 runners.setdefault(container_type, {}).update(config)
             jmeter_runners = list(map(lambda i: {'version': i}, runners['jmeter'].keys()))
             gatling_runners = list(map(lambda i: {'version': i}, runners['gatling'].keys()))
-            executable_runners = list(map(lambda i: {'version': i}, runners['executable_jar'].keys()))
+            executable_runners = list(
+                map(lambda i: {'version': i}, runners['executable_jar'].keys()))
         else:
             jmeter_runners = list(map(lambda i: {'version': i}, JMETER_MAPPING.keys()))
             gatling_runners = list(map(lambda i: {'version': i}, GATLING_MAPPING.keys()))
-            executable_runners = list(map(lambda i: {'version': i}, EXECUTABLE_MAPPING.keys()))              
-        project_regions = context.rpc_manager.call.get_rabbit_queues(f"project_{project_id}_vhost")
+            executable_runners = list(map(lambda i: {'version': i}, EXECUTABLE_MAPPING.keys()))
+        project_regions = context.rpc_manager.call.get_rabbit_queues(
+            f"project_{project_id}_vhost")
         try:
-            cloud_regions = context.rpc_manager.timeout(3).integrations_get_cloud_integrations(project_id)
+            cloud_regions = context.rpc_manager.timeout(3).integrations_get_cloud_integrations(
+                project_id)
         except Empty:
             cloud_regions = []
         with context.app.app_context():

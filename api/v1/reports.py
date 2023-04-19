@@ -19,7 +19,7 @@ from ...models.baselines import Baseline
 from ...models.reports import Report
 from ...models.tests import Test
 from ...connectors.influx_connector import InfluxConnector
-from tools import MinioClient, api_tools
+from tools import MinioClient, api_tools, auth
 from influxdb.exceptions import InfluxDBClientError
 
 
@@ -31,22 +31,37 @@ class API(Resource):
     def __init__(self, module):
         self.module = module
 
+    @auth.decorators.check_api({
+        "permissions": ["performance.backend.reports.view"],
+        "recommended_roles": {
+            "default": {"admin": True, "editor": True, "viewer": True},
+        }
+    })
     def get(self, project_id: int):
         args = request.args
         if args.get("report_id"):
-            report = Report.query.filter_by(project_id=project_id, id=args.get("report_id")).first()
+            report = Report.query.filter_by(project_id=project_id,
+                                            id=args.get("report_id")).first()
             return ReportGetSerializer.from_orm(report).dict(), 200
-        project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
+        project = self.module.context.rpc_manager.call.project_get_or_404(
+            project_id=project_id)
         total, res = api_tools.get(project.id, args, Report)
         reports = parse_obj_as(List[ReportGetSerializer], res)
         return {"total": total, "rows": [i.dict() for i in reports]}, 200
 
+    @auth.decorators.check_api({
+        "permissions": ["performance.backend.reports.create"],
+        "recommended_roles": {
+            "default": {"admin": True, "editor": True, "viewer": False},
+        }
+    })
     def post(self, project_id: int):
         '''
             create report from control tower?
         '''
         args = request.json
-        project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
+        project = self.module.context.rpc_manager.call.project_get_or_404(
+            project_id=project_id)
 
         # TODO: we need to check api performance tests quota here
         # if not ProjectQuota.check_quota(project_id=project_id, quota='performance_test_runs'):
@@ -113,13 +128,22 @@ class API(Resource):
         # statistic = Statistic.query.filter_by(project_id=project_id).first()
         # setattr(statistic, 'performance_test_runs', Statistic.performance_test_runs + 1)
         # statistic.commit()
-        self.module.context.rpc_manager.call.increment_statistics(project_id, 'performance_test_runs')
+        self.module.context.rpc_manager.call.increment_statistics(project_id,
+                                                                  'performance_test_runs')
         return report.to_json(), 200
 
+    @auth.decorators.check_api({
+        "permissions": ["performance.backend.reports.edit"],
+        "recommended_roles": {
+            "default": {"admin": True, "editor": True, "viewer": False},
+        }
+    })
     def put(self, project_id: int):
         args = request.json
-        project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
-        connector = InfluxConnector(project_id=project_id, build_id=args["build_id"], test_name=args["test_name"],
+        project = self.module.context.rpc_manager.call.project_get_or_404(
+            project_id=project_id)
+        connector = InfluxConnector(project_id=project_id, build_id=args["build_id"],
+                                    test_name=args["test_name"],
                                     lg_type=args["lg_type"])
         test_data = connector.get_test_details()
         response_times = loads(args["response_times"])
@@ -155,8 +179,15 @@ class API(Resource):
             write_test_run_logs_to_minio_bucket(report, project)
         return {"message": "updated"}, 201
 
+    @auth.decorators.check_api({
+        "permissions": ["performance.backend.reports.delete"],
+        "recommended_roles": {
+            "default": {"admin": True, "editor": False, "viewer": False},
+        }
+    })
     def delete(self, project_id: int):
-        project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
+        project = self.module.context.rpc_manager.call.project_get_or_404(
+            project_id=project_id)
         try:
             delete_ids = list(map(int, request.args["id[]"].split(',')))
         except TypeError:
@@ -191,7 +222,8 @@ class API(Resource):
 
 
 def write_test_run_logs_to_minio_bucket(test: Report, project):
-    loki_settings_url = urlparse(current_app.config["CONTEXT"].settings.get('loki', {}).get('url'))
+    loki_settings_url = urlparse(
+        current_app.config["CONTEXT"].settings.get('loki', {}).get('url'))
     if loki_settings_url:
         #
         build_id = test.build_id
@@ -224,7 +256,8 @@ def write_test_run_logs_to_minio_bucket(test: Report, project):
                 for ii in i['values']:
                     unpacked_values.append(ii)
             for unix_ns, log_line in sorted(unpacked_values, key=lambda x: int(x[0])):
-                timestamp = datetime.fromtimestamp(int(unix_ns) / 1e9).strftime("%Y-%m-%d %H:%M:%S")
+                timestamp = datetime.fromtimestamp(int(unix_ns) / 1e9).strftime(
+                    "%Y-%m-%d %H:%M:%S")
                 file_output.write(
                     f'{timestamp}\t{log_line}\n'.encode(enc)
                 )

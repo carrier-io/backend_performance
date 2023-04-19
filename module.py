@@ -50,6 +50,13 @@ class Module(module.ModuleModel):
                 "Performance",
                 kind="holder",
                 location="left",
+                permissions={
+                    "permissions": ["performance"],
+                    "recommended_roles": {
+                        "administration": {"admin": True, "editor": True, "viewer": False},
+                        "default": {"admin": True, "editor": True, "viewer": False},
+                    }
+                }
             )
         except:
             ...
@@ -61,6 +68,13 @@ class Module(module.ModuleModel):
             kind="slot",
             prefix="backend_performance_",
             weight=5,
+            permissions={
+                "permissions": ["performance.backend"],
+                "recommended_roles": {
+                    "administration": {"admin": True, "editor": True, "viewer": False},
+                    "default": {"admin": True, "editor": True, "viewer": False},
+                }
+            }
         )
 
         theme.register_page(
@@ -69,6 +83,13 @@ class Module(module.ModuleModel):
             title="Test Results",
             kind="slot",
             prefix="results_",
+            permissions={
+                "permissions": ["performance.backend.reports"],
+                "recommended_roles": {
+                    "administration": {"admin": True, "editor": True, "viewer": False},
+                    "default": {"admin": True, "editor": True, "viewer": False},
+                }
+            }
         )
 
         try:
@@ -76,7 +97,8 @@ class Module(module.ModuleModel):
                 name='Processing',
                 integration_description='Manage processing',
                 test_planner_description='Specify processing tools. You may also set processors in <a '
-                                         'href="{}">Integrations</a> '.format('/-/configuration/integrations/')
+                                         'href="{}">Integrations</a> '.format(
+                    '/-/configuration/integrations/')
             )
 
             self.context.rpc_manager.timeout(3).integrations_register(

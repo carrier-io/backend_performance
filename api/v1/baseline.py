@@ -19,6 +19,7 @@ class API(Resource):
         "permissions": ["performance.backend.baseline.view"],
         "recommended_roles": {
             "default": {"admin": True, "editor": True, "viewer": True},
+            "administration": {"admin": True, "editor": True, "viewer": True},
         }
     })
     def get(self, project_id: int):
@@ -38,6 +39,7 @@ class API(Resource):
         "permissions": ["performance.backend.baseline.create"],
         "recommended_roles": {
             "default": {"admin": True, "editor": True, "viewer": False},
+            "administration": {"admin": True, "editor": True, "viewer": False},
         }
     })
     def post(self, project_id: int):
@@ -79,6 +81,7 @@ class API(Resource):
         "permissions": ["performance.backend.baseline.delete"],
         "recommended_roles": {
             "default": {"admin": True, "editor": False, "viewer": False},
+            "administration": {"admin": True, "editor": False, "viewer": False},
         }
     })
     def delete(self, project_id: int, report_id: int):

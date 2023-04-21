@@ -17,6 +17,7 @@ class API(Resource):
         "permissions": ["performance.backend.thresholds.create"],
         "recommended_roles": {
             "default": {"admin": True, "editor": True, "viewer": False},
+            "administration": {"admin": True, "editor": True, "viewer": False},
         }
     })
     def get(self, project_id: int):

@@ -6,7 +6,7 @@ from sqlalchemy import and_
 from flask_restful import Resource
 from flask import request
 
-from tools import api_tools
+from tools import api_tools, auth
 from ...models.tests import Test
 from ...models.pd.test_parameters import PerformanceTestParam
 from ...utils.utils import run_test, parse_test_data, compile_tests
@@ -20,6 +20,9 @@ class API(Resource):
     def __init__(self, module):
         self.module = module
 
+    @auth.decorators.check_api({
+        "permissions": ["performance.backend.tests.view"],
+    })
     def get(self, project_id: int):
         total, res = api_tools.get(project_id, request.args, Test)
         rows = []
@@ -39,13 +42,21 @@ class API(Resource):
     def get_schedules_ids(filter_) -> set:
         r = set()
         for i in Test.query.with_entities(Test.schedules).filter(
-            filter_
+                filter_
         ).all():
             r.update(set(*i))
         return r
 
+    @auth.decorators.check_api({
+        "permissions": ["performance.backend.tests.delete"],
+        "recommended_roles": {
+            "default": {"admin": True, "editor": False, "viewer": False},
+            "administration": {"admin": True, "editor": False, "viewer": False},
+        }
+    })
     def delete(self, project_id: int):
-        project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
+        project = self.module.context.rpc_manager.call.project_get_or_404(
+            project_id=project_id)
         try:
             delete_ids = list(map(int, request.args["id[]"].split(',')))
         except TypeError:
@@ -70,6 +81,13 @@ class API(Resource):
 
         return {'ids': delete_ids}, 200
 
+    @auth.decorators.check_api({
+        "permissions": ["performance.backend.tests.create"],
+        "recommended_roles": {
+            "default": {"admin": True, "editor": True, "viewer": False},
+            "administration": {"admin": True, "editor": True, "viewer": False},
+        }
+    })
     def post(self, project_id: int):
         """
         Create test and run on demand
@@ -77,7 +95,7 @@ class API(Resource):
         data = json.loads(request.form.get('data'))
         run_test_ = data.pop('run_test', False)
         compile_tests_flag = data.pop('compile_tests', False)
-        engagement_id = data.get('integrations', {}).get('reporters', {})\
+        engagement_id = data.get('integrations', {}).get('reporters', {}) \
             .get('reporter_engagement', {}).get('id')
 
         test_data, errors = parse_test_data(
@@ -108,14 +126,16 @@ class API(Resource):
 
         if test_data['source']['name'] == 'artifact':
             file = request.files.get('file')
-            project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
+            project = self.module.context.rpc_manager.call.project_get_or_404(
+                project_id=project_id)
             bucket = "tests"
             api_tools.upload_file(bucket, file, project, create_if_not_exists=True)
             compile_file_name = file.filename
 
             if compile_tests_flag:  # compiling tests only if source is artifact
                 if not project:
-                    project = self.module.context.rpc_manager.call.project_get_or_404(project_id=project_id)
+                    project = self.module.context.rpc_manager.call.project_get_or_404(
+                        project_id=project_id)
                 compile_tests(project.id, compile_file_name, test_data["runner"])
 
         test = Test(**test_data)

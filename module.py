@@ -84,7 +84,7 @@ class Module(module.ModuleModel):
             kind="slot",
             prefix="results_",
             permissions={
-                "permissions": ["performance.backend.reports"],
+                "permissions": ["performance.backend_results"],
                 "recommended_roles": {
                     "administration": {"admin": True, "editor": True, "viewer": False},
                     "default": {"admin": True, "editor": True, "viewer": False},

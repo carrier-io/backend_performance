@@ -24,7 +24,7 @@ def _get_connector(test_data):
 class Slot:  # pylint: disable=E1101,R0903
     @web.slot('results_content')
     @auth.decorators.check_slot({
-        "permissions": ["performance.backend.reports"]
+        "permissions": ["performance.backend_results"]
     })
     def content(self, context, slot, payload):
         result_id = payload.request.args.get('result_id')
@@ -52,9 +52,6 @@ class Slot:  # pylint: disable=E1101,R0903
         return theme.empty_content
 
     @web.slot('results_scripts')
-    @auth.decorators.check_slot({
-        "permissions": ["performance.backend.reports"]
-    })
     def scripts(self, context, slot, payload):
         # log.info('slot: [%s], payload: %s', slot, payload)
         result_id = payload.request.args.get('result_id')
@@ -73,9 +70,6 @@ class Slot:  # pylint: disable=E1101,R0903
             )
 
     @web.slot('results_styles')
-    @auth.decorators.check_slot({
-        "permissions": ["performance.backend.reports"]
-    })
     def styles(self, context, slot, payload):
         # log.info('slot: [%s], payload: %s', slot, payload)
         with context.app.app_context():

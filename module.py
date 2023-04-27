@@ -53,8 +53,8 @@ class Module(module.ModuleModel):
                 permissions={
                     "permissions": ["performance"],
                     "recommended_roles": {
-                        "administration": {"admin": True, "editor": True, "viewer": False},
-                        "default": {"admin": True, "editor": True, "viewer": False},
+                        "administration": {"admin": True, "editor": True, "viewer": True},
+                        "default": {"admin": True, "editor": True, "viewer": True},
                     }
                 }
             )
@@ -71,8 +71,8 @@ class Module(module.ModuleModel):
             permissions={
                 "permissions": ["performance.backend"],
                 "recommended_roles": {
-                    "administration": {"admin": True, "editor": True, "viewer": False},
-                    "default": {"admin": True, "editor": True, "viewer": False},
+                    "administration": {"admin": True, "editor": True, "viewer": True},
+                    "default": {"admin": True, "editor": True, "viewer": True},
                 }
             }
         )
@@ -86,8 +86,8 @@ class Module(module.ModuleModel):
             permissions={
                 "permissions": ["performance.backend_results"],
                 "recommended_roles": {
-                    "administration": {"admin": True, "editor": True, "viewer": False},
-                    "default": {"admin": True, "editor": True, "viewer": False},
+                    "administration": {"admin": True, "editor": True, "viewer": True},
+                    "default": {"admin": True, "editor": True, "viewer": True},
                 }
             }
         )

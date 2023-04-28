@@ -354,6 +354,19 @@ const TestCreateModal = {
                                         <h9> Compile tests for Gatling </h9>
                                     </label>
                             </div>
+                            <div class="form-group">
+                                <p class="font-h5 font-semibold">Custom CMD</p>
+                                <p class="font-h6 font-weight-400">You may also add a command for test runner</p>
+                                <div class="custom-input mb-3 mt-2"
+                                    :class="{ 'invalid-input': errors?.custom_cmd }">
+                                    <input type="text"
+                                        placeholder="Custom CMD"
+                                        v-model='custom_cmd'
+                                    >
+                                    <span class="input_error-msg">[[ get_error_msg('custom_cmd') ]]</span>
+                                </div>
+                            </div>
+
                         </div>
                         <div class="col">
                             <slot name='sources'></slot>
@@ -547,7 +560,8 @@ const TestCreateModal = {
                             this.$refs.locations.chosen_location_settings,
                             this.cloud_settings,
                             ["id", "integration_name", "instance_type"]
-                        )
+                        ), 
+                        custom_cmd: this.custom_cmd
                     },
                     parallel_runners: this.parallel_runners,
                     cc_env_vars: {},
@@ -652,6 +666,7 @@ const TestCreateModal = {
                 env_vars: {},
                 customization: [],
                 cc_env_vars: {},
+                custom_cmd: '',
 
                 compile_tests: false,
                 errors: {},
@@ -666,7 +681,7 @@ const TestCreateModal = {
                 source, env_vars: all_env_vars, customization, ...rest} = data
             const formatted_customization = format_customization(customization)
 
-            const {cpu_quota, memory_quota, cloud_settings, ...env_vars} = all_env_vars
+            const {cpu_quota, memory_quota, cloud_settings, custom_cmd, ...env_vars} = all_env_vars
 
             let test_type = ''
             let env_type = ''
@@ -684,7 +699,7 @@ const TestCreateModal = {
             })
             // common fields
             Object.assign(this.$data, {...rest, cpu_quota, memory_quota,
-                cloud_settings, env_vars, test_type, env_type,
+                cloud_settings, env_vars, test_type, env_type, custom_cmd,
                 customization: formatted_customization
             })
 
@@ -775,6 +790,18 @@ const TestRunModal = {
                     </div>
                     <div class="modal-body">
                         <slot name="test_parameters"></slot>
+                        <div class="form-group">
+                            <p class="font-h5 font-semibold">Custom CMD</p>
+                            <p class="font-h6 font-weight-400">You may also add a command for test runner</p>
+                            <div class="custom-input mb-3 mt-2 mr-3"
+                                :class="{ 'invalid-input': errors?.custom_cmd }">
+                                <input type="text"
+                                    placeholder="Custom CMD"
+                                    v-model='custom_cmd'
+                                >
+                                <div class="invalid-feedback">[[ get_error_msg('custom_cmd') ]]</div>
+                            </div>
+                        </div>
                         <Locations 
                             v-model:location="location"
                             v-model:parallel_runners="parallel_runners"
@@ -823,6 +850,7 @@ const TestRunModal = {
 
                 env_vars: {},
                 cc_env_vars: {},
+                custom_cmd: '',
 
                 compile_tests: false,
                 errors: {},
@@ -832,10 +860,10 @@ const TestRunModal = {
             console.log('set data called', data)
             const {test_parameters, env_vars: all_env_vars, integrations, ...rest} = data
 
-            const {cpu_quota, memory_quota, cloud_settings, ...env_vars} = all_env_vars
+            const {cpu_quota, memory_quota, cloud_settings, custom_cmd, ...env_vars} = all_env_vars
 
             // common fields
-            Object.assign(this.$data, {...rest, cpu_quota, memory_quota, cloud_settings, env_vars,})
+            Object.assign(this.$data, {...rest, cpu_quota, memory_quota, cloud_settings, custom_cmd, env_vars,})
 
             // special fields
             this.test_parameters.set(test_parameters)
@@ -858,6 +886,11 @@ const TestRunModal = {
         clearErrors() {
             this.errors = {}
         },
+        get_error_msg(field_name) {
+            return this.errors[field_name]?.reduce((acc, item) => {
+                return acc === '' ? item.msg : [acc, item.msg].join('; ')
+            }, '')
+        },
         get_data() {
             const test_params = this.test_parameters.get()
             const integrations = this.integrations?.get()
@@ -873,7 +906,8 @@ const TestRunModal = {
                     env_vars: {
                         cpu_quota: this.cpu_quota,
                         memory_quota: this.memory_quota,
-                        cloud_settings: this.cloud_settings
+                        cloud_settings: this.cloud_settings, 
+                        custom_cmd: this.custom_cmd
                     },
                     parallel_runners: this.parallel_runners,
                     location: this.location

@@ -78,7 +78,7 @@ const SummaryController = {
         }
     },
     async mounted() {
-        this.samplers = this.samplers.initial_samplers > 0 ? this.samplers : ['REQUEST',]
+        this.samplers = this.initial_samplers.length > 0 ? this.initial_samplers : ['REQUEST',]
         this.aggregations = this.initial_aggregations
         this.status_percentage = this.initial_status_percentage
         this.sampler_type = this.samplers.length > 0 ? this.samplers[0] : 'REQUEST'

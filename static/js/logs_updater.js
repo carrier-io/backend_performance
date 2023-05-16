@@ -206,7 +206,7 @@ const PerformanceLogsApp = {
                                 data-style="item__right"
                                 v-model="logs_limit"
                             >
-                            <option v-for="i in [10, 100, 500, 1000]" :value="i" :key="i">[[ i ]]</option>
+                            <option v-for="i in [100, 500, 1000]" :value="i" :key="i">[[ i ]]</option>
                             <option :value="null">None</option>
                         </select>
                         </div>

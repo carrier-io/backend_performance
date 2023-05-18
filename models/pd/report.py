@@ -61,8 +61,8 @@ class ReportGetSerializer(ReportDefaultSerializer):
     # end_time: Union[datetime, str, None]
     failure_rate: Optional[float] = 0
 
-    @validator('failure_rate', always=True)
-    def compute_failure_rate(cls, value: Optional[float], values: dict) -> float:
+    @validator('failure_rate', always=True, pre=True, check_fields=False)
+    def compute_error_rate(cls, value: Optional[float], values: dict) -> float:
         if value:
             return value
         try:

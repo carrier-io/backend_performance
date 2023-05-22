@@ -41,9 +41,11 @@ const PerformanceLogsApp = {
             logs: [],
             follow_logs: true,
             logs_limit: 100,
-            tag_map: {},
+            tag_map: {
+                'control-tower': '#000',
+                'interceptor': '#f00'
+            },
             tag_colors: [
-                '#f89033',
                 '#e127ff',
                 '#2BD48D',
                 '#2196C9',
@@ -51,11 +53,14 @@ const PerformanceLogsApp = {
                 '#385eb0',
                 '#7345fc',
                 '#94E5B0',
-            ].reverse()
+                '#f89033',
+            ].reverse(),
+            selected_sources: [],
         }
     },
     mounted() {
         $(document).on('vue_init', this.init_websocket)
+        this.selected_sources = this.all_tags
     },
     computed: {
         // reversedLogs: function () {
@@ -71,6 +76,9 @@ const PerformanceLogsApp = {
             result_url.searchParams.append('report_id', this.report_id)
             return result_url
         },
+        all_tags() {
+            return Object.keys(this.tag_map)
+        }
     },
     watch: {
         follow_logs(newValue) {
@@ -107,11 +115,16 @@ const PerformanceLogsApp = {
                 default:
             }
             console.log('Websocket status:', newValue)
+        },
+        selected_sources(newValue) {
+            this.state === this.states.connected && this.websocket.close()
         }
     },
     methods: {
         scrollLogsToEnd() {
-            this.$refs.log_container.scrollTop = this.$refs.log_container.scrollHeight
+            this.$nextTick(() => {
+                this.$refs.log_container.scrollTop = this.$refs.log_container.scrollHeight
+            })
         },
         resolve_color(hostname) {
             let host_color = this.tag_map[hostname]
@@ -121,6 +134,7 @@ const PerformanceLogsApp = {
                     host_color = '#' + Math.floor(Math.random() * 16777215).toString(16)
                 }
                 this.tag_map[hostname] = host_color
+                this.selected_sources = [...this.selected_sources, hostname]
             }
             return host_color
         },
@@ -146,7 +160,7 @@ const PerformanceLogsApp = {
         },
         on_websocket_message(message) {
             if (message.type !== 'message') {
-                console.log('Unknown message', message)
+                console.warn('Unknown message', message)
                 return
             }
             const data = JSON.parse(message.data)
@@ -187,8 +201,10 @@ const PerformanceLogsApp = {
             this.websocket.close()
         },
         handle_new_log_line(log_data) {
-            this.logs.push(log_data)
-            this.logs_limit !== null && this.logs.length > this.logs_limit && this.logs.shift()
+            if (this.selected_sources.includes(log_data.hostname)) {
+                this.logs.push(log_data)
+                this.logs_limit !== null && this.logs.length > this.logs_limit && this.logs.shift()
+            }
         }
     },
     template: `
@@ -197,11 +213,23 @@ const PerformanceLogsApp = {
                 <div class="d-flex justify-content-between">
                     <p class="font-h3 font-bold">Logs</p>
                     <div class="d-flex">
+                        
+                        <div class="d-flex align-items-center mr-2" style="width: 130px;">
+                            <label class="d-inline-flex flex-column">
+                                <span class="font-h6 position-absolute" style="top: 13px;">Hostnames:</span>
+                                <MultiselectDropdown
+                                    class="w-100"
+                                    :list_items="all_tags"
+                                    v-model="selected_sources"
+                                    placeholder="Select sources"
+                                ></MultiselectDropdown>
+                            </label>
+                        </div>
+                        
                         <div class="selectpicker-titled">
                             <span class="font-h6 font-semibold px-3 item__left text-uppercase">
                                 Limit logs
                             </span>
-<!--                            data-style="btn-secondary" -->
                             <select class="selectpicker" 
                                 data-style="item__right"
                                 v-model="logs_limit"

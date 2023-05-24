@@ -171,12 +171,12 @@
         {% include 'backend_performance:results/artifacts_table.html' %}
         {% endwith %}
         {% else %}
-        <performancelogsapp
-                :project_id="{{ test_data.project_id }}"
-                :report_id="{{ test_data.id }}"
-                instance_name="perf_logs"
-                @register="register"
-        ></performancelogsapp>
+            <Performance-Logs-App
+                    @register="register"
+                    instance_name="perf_logs"
+                    :project_id="{{ test_data.project_id }}"
+                    :report_id="{{ test_data.id }}"
+            ></Performance-Logs-App>
         {% endif %}
         {% with test_config = test_data['test_config'] %}
         {% include 'backend_performance:results/config_modal.html' %}

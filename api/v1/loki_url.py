@@ -1,18 +1,16 @@
 from ...models.reports import Report
 from flask import request
-from flask_restful import Resource
-from ....shared.tools.constants import APP_HOST
+
+from tools import api_tools, constants as c
 
 
-class API(Resource):
+class API(api_tools.APIBase):
     url_params = [
         '<int:project_id>',
+        '<string:mode>/<int:project_id>',
     ]
 
-    def __init__(self, module):
-        self.module = module
-
-    def get(self, project_id: int):
+    def get(self, project_id: int, **kwargs):
 
         report_id = request.args.get("report_id", None)
 
@@ -21,7 +19,7 @@ class API(Resource):
 
         build_id = Report.query.get_or_404(report_id).build_id
 
-        websocket_base_url = APP_HOST.replace("http://", "ws://").replace("https://", "wss://")
+        websocket_base_url = c.APP_HOST.replace("http://", "ws://").replace("https://", "wss://")
         websocket_base_url += "/loki/api/v1/tail"
         logs_query = "{" + f'report_id="{report_id}",project="{project_id}",build_id="{build_id}"' + "}"
 

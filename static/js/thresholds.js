@@ -298,8 +298,8 @@ var threshold_formatters = {
     test_env(value, row) {
         return `
             <div>
-                <p class="mb-0">${row.test}</p>
-                <span class="font-weight-400 text-gray-500 font-h6">${row.environment}</span>
+                <p class="font-h5 mb-0 text-gray-800">${row.test}</p>
+                <span class="font-weight-400 text-gray-600 font-h6">${row.environment}</span>
             </div>
         `
     },
@@ -326,8 +326,8 @@ var threshold_formatters = {
         const comparison = comparisonMap.get(row.comparison)
         return `
             <div>
-                <p class="mb-0">${row.aggregation} ${comparison} ${row.value}</p>
-                <span class="font-weight-400 text-gray-500 font-h6">${row.target}</span>
+                <p class="font-h5 mb-0 text-gray-800">${row.aggregation} ${comparison} ${row.value}</p>
+                <span class="font-weight-400 text-gray-600 font-h6">${row.target}</span>
             </div>
         `
     },

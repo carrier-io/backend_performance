@@ -328,7 +328,7 @@ const TestCreateModal = {
                                 <p class="font-h5 font-semibold">Test runner</p>
                                 <p class="font-h6 font-weight-400">Choose the runner for the test.</p>
                                 <div class="custom-input w-100-imp">
-                                    <select class="selectpicker bootstrap-select__b mt-2" data-style="btn" 
+                                    <select class="selectpicker bootstrap-select__b displacement-ml-4 mt-2" data-style="btn" 
                                     v-model="runner"
                                     :class="{ 'is-invalid': errors?.runner }"
                                 >

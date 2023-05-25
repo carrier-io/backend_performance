@@ -52,7 +52,6 @@ const QualityGate = {
             }
         },
         set_data(data) {
-            console.log('set_data', data)
             const {id, ...rest} = data
             this.load(rest)
             this.$emit('set_data', {id: 'quality_gate'})

@@ -1,10 +1,9 @@
 var test_formatters = {
     name_uid(value, row) {
-        console.log(value, row)
         return `
             <div>
-                <p class="mb-0">${row.name}</p>
-                <span class="font-weight-400 text-gray-500 font-h6">${row.uid}</span>
+                <p class="font-h5 mb-0 text-gray-800">${row.name}</p>
+                <span class="font-weight-400 text-gray-600 font-h6">${row.uid}</span>
             </div>
         `
     },

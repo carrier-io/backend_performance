@@ -168,7 +168,8 @@ const SummaryController = {
                         'Response time, ms'
                     )
             }
-            vueVm.registered_components.requests_chart_legend?.reload()
+            $(document).on('vue_init', () => V.registered_components.requests_chart_legend?.reload())
+            // vueVm.registered_components.requests_chart_legend?.reload()
         },
         async handle_slider_change(values) {
             [this.slider.low, this.slider.high] = values

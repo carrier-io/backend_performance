@@ -71,17 +71,17 @@ GATLING_MAPPING = {
     }
 }
 
-if c.LOCAL_DEV:
-    JMETER_MAPPING['local_jmeter'] = {
-        "container": "perfmeter:local",
-        "job_type": "perfmeter",
-        "influx_db": "{{secret.jmeter_db}}"
-    }
-    GATLING_MAPPING['local_gatling'] = {
-        "container": "perfgun:local",
-        "job_type": "perfgun",
-        "influx_db": "{{secret.gatling_db}}"
-    }
+# if c.LOCAL_DEV:
+    # JMETER_MAPPING['local_jmeter'] = {
+    #     "container": "perfmeter:local",
+    #     "job_type": "perfmeter",
+    #     "influx_db": "{{secret.jmeter_db}}"
+    # }
+    # GATLING_MAPPING['local_gatling'] = {
+    #     "container": "perfgun:local",
+    #     "job_type": "perfgun",
+    #     "influx_db": "{{secret.gatling_db}}"
+    # }
 
 EXECUTABLE_MAPPING = {
     "gatling": {

@@ -262,7 +262,7 @@ def write_test_run_logs_to_minio_bucket(report: Report):
             llf.fetch_logs(query=logs_query)
             llf.to_file(file_output, enc=enc)
             integration_id = report.test_config.get(
-                'integrations', {}).get('system', {}).get('s3_integration', {}).get('id')
+                'integrations', {}).get('system', {}).get('s3_integration', {}).get('integration_id')
             is_local = report.test_config.get(
                 'integrations', {}).get('system', {}).get('s3_integration', {}).get('is_local')
             minio_client = MinioClient.from_project_id(report.project_id, integration_id, is_local)

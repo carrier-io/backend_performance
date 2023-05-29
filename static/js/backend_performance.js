@@ -1,10 +1,9 @@
 var test_formatters = {
     name_uid(value, row) {
-        console.log(value, row)
         return `
             <div>
-                <p class="mb-0">${row.name}</p>
-                <span class="font-weight-400 text-gray-500 font-h6">${row.uid}</span>
+                <p class="font-h5 mb-0 text-gray-800">${row.name}</p>
+                <span class="font-weight-400 text-gray-600 font-h6">${row.uid}</span>
             </div>
         `
     },
@@ -130,7 +129,7 @@ var report_formatters = {
         }
     },
     createLinkToTest(value, row, index) {
-        return `<a class="test form-control-label font-h5" target="_blank" href="./results?result_id=${row.id}" role="button">${row.name}</a>`
+        return `<a class="test form-control-label font-h5" href="./results?result_id=${row.id}" role="button">${row.name}</a>`
     },
     date_formatter(value) {
         return new Date(value).toLocaleString()
@@ -328,7 +327,7 @@ const TestCreateModal = {
                                 <p class="font-h5 font-semibold">Test runner</p>
                                 <p class="font-h6 font-weight-400">Choose the runner for the test.</p>
                                 <div class="custom-input w-100-imp">
-                                    <select class="selectpicker bootstrap-select__b mt-2" data-style="btn" 
+                                    <select class="selectpicker bootstrap-select__b displacement-ml-4 mt-2" data-style="btn" 
                                     v-model="runner"
                                     :class="{ 'is-invalid': errors?.runner }"
                                 >
@@ -1001,5 +1000,24 @@ $(document).on('vue_init', () => {
             item => item.id
         ).join(',')
         ids_to_delete && results_delete(ids_to_delete)
+    })
+    socket.on("backend_test_status_updated", data => {
+        $('#results_table').bootstrapTable('updateByUniqueId', {
+            id: data['report_id'],
+            row: {
+                'test_status': data['status']
+            }
+        })
+    })
+    socket.on("backend_test_finished", data => {
+        $('#results_table').bootstrapTable('updateByUniqueId', {
+            id: data['id'],
+            row: {
+                'start_time': data['start_time'],
+                'duration': data['duration'],
+                'throughput': data['throughput'],
+                'failure_rate': data['failure_rate']
+            }
+        })
     })
 })

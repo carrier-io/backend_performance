@@ -6,10 +6,8 @@ from sqlalchemy import and_
 from json import loads
 
 from flask_restful import Resource
-from datetime import datetime
 from io import BytesIO
 from urllib.parse import urlunparse, urlparse
-import requests
 from pylon.core.tools import log
 from flask import current_app, request
 
@@ -19,9 +17,8 @@ from ...models.baselines import Baseline
 from ...models.reports import Report
 from ...models.tests import Test
 from ...connectors.influx_connector import InfluxConnector
-from tools import MinioClient, api_tools, auth
+from tools import MinioClient, api_tools, auth, LokiLogFetcher
 from influxdb.exceptions import InfluxDBClientError
-from ...utils.loki_log_fetcher import LokiLogFetcher
 
 
 class API(Resource):

@@ -15,16 +15,16 @@
 import requests
 
 from pylon.core.tools import log
-from tools import constants as c
+from tools import LokiLogFetcher
 
 from ..utils.report_utils import timeframe
 
 
-class LokiConnector():
+class LokiConnector:
     
     def __init__(self, **args) -> None:
         self.test_name = args['test_name']
-        self.query_range_url = f"{c.LOKI_HOST}/loki/api/v1/query_range"
+        self.query_range_url = LokiLogFetcher.make_url()  # todo: here we should consider making url from project
         self.start_time, self.end_time = timeframe(args, time_as_ts=True)
 
 

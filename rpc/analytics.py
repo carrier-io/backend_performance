@@ -6,8 +6,7 @@ from pydantic import BaseModel, validator, parse_obj_as
 from pylon.core.tools import web, log
 from sqlalchemy import String, literal_column, asc, func, not_
 
-from tools import rpc_tools, influx_tools
-from ..connectors.minio_connector import MinioConnector
+from tools import rpc_tools, influx_tools, MinioClient
 from ..models.baselines import Baseline
 from ..models.reports import Report
 
@@ -19,6 +18,7 @@ class ReportBuilderReflection(BaseModel):
     build_id: str
     name: str
     bucket_name: Optional[str]
+    s3_settings: dict
 
     # report_file_name: Optional[str]
 
@@ -106,6 +106,7 @@ columns = OrderedDict((
     ('total', Report.total),
     ('failures', Report.failures),
     ('tags', Report.tags),
+    ('s3_settings', Report.test_config),
 ))
 
 
@@ -190,8 +191,10 @@ class RPC:
         return tuple(zip(columns.keys(), i) for i in query.all())
 
     @web.rpc('get_backend_results', 'get_backend_results')
-    def get_ui_results(self, bucket: str, file_name: str, project_id: int, expression_addon: str = '') -> list:
-        client = MinioConnector.get_client(project_id)
+    def get_backend_results(self, bucket: str, file_name: str, project_id: int, 
+                            integration_id: int = None, is_local:bool = True, 
+                            expression_addon: str = '') -> list:
+        client = MinioClient.from_project_id(project_id, integration_id, is_local)
         return client.select_object_content(bucket, file_name, expression_addon)
 
     @web.rpc('backend_performance_compile_builder_data', 'compile_builder_data')
@@ -215,14 +218,16 @@ class RPC:
                 results = self.get_backend_results(
                     report_reflection.bucket_name,
                     report_file_name,
-                    project_id
+                    project_id,
+                    **report_reflection.s3_settings
                 )
                 users_file_name = f'users_{report_reflection.build_id}_{time_aggregation}.csv.gz'
                 user_results = self.get_backend_results(
                     report_reflection.bucket_name,
                     users_file_name,
                     project_id,
-                    expression_addon=" where s['sum'] != 'None' "
+                    expression_addon=" where s['sum'] != 'None' ",
+                    **report_reflection.s3_settings
                 )
                 # log.info('Backend users %s', user_results)
                 # if user_results:

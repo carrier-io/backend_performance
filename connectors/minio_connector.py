@@ -32,6 +32,7 @@ class MinioConnector(BaseConnector):
         if self.aggregation == 'auto':
             self.aggregation = self.calculate_auto_aggregation()
         self.time_addon = f" where time>='{self.start_time}' and time<='{self.end_time}'"
+        self.sampler_addon = f" and method{'=' if self.sampler == 'TRANSACTION' else '!='}'TRANSACTION'"
         # self.timestamps = self._calculate_timestamps(
         #     datetime.fromisoformat(self.start_time.strip('Z')),
         #     datetime.fromisoformat(self.end_time.strip('Z'))
@@ -117,7 +118,7 @@ class MinioConnector(BaseConnector):
             # status_addon = f" {'and' if scope_addon else 'where'} status='{self.status.upper()}'"
             status_addon = f" and status='{self.status.upper()}'"
         
-        expression_addon = self.time_addon + scope_addon + status_addon
+        expression_addon = self.time_addon + scope_addon + status_addon + self.sampler_addon
         
         if not (timestamps and users):
             timestamps, users = self.get_backend_users(self.aggregation)
@@ -149,9 +150,10 @@ class MinioConnector(BaseConnector):
         timestamps, users = self.get_backend_users(self.aggregation)
         status_addon = ""
         if self.status != 'all':
-            status_addon = f" where status='{self.status.upper()}'"
-            
-        response = self.client.select_object_content(self.bucket_name, file_name, status_addon)
+            status_addon = f" and status='{self.status.upper()}'"
+        expression_addon = self.time_addon + status_addon + self.sampler_addon
+
+        response = self.client.select_object_content(self.bucket_name, file_name, expression_addon)
         
         results = {"responses": {}}
         for line in response:
@@ -167,11 +169,12 @@ class MinioConnector(BaseConnector):
         if not (timestamps and users):
             timestamps, users = self.get_backend_users(self.aggregation)
         if scope and scope != 'All':
-            scope_addon = f" where request_name='{scope}'"
+            scope_addon = f" and request_name='{scope}'"
         if self.status != 'all':
-            status_addon = f" {'and' if scope_addon else 'where'} status='{self.status.upper()}'"
+            status_addon = f" and status='{self.status.upper()}'"
             
-        expression_addon = scope_addon + status_addon
+        expression_addon = self.time_addon + scope_addon + status_addon + self.sampler_addon
+        log.info(expression_addon)
         
         response = self.client.select_object_content(self.bucket_name, file_name, expression_addon)    
 
@@ -212,14 +215,14 @@ class MinioConnector(BaseConnector):
         if not (timestamps and users):
             timestamps, users = self.get_backend_users(self.aggregation)
         if scope and 'All' not in scope:
-            scope_addon = " where ("
+            scope_addon = " and ("
             for each in scope:
                 scope_addon += f"request_name='{each}' OR "
             scope_addon = scope_addon[0: -4] + ")"
         if self.status != 'all':
-            status_addon = f" {'and' if scope_addon else 'where'} status='{self.status.upper()}'"
+            status_addon = f" and status='{self.status.upper()}'"
             
-        expression_addon = scope_addon + status_addon
+        expression_addon = self.time_addon + scope_addon + status_addon + self.sampler_addon
         
         response = self.client.select_object_content(self.bucket_name, file_name, expression_addon) 
             
@@ -248,13 +251,13 @@ class MinioConnector(BaseConnector):
         if not (timestamps and users):
             timestamps, users = self.get_backend_users(self.aggregation)
         if scope and 'All' not in scope:
-            scope_addon = " where ("
+            scope_addon = " and ("
             for each in scope:
                 scope_addon += f"request_name='{each}' OR "
             scope_addon = scope_addon[0: -4] + ")"
-        status_addon = f" {'and' if scope_addon else 'where'} status='KO'"
+        status_addon = f" and status='KO'"
         
-        expression_addon = scope_addon + status_addon
+        expression_addon = self.time_addon + scope_addon + status_addon + self.sampler_addon
         
         response = self.client.select_object_content(self.bucket_name, file_name, expression_addon)
         
@@ -285,14 +288,14 @@ class MinioConnector(BaseConnector):
             timestamps, users = self.get_backend_users(self.aggregation)
 
         if scope and 'All' not in scope:
-            scope_addon = " where ("
+            scope_addon = " and ("
             for each in scope:
                 scope_addon += f"request_name='{each}' OR "
             scope_addon = scope_addon[0: -4] + ")"
         if self.status != 'all':
-            status_addon = f" {'and' if scope_addon else 'where'} status='{self.status.upper()}'"
+            status_addon = f" and status='{self.status.upper()}'"
 
-        expression_addon = scope_addon + status_addon
+        expression_addon = self.time_addon + scope_addon + status_addon + self.sampler_addon
         
         response = self.client.select_object_content(self.bucket_name, file_name, expression_addon)     
         
@@ -322,14 +325,14 @@ class MinioConnector(BaseConnector):
             timestamps, users = self.get_backend_users(self.aggregation)
         
         if scope and 'All' not in scope:
-            scope_addon = " where ("
+            scope_addon = " and ("
             for each in scope:
                 scope_addon += f"request_name='{each}' OR "
             scope_addon = scope_addon[0: -4] + ")"
         if self.status != 'all':
-            status_addon = f" {'and' if scope_addon else 'where'} status='{self.status.upper()}'"
+            status_addon = f" and status='{self.status.upper()}'"
             
-        expression_addon = scope_addon + status_addon
+        expression_addon = self.time_addon + scope_addon + status_addon + self.sampler_addon
         
         response = self.client.select_object_content(self.bucket_name, file_name, expression_addon)
         

@@ -5,14 +5,16 @@
     <div class="card-body d-flex">
         <div class="engine_health_card">
             <div>
-                <Multiselect-Dropdown
-                        @register="register"
-                        placeholder="Select Metrics"
-                        instance_name="load_metric_select"
-                        :list_items='["load1", "load5", "load15"]'
-                        :pre_selected_indexes='[2]'
-                        container_class="d-flex flex-row-reverse metric_select"
-                ></Multiselect-Dropdown>
+                <div class="d-flex justify-content-end">
+                    <Multiselect-Dropdown
+                            @register="register"
+                            placeholder="Select Metrics"
+                            instance_name="load_metric_select"
+                            :list_items='["load1", "load5", "load15"]'
+                            :pre_selected_indexes='[2]'
+                            container_class="d-flex flex-row-reverse metric_select bootstrap-select__b"
+                    ></Multiselect-Dropdown>
+                </div>
                 <canvas id="engine_health_load"></canvas>
                 <Engine-Health-Metrics-Legend
                         @register="register"
@@ -22,14 +24,16 @@
             </div>
 
             <div>
-                <Multiselect-Dropdown
-                        @register="register"
-                        placeholder="Select Metrics"
-                        instance_name="cpu_metric_select"
-                        :list_items='["system", "user", "softirq", "iowait"]'
-                        :pre_selected_indexes='[1]'
-                        container_class="d-flex flex-row-reverse metric_select"
-                ></Multiselect-Dropdown>
+                <div class="d-flex justify-content-end">
+                    <Multiselect-Dropdown
+                            @register="register"
+                            placeholder="Select Metrics"
+                            instance_name="cpu_metric_select"
+                            :list_items='["system", "user", "softirq", "iowait"]'
+                            :pre_selected_indexes='[1]'
+                            container_class="d-flex flex-row-reverse metric_select bootstrap-select__b"
+                    ></Multiselect-Dropdown>
+                </div>
                 <canvas id="engine_health_cpu"></canvas>
                 <Engine-Health-Metrics-Legend
                         @register="register"
@@ -39,14 +43,16 @@
             </div>
 
             <div>
-                <Multiselect-Dropdown
-                        @register="register"
-                        placeholder="Select Metrics"
-                        instance_name="memory_metric_select"
-                        :list_items='["heap memory", "non-heap memory"]'
-                        :pre_selected_indexes='[0]'
-                        container_class="d-flex flex-row-reverse metric_select"
-                ></Multiselect-Dropdown>
+                <div class="d-flex justify-content-end">
+                    <Multiselect-Dropdown
+                            @register="register"
+                            placeholder="Select Metrics"
+                            instance_name="memory_metric_select"
+                            :list_items='["heap memory", "non-heap memory"]'
+                            :pre_selected_indexes='[0]'
+                            container_class="d-flex flex-row-reverse metric_select bootstrap-select__b"
+                    ></Multiselect-Dropdown>
+                </div>
                 <canvas id="engine_health_memory"></canvas>
                 <Engine-Health-Metrics-Legend
                         @register="register"

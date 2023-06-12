@@ -214,12 +214,13 @@ const PerformanceLogsApp = {
                     <p class="font-h3 font-bold">Logs</p>
                     <div class="d-flex">
                         
-                        <div class="d-flex align-items-center mr-2" style="width: 130px;">
+                        <div class="d-flex align-items-center mr-2">
                             <label class="d-inline-flex flex-column">
                                 <span class="font-h6 position-absolute" style="top: 13px;">Hostnames:</span>
                                 <MultiselectDropdown
                                     class="w-100"
                                     :list_items="all_tags"
+                                    container_class="bootstrap-select__b"
                                     v-model="selected_sources"
                                     placeholder="Select sources"
                                 ></MultiselectDropdown>

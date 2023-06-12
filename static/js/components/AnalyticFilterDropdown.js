@@ -84,7 +84,8 @@ const AnalyticFilterDropdown = {
     },
     template: `
         <div id="complexList" class="complex-list">
-            <button class="btn btn-select dropdown-toggle text-left w-100" type="button"
+            <button class="btn btn-select bootstrap-select__sm dropdown-toggle px-2.5 text-left w-100" type="button"
+                style="height: 32px"
                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 <span class="d-inline-block"
                     :class="classTitle"

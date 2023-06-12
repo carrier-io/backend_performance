@@ -99,12 +99,12 @@ const AnalyticFilter = {
         },
     },
     template: `
-        <div id="dataFilter" class="card" style=" width:280px; height: 450px; margin-left: 28px">
+        <div id="dataFilter" class="card" style="width:280px; height: 450px; margin-left: 28px">
             <div class="d-flex justify-content-between align-items-center">
-                <p class="font-h5 font-bold py-3 px-4 text-gray-800">DATA FILTER</p>
+                <p class="font-h6 font-semibold py-3 px-4 text-gray-800">DATA FILTER</p>
                 <p class="text-purple font-semibold font-h5 cursor-pointer d-flex align-items-center">
-                    <span @click="clearFilter">Clear all</span>
-                    <i class="icon__16x16 icon-plus__16-purple mx-3 mb-1" @click="addBlock"></i>
+                    <i class="icon__16x16 icon-delete" @click="clearFilter"></i>
+                    <i class="icon__16x16 icon-plus__16-purple mx-3" @click="addBlock"></i>
                 </p>
             </div>
             <div style="overflow: scroll;">
@@ -119,7 +119,7 @@ const AnalyticFilter = {
                             v-bind:analytics-data='analyticsData'
                         >
                         </analytic-filter-block>
-                        <i v-if="blocks.length > 1" class="icon__16x16 icon-minus__16 ml-4 mb-3" @click="removeBlock(block)"></i>
+                        <i v-if="blocks.length > 1" class="icon__18x18 icon-minus__big ml-3 mb-2" @click="removeBlock(block)"></i>
                     </div>
                 </div> 
             </div>

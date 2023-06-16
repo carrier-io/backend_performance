@@ -171,7 +171,6 @@ def parse_test_data(project_id: int, request_data: dict,
     common_kwargs = common_kwargs or dict()
     test_create_rpc_kwargs = test_create_rpc_kwargs or dict()
     errors = list()
-
     common_params = request_data.pop('common_params', {})
     cloud_settings = common_params.get('env_vars', {}).get('cloud_settings')
 
@@ -187,6 +186,17 @@ def parse_test_data(project_id: int, request_data: dict,
             integration_name: cloud_settings
         }
         request_data['integrations'] = integrations
+
+    s3_settings = request_data.get('integrations', {}).get('system', {}).get('s3_integration')
+    if not s3_settings:
+        default_integration = rpc.call.integrations_get_defaults(
+            project_id=project_id, name='s3_integration'
+        )
+        if default_integration:
+            request_data['integrations'].setdefault('system', {})['s3_integration'] = {
+                "integration_id": default_integration.integration_id, 
+                "is_local": bool(default_integration.project_id)
+            }
 
     try:
         test_data = rpc.call.backend_performance_test_create_common_parameters(

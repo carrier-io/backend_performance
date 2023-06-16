@@ -87,54 +87,7 @@ class RPC:
     @rpc_tools.wrap_exceptions(RuntimeError)
     def make_execution_json_config(self, integration_data: dict, project_id: int) -> dict:
         """ Prepare execution_json for this integration """
-        return {
-            'SLA': {
-                'checked': integration_data['SLA']
-                },
-            'baseline': {
-                'checked': integration_data['baseline'],
-                'rt_baseline_comparison_mecric': 
-                    integration_data['rt_baseline_comparison_mecric']
-                },
-            'settings': {
-                'summary_results': {
-                    'check_response_time': 
-                        integration_data['summary_check'] and \
-                            integration_data['summary_check_response_time'],
-                    'response_time_deviation': 
-                        integration_data['summary_response_time_deviation'],
-                    'check_error_rate': 
-                        integration_data['summary_check'] and \
-                            integration_data['summary_check_error_rate'],
-                    'error_rate_deviation': 
-                        integration_data['summary_error_rate_deviation'],
-                    'check_throughput': 
-                        integration_data['summary_check'] and \
-                            integration_data['summary_check_throughput'],
-                    'throughput_deviation': 
-                        integration_data['summary_throughput_deviation']
-                    },
-                'per_request_results': {
-                    'check_response_time': 
-                        integration_data['request_check'] and \
-                            integration_data['request_check_response_time'],
-                    'response_time_deviation': 
-                        integration_data['request_response_time_deviation'],
-                    'check_error_rate': 
-                        integration_data['request_check'] and \
-                            integration_data['request_check_error_rate'],
-                    'error_rate_deviation': 
-                        integration_data['request_error_rate_deviation'],
-                    'check_throughput': 
-                        integration_data['request_check'] and \
-                            integration_data['request_check_throughput'],
-                    'throughput_deviation': 
-                        integration_data['request_throughput_deviation'],
-                    'percentage_of_failed_requests': 
-                        integration_data['percentage_of_failed_requests']
-                    }
-                }
-            }
+        return integration_data
 
     @web.rpc('backend_performance_get_tests')
     @rpc_tools.wrap_exceptions(RuntimeError)

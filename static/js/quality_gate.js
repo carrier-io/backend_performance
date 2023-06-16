@@ -30,25 +30,33 @@ const QualityGate = {
                     rt_baseline_comparison_mecric,
                 } = this
                 return {
-                    SLA,
-                    baseline,
-                    request_check,
-                    summary_check,
-                    summary_check_response_time,
-                    summary_check_error_rate,
-                    summary_check_throughput,
-                    request_check_response_time,
-                    request_check_error_rate,
-                    request_check_throughput,
-                    summary_response_time_deviation,
-                    summary_error_rate_deviation,
-                    summary_throughput_deviation,
-                    request_response_time_deviation,
-                    request_error_rate_deviation,
-                    request_throughput_deviation,
-                    percentage_of_failed_requests,
-                    rt_baseline_comparison_mecric,            
-                }
+                    SLA: {
+                        checked: SLA
+                        },
+                    baseline: {
+                        checked: baseline,
+                        rt_baseline_comparison_mecric: rt_baseline_comparison_mecric
+                        },
+                    settings: {
+                        summary_results: {
+                            check_response_time: summary_check && summary_check_response_time,
+                            response_time_deviation: summary_response_time_deviation,
+                            check_error_rate: summary_check && summary_check_error_rate,
+                            error_rate_deviation: summary_error_rate_deviation,
+                            check_throughput: summary_check && summary_check_throughput,
+                            throughput_deviation: summary_throughput_deviation
+                            },
+                        per_request_results: {
+                            check_response_time: request_check && request_check_response_time,
+                            response_time_deviation: request_response_time_deviation,
+                            check_error_rate: request_check && request_check_error_rate,
+                            error_rate_deviation: request_error_rate_deviation,
+                            check_throughput: request_check && request_check_throughput,
+                            throughput_deviation: request_throughput_deviation,
+                            percentage_of_failed_requests: percentage_of_failed_requests
+                            }
+                        }
+                    }
             }
         },
         set_data(data) {
@@ -61,10 +69,35 @@ const QualityGate = {
             this.$emit('clear_data')
         },
         load(data) {
-            Object.assign(this.$data, {...this.initialState(), ...data})
+            data_to_load = {
+                SLA: data.SLA.checked,
+                baseline: data.baseline.checked,
+                request_check: data.settings.per_request_results.check_response_time || 
+                               data.settings.per_request_results.check_error_rate || 
+                               data.settings.per_request_results.check_throughput,
+                summary_check: data.settings.summary_results.check_response_time || 
+                               data.settings.summary_results.check_error_rate || 
+                               data.settings.summary_results.check_throughput,
+                summary_check_response_time: data.settings.summary_results.check_response_time,
+                summary_check_error_rate: data.settings.summary_results.check_error_rate,
+                summary_check_throughput: data.settings.summary_results.check_throughput,
+                request_check_response_time: data.settings.per_request_results.check_response_time,
+                request_check_error_rate: data.settings.per_request_results.check_error_rate,
+                request_check_throughput: data.settings.per_request_results.check_throughput,
+                summary_response_time_deviation: data.settings.summary_results.response_time_deviation,
+                summary_error_rate_deviation: data.settings.summary_results.error_rate_deviation,
+                summary_throughput_deviation: data.settings.summary_results.throughput_deviation,
+                request_response_time_deviation: data.settings.per_request_results.response_time_deviation,
+                request_error_rate_deviation: data.settings.per_request_results.error_rate_deviation,
+                request_throughput_deviation: data.settings.per_request_results.throughput_deviation,
+                percentage_of_failed_requests: data.settings.per_request_results.percentage_of_failed_requests,
+                rt_baseline_comparison_mecric: data.baseline.rt_baseline_comparison_mecric
+            }
+            Object.assign(this.$data, {...this.initialState(), ...data_to_load})
         },
         set_error(data) {
-            this.errors[data.loc[data.loc.length - 1]] = data.msg
+            this.errors[`${data.loc[data.loc.length - 2]}_${data.loc[data.loc.length - 1]}`] = data.msg
+            console.log(this.errors)
         },
         clear_errors() {
             this.errors = {}
@@ -165,9 +198,9 @@ const QualityGate = {
                                 <div class="font-h6 font-semibold" style="white-space: nowrap">deviation = </div>
                                 <input type="number" class="form-control mt-1" placeholder="Response time deviation"
                                     v-model="summary_response_time_deviation"
-                                    :class="{ 'is-invalid': errors.summary_response_time_deviation }"
+                                    :class="{ 'is-invalid': errors.summary_results_response_time_deviation }"
                                 >
-                                <div class="invalid-feedback">[[ errors.summary_response_time_deviation ]]</div>
+                                <div class="invalid-feedback">[[ errors.summary_results_response_time_deviation ]]</div>
                             </div>
                         </div>
 
@@ -184,9 +217,9 @@ const QualityGate = {
                                 <div class="font-h6 font-semibold" style="white-space: nowrap">deviation = </div>
                                 <input type="number" class="form-control mt-1" placeholder="Error rate deviation"
                                     v-model="summary_error_rate_deviation"
-                                    :class="{ 'is-invalid': errors.summary_error_rate_deviation }"
+                                    :class="{ 'is-invalid': errors.summary_results_error_rate_deviation }"
                                 >
-                                <div class="invalid-feedback">[[ errors.summary_error_rate_deviation ]]</div>
+                                <div class="invalid-feedback">[[ errors.summary_results_error_rate_deviation ]]</div>
                             </div>
                         </div>
                         
@@ -203,9 +236,9 @@ const QualityGate = {
                                 <div class="font-h6 font-semibold" style="white-space: nowrap">deviation = </div>
                                 <input type="number" class="form-control mt-1" placeholder="Throughput deviation"
                                     v-model="summary_throughput_deviation"
-                                    :class="{ 'is-invalid': errors.summary_throughput_deviation }"
+                                    :class="{ 'is-invalid': errors.summary_results_throughput_deviation }"
                                 >
-                                <div class="invalid-feedback">[[ errors.summary_throughput_deviation ]]</div>
+                                <div class="invalid-feedback">[[ errors.summary_results_throughput_deviation ]]</div>
                             </div>
                         </div>
                     </div>
@@ -238,9 +271,9 @@ const QualityGate = {
                                 <div class="font-h6 font-semibold" style="white-space: nowrap">deviation = </div>
                                 <input type="number" class="form-control mt-1" placeholder="Response time deviation"
                                     v-model="request_response_time_deviation"
-                                    :class="{ 'is-invalid': errors.request_response_time_deviation }"
+                                    :class="{ 'is-invalid': errors.per_request_results_response_time_deviation }"
                                 >
-                                <div class="invalid-feedback">[[ errors.request_response_time_deviation ]]</div>
+                                <div class="invalid-feedback">[[ errors.per_request_results_response_time_deviation ]]</div>
                             </div>
                         </div>
 
@@ -257,9 +290,9 @@ const QualityGate = {
                                 <div class="font-h6 font-semibold" style="white-space: nowrap">deviation = </div>
                                 <input type="number" class="form-control mt-1" placeholder="Error rate deviation"
                                     v-model="request_error_rate_deviation"
-                                    :class="{ 'is-invalid': errors.request_error_rate_deviation }"
+                                    :class="{ 'is-invalid': errors.per_request_results_error_rate_deviation }"
                                 >
-                                <div class="invalid-feedback">[[ errors.request_error_rate_deviation ]]</div>
+                                <div class="invalid-feedback">[[ errors.per_request_results_error_rate_deviation ]]</div>
                             </div>
                         </div>
                         
@@ -276,9 +309,9 @@ const QualityGate = {
                                 <div class="font-h6 font-semibold" style="white-space: nowrap">deviation = </div>
                                 <input type="number" class="form-control mt-1" placeholder="Throughput deviation"
                                     v-model="request_throughput_deviation"
-                                    :class="{ 'is-invalid': errors.request_throughput_deviation }"
+                                    :class="{ 'is-invalid': errors.per_request_results_throughput_deviation }"
                                 >
-                                <div class="invalid-feedback">[[ errors.request_throughput_deviation ]]</div>
+                                <div class="invalid-feedback">[[ errors.per_request_results_throughput_deviation ]]</div>
                             </div>
                         </div>
 
@@ -287,9 +320,9 @@ const QualityGate = {
                             <div class="col mb-2">
                                 <input type="number" class="form-control mt-1" placeholder="Failed requests"
                                     v-model="percentage_of_failed_requests"
-                                    :class="{ 'is-invalid': errors.percentage_of_failed_requests }"
+                                    :class="{ 'is-invalid': errors.per_request_results_percentage_of_failed_requests }"
                                 >
-                                <div class="invalid-feedback">[[ errors.percentage_of_failed_requests ]]</div>
+                                <div class="invalid-feedback">[[ errors.per_request_results_percentage_of_failed_requests ]]</div>
                             </div>
                         </div>
 
@@ -309,7 +342,7 @@ const QualityGate = {
                                     <option value="pct95">Percentile 95</option>
                                     <option value="pct50">Percentile 50</option>
                                 </select>
-                                <div class="invalid-feedback" style="display: block;">[[ errors.rt_baseline_comparison_mecric ]]</div>
+                                <div class="invalid-feedback" style="display: block;">[[ errors.baseline_rt_baseline_comparison_mecric ]]</div>
                             </div>
                         </div>
 

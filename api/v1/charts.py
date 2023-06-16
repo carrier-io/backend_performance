@@ -10,8 +10,7 @@ from ...connectors.minio_connector import MinioConnector
 from ...connectors.influx_connector import InfluxConnector
 from ...connectors.loki_connector import LokiConnector
 from ...utils.charts_utils import requests_summary, requests_hits, avg_responses, \
-    summary_table, \
-    get_data_for_analytics, get_issues, engine_health
+    summary_table, get_data_for_analytics, get_issues, engine_health
 
 
 class API(Resource):
@@ -55,11 +54,15 @@ class API(Resource):
         return self.mapping[source][target](connector)
 
     def _get_connector(self, args, source):
-        test_status = Report.query.with_entities(Report.test_status).filter(
+        report = Report.query.with_entities(Report.test_status, Report.test_config).filter(
             Report.build_id == args['build_id']
-        ).first()[0]['status'].lower()
+        ).first()
+        test_status = report[0]['status'].lower()
+        s3_config = {
+            's3_config': report[1].get('integrations', {}).get('system', {}).get('s3_integration', {})
+            }
         if test_status in self.statuses:
-            log.info('Using MinioConnector')
+            args.update(s3_config)
             return MinioConnector(**args)
         else:
             if source == "errors":

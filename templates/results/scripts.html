@@ -20,11 +20,13 @@
 <script src="{{ url_for('backend_performance.static', filename='js/in_progress.js') }}"></script>
 <script src="{{ url_for('backend_performance.static', filename='js/artifacts.js') }}"></script>
 <script src="{{ url_for('backend_performance.static', filename='js/results.js') }}"></script>
+<script src="{{ url_for('backend_performance.static', filename='js/quality_gate.js') }}"></script>
 {{ template_slot('params_table_scripts') | safe }}
 {{ template_slot('sources_scripts') | safe }}
 {{ template_slot('locations_scripts') | safe }}
 {{ template_slot('integrations_backend_performance_scripts') | safe }}
-<script src="{{ url_for('backend_performance.static', filename='js/quality_gate.js') }}"></script>
+
+{% set integrations_data = test_data.get("test_config", {}).get("integrations") %}
 
 <script>
     $(document).on('vue_init', () => {
@@ -35,5 +37,3 @@
         IntegrationSection.Manager().set({{ integrations_data | default({}) | tojson }})
     })
 </script>
-
-

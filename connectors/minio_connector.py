@@ -27,6 +27,7 @@ class MinioConnector(BaseConnector):
     
     def __init__(self, **args) -> None:
         super().__init__(**args)
+        self.s3_config = args.get('s3_config', {})
         self.client = self.get_client(self.project_id)
         self.bucket_name = f'p--{self.project_id}.{self.test_name}'.replace("_", "").lower()
         if self.aggregation == 'auto':
@@ -43,12 +44,8 @@ class MinioConnector(BaseConnector):
         resp = Report.query.with_entities(Report.project_id).filter(Report.build_id == build_id).first()
         return resp[0]
     
-    
-    @staticmethod
-    def get_client(project_id: int) -> MinioClient:
-        rpc = rpc_tools.RpcMixin().rpc
-        return MinioClient(rpc.call.project_get_or_404(project_id))
-
+    def get_client(self, project_id: int) -> MinioClient:
+        return MinioClient.from_project_id(project_id, **self.s3_config)
 
     @staticmethod
     def _calculate_timestamps(start_time: datetime, end_time: datetime) -> list:

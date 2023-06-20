@@ -49,6 +49,9 @@ const PerformanceTestProgress = {
     },
     watch: {
         percentage(newValue, oldValue) {
+            if (this.status.toLowerCase() === 'canceled') {
+                return
+            }
             if (newValue === 100) {
                 clearInterval(this.poll_intrvl)
                 location.reload()

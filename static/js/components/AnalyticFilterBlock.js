@@ -140,14 +140,10 @@ const AnalyticFilterBlock = {
                 :items-list="metricItems"
             ></analytic-filter-dropdown>
             <div class="pt-3">
-                <button class="btn btn-secondary"
+                <button class="btn btn-sm btn-secondary d-flex align-items-center"
                     :disabled="loadingData"
-                    style="position: relative; padding-right: 24px"
                     @click="handlerSubmit">Apply
-                    <i
-                        v-if="loadingData"
-                        class="spinner-loader" 
-                        style="position: absolute; top: 8px; right: 5px"></i>
+                    <i v-if="loadingData" class="preview-loader ml-2"></i>
                 </button>
             </div>
         </div>

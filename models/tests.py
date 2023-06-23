@@ -171,8 +171,7 @@ class Test(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin):
                     integration[integration_name] = self.rpc.call_function_with_timeout(
                         func=f'backend_performance_execution_json_config_{integration_name}',
                         timeout=3,
-                        integration_data=integration_data,
-                        project_id=self.project_id
+                        integration_data=integration_data
                     )
                 except Empty:
                     log.error(f'Cannot find execution json compiler for {integration_name}')

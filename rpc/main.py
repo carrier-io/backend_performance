@@ -44,9 +44,7 @@ class RPC:
 
     @web.rpc('backend_performance_test_create_test_parameters', 'parse_test_parameters')
     @rpc_tools.wrap_exceptions(ValidationError)
-    def parse_test_parameters(
-            self, data: Union[list, dict], project_id: int, **kwargs
-    ) -> dict:
+    def parse_test_parameters(self, data: Union[list, dict], **kwargs) -> dict:
         purpose = kwargs.pop('purpose', None)
         if purpose == 'run':
             pd_object = PerformanceTestParamsRun(test_parameters=data)
@@ -67,9 +65,7 @@ class RPC:
 
     @web.rpc(f'backend_performance_test_create_integration_validate_quality_gate')
     @rpc_tools.wrap_exceptions(ValidationError)
-    def backend_performance_test_create_integration_validate(
-            self,
-            data: dict, project_id: int,
+    def backend_performance_test_create_integration_validate(self, data: dict,
             pd_kwargs: Optional[dict] = None, **kwargs
     ) -> dict:
         if not pd_kwargs:
@@ -79,7 +75,7 @@ class RPC:
 
     @web.rpc('backend_performance_execution_json_config_quality_gate')
     @rpc_tools.wrap_exceptions(RuntimeError)
-    def make_execution_json_config(self, integration_data: dict, project_id: int) -> dict:
+    def make_execution_json_config(self, integration_data: dict) -> dict:
         """ Prepare execution_json for this integration """
         return integration_data
 

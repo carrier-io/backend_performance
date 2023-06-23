@@ -558,7 +558,7 @@ const TestCreateModal = {
                         cloud_settings: this.compareObjectsDiff(
                             this.$refs.locations.chosen_location_settings,
                             this.cloud_settings,
-                            ["id", "integration_name", "instance_type"]
+                            ["id", "integration_name", "project_id", "instance_type"]
                         ), 
                         custom_cmd: this.custom_cmd
                     },

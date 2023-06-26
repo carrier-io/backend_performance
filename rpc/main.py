@@ -2,19 +2,18 @@ from datetime import datetime
 from typing import Optional, Union
 
 from pydantic import ValidationError
-from pylon.core.tools import web
-from pylon.core.tools import log
 from sqlalchemy import desc
 
+from pylon.core.tools import web, log
+
 from tools import rpc_tools, db_tools
+
 from ..models.pd.performance_test import TestCommon, TestOverrideable
 from ..models.pd.quality_gate import QualityGate
-from ..models.pd.test_parameters import PerformanceTestParams, PerformanceTestParamsCreate, \
-    PerformanceTestParamsRun
+from ..models.pd.test_parameters import PerformanceTestParamsCreate, PerformanceTestParamsRun
 from ..models.reports import Report
 from ..models.tests import Test
 from ..models.runners import Runner
-from ..utils.utils import run_test
 from ..constants import JMETER_MAPPING, GATLING_MAPPING, EXECUTABLE_MAPPING
 
 
@@ -28,7 +27,8 @@ class RPC:
              'parse_common_test_parameters')
     # @rpc_tools.wrap_exceptions(RuntimeError)
     # @rpc_tools.wrap_exceptions(ValidationError)
-    def parse_common_test_parameters(self, project_id: int, test_params: dict, **kwargs
+    def parse_common_test_parameters(
+            self, project_id: int, test_params: dict, **kwargs
     ) -> dict:
         overrideable_only = kwargs.pop('overrideable_only', False)
         if overrideable_only:
@@ -44,7 +44,9 @@ class RPC:
 
     @web.rpc('backend_performance_test_create_test_parameters', 'parse_test_parameters')
     @rpc_tools.wrap_exceptions(ValidationError)
-    def parse_test_parameters(self, data: Union[list, dict], project_id: int, **kwargs) -> dict:
+    def parse_test_parameters(
+            self, data: Union[list, dict], project_id: int, **kwargs
+    ) -> dict:
         purpose = kwargs.pop('purpose', None)
         if purpose == 'run':
             pd_object = PerformanceTestParamsRun(test_parameters=data)
@@ -53,16 +55,6 @@ class RPC:
         else:
             pd_object = PerformanceTestParamsCreate(test_parameters=data)
         return pd_object.dict(**kwargs)
-
-    @web.rpc('backend_performance_run_scheduled_test', 'run_scheduled_test')
-    @rpc_tools.wrap_exceptions(RuntimeError)
-    def run_scheduled_test(self, test_id: int, test_params: list) -> dict:
-        test = Test.query.filter(Test.id == test_id).one()
-        test_params_schedule_pd = PerformanceTestParams(test_parameters=test_params)
-        test_params_existing_pd = PerformanceTestParams.from_orm(test)
-        test_params_existing_pd.update(test_params_schedule_pd)
-        test.__dict__.update(test_params_existing_pd.dict())
-        return run_test(test)
 
     @web.rpc('backend_performance_job_type_by_uid')
     @rpc_tools.wrap_exceptions(RuntimeError)
@@ -75,7 +67,9 @@ class RPC:
 
     @web.rpc(f'backend_performance_test_create_integration_validate_quality_gate')
     @rpc_tools.wrap_exceptions(ValidationError)
-    def backend_performance_test_create_integration_validate(self, data: dict, project_id: int,
+    def backend_performance_test_create_integration_validate(
+            self,
+            data: dict, project_id: int,
             pd_kwargs: Optional[dict] = None, **kwargs
     ) -> dict:
         if not pd_kwargs:
@@ -136,14 +130,17 @@ class RPC:
     @web.rpc('populate_backend_runners_table')
     def populate_runners_table(self, project_id):
         runners = []
+
         def _create_runner_objects(mapping, container_type):
             for runner in mapping:
-                runners.append(Runner(project_id=project_id,
-                                    container_type=container_type, 
-                                    config={runner: mapping[runner]},
-                                    is_active=True,
-                                    is_default=True
-                                    ))
+                runners.append(Runner(
+                    project_id=project_id,
+                    container_type=container_type,
+                    config={runner: mapping[runner]},
+                    is_active=True,
+                    is_default=True
+                ))
+
         _create_runner_objects(JMETER_MAPPING, 'jmeter')
         _create_runner_objects(GATLING_MAPPING, 'gatling')
         _create_runner_objects(EXECUTABLE_MAPPING, 'executable_jar')

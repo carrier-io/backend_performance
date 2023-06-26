@@ -1,3 +1,4 @@
+import re
 from traceback import format_exc
 from typing import List
 
@@ -7,9 +8,9 @@ from json import loads
 
 from flask_restful import Resource
 from io import BytesIO
-from urllib.parse import urlunparse, urlparse
+from collections import defaultdict
+from flask import request
 from pylon.core.tools import log
-from flask import current_app, request
 
 from ...models.pd.report import ReportCreateSerializer, ReportGetSerializer
 from ...models.pd.test_parameters import PerformanceTestParamsRun
@@ -198,33 +199,74 @@ class API(Resource):
             return 'IDs must be integers', 400
         # query only needed fields
         query_result = Report.query.with_entities(
-            Report.build_id, Report.name, Report.lg_type
+            Report.build_id, Report.name, Report.lg_type, Report.test_config
         ).filter(
             and_(Report.project_id == project.id, Report.id.in_(delete_ids))
         ).all()
-        for build_id, name, lg_type in query_result:
+
+        minio_delete_build_ids = dict()
+        for build_id, name, lg_type, test_config in query_result:
+            # delete influx tables
             try:
-                connector = InfluxConnector(build_id=build_id, test_name=name, lg_type=lg_type)
-                connector.delete_test_data()
+                InfluxConnector(build_id=build_id, test_name=name, lg_type=lg_type).delete_test_data()
             except InfluxDBClientError as e:
                 log.warning('InfluxDBClientError %s', e)
 
-        # bulk delete baselines
+            # collect s3 data for deletion
+            s3_settings = test_config.get(
+                'integrations', {}).get('system', {}).get('s3_integration', {'integration_id': 1})
+            if s3_settings:
+                try:
+                    minio_delete_build_ids[s3_settings['integration_id']]['names'][name].add(build_id)
+                except KeyError:
+                    minio_delete_build_ids[s3_settings['integration_id']] = {
+                        'settings': s3_settings,
+                        'names': defaultdict(set)
+                    }
+                    minio_delete_build_ids[s3_settings['integration_id']]['names'][name].add(build_id)
+
+        log.info('DEELEETE  %s', minio_delete_build_ids)
+        # delete files from s3
+        tmp = []
+        for i in minio_delete_build_ids.values():
+            minio_client = MinioClient(project, **i['settings'])
+            for test_name, build_ids in i['names'].items():
+                bucket_name = str(test_name).replace("_", "").replace(" ", "").lower()
+                patt = re.compile(r'|'.join(build_ids))
+                minio_files = minio_client.list_files(bucket_name)
+                files_to_delete = [
+                    {'Key': f['name']}
+                    for f in minio_files
+                    if re.search(patt, f['name'])
+                ]
+                tmp.append(dict(
+                    Bucket=minio_client.format_bucket_name(bucket_name),
+                    Delete={'Objects': files_to_delete},
+                ))
+                minio_client.s3_client.delete_objects(
+                    Bucket=minio_client.format_bucket_name(bucket_name),
+                    Delete={'Objects': files_to_delete},
+                )
+        log.info('DELETE REPORT %s', tmp)
+
+        # delete baselines
         Baseline.query.filter(
             Baseline.project_id == project.id,
             Baseline.report_id.in_(delete_ids)
         ).delete()
         Baseline.commit()
 
-        # bulk delete reports
+        # delete reports
         Report.query.filter(
             Report.project_id == project.id,
             Report.id.in_(delete_ids)
         ).delete()
         Report.commit()
-        return {"message": "deleted"}, 204
+
+        return None, 204
 
     def patch(self, project_id: int):
+        # used as dump logs flag in control tower
         report = Report.query.filter(
             Report.project_id == project_id,
             Report.build_id == request.json["build_id"]

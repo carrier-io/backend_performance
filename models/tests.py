@@ -172,7 +172,7 @@ class Test(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin):
                         func=f'backend_performance_execution_json_config_{integration_name}',
                         timeout=3,
                         integration_data=integration_data,
-                        project_id = self.project_id
+                        project_id=self.project_id
                     )
                 except Empty:
                     log.error(f'Cannot find execution json compiler for {integration_name}')
@@ -209,7 +209,10 @@ class Test(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin):
         self.location = location
         if execution:
             vault_client = VaultClient.from_project(self.project_id)
+            vault_client.track_used_secrets = True
             execution_json = vault_client.unsecret(execution_json)
+            execution_json['logger_stop_words'] = vault_client.used_secrets
+
 
         return execution_json
 

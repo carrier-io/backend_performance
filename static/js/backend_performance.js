@@ -545,6 +545,7 @@ const TestCreateModal = {
         get_data() {
 
             const data = {
+                compile_tests: this.compile_tests,
                 common_params: {
                     name: this.name,
                     test_type: this.test_type,

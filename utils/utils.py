@@ -177,6 +177,7 @@ def parse_test_data(project_id: int, request_data: dict,
     cloud_settings = common_params.get('env_vars', {}).get('cloud_settings')
     request_data.setdefault('integrations', {})
 
+    request_data.setdefault('integrations', {})
     if cloud_settings:
         integration_name = cloud_settings.get("integration_name")
 

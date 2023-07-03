@@ -7,7 +7,6 @@ const RetentionModal = {
             time_type: undefined,
             time_amount: 1,
             ttl: undefined,
-            ts: undefined,
             default_retention: undefined
         }
     },
@@ -23,7 +22,7 @@ const RetentionModal = {
             this.$nextTick(this.refresh_pickers)
         },
         initial_retention(newValue) {
-            Object.assign(this.$data, this.process_retention(newValue))
+            newValue !== undefined && Object.assign(this.$data, this.process_retention(newValue))
         }
     },
     computed: {
@@ -74,9 +73,9 @@ const RetentionModal = {
             }
         },
         process_response(data) {
-            const {retention, ttl, ts, ...rest} = data
+            const {retention, ttl, ...rest} = data
             const {time_type, time_amount} = this.process_retention(retention)
-            return {time_type, time_amount, ttl, ts, ...rest}
+            return {time_type, time_amount, ttl, ...rest}
         },
         process_retention(retention_data) {
             if (retention_data === null) {

@@ -15,7 +15,7 @@ from uuid import uuid4
 
 from pydantic import ValidationError
 from ..utils.retention_utils import RetentionModel
-from sqlalchemy import String, Column, Integer, Float, Text, JSON, DateTime, Interval
+from sqlalchemy import String, Column, Integer, Float, JSON
 from sqlalchemy.dialects.postgresql import ARRAY
 
 from tools import db_tools, db, VaultClient
@@ -67,7 +67,7 @@ class Report(db_tools.AbstractBaseMixin, db.Base):
     test_config = Column(JSON, nullable=False, unique=False)
     # engagement id
     engagement = Column(String(64), nullable=True, default=None)
-    retention = Column(JSON, nullable=True, default=None)
+    retention = Column(JSON, nullable=True)
 
     @property
     def serialized(self):

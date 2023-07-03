@@ -1,20 +1,12 @@
 from datetime import datetime
-from typing import Optional, Union
-
-from pydantic import ValidationError
 from pylon.core.tools import web, log
-from sqlalchemy import desc
 
-from tools import rpc_tools, db_tools
-from ..models.pd.performance_test import TestCommon, TestOverrideable
-from ..models.pd.quality_gate import QualityGate
-from ..models.pd.test_parameters import PerformanceTestParams, PerformanceTestParamsCreate, \
-    PerformanceTestParamsRun
+from tools import rpc_tools
+from ..models.pd.test_parameters import PerformanceTestParams
 from ..models.reports import Report
 from ..models.tests import Test
-from ..models.runners import Runner
+from ..utils.retention_utils import RetentionModel
 from ..utils.utils import run_test
-from ..constants import JMETER_MAPPING, GATLING_MAPPING, EXECUTABLE_MAPPING
 
 
 class RPC:
@@ -33,7 +25,7 @@ class RPC:
     def get_retention_schedule_data(self) -> dict:
         return {
             'name': 'backend_performance_run_retention_check',
-            'cron': '*/1 * * * *',
+            'cron': '0 0 * * *',
             'rpc_func': 'backend_performance_run_retention_check'
         }
 
@@ -41,3 +33,19 @@ class RPC:
     @rpc_tools.wrap_exceptions(RuntimeError)
     def run_retention_check(self) -> None:
         log.info('Running backend_performance_run_retention_check...')
+        for report_id, retention, start_time, end_time in Report.query.with_entities(
+            Report.id,
+            Report.retention,
+            Report.start_time,
+            Report.end_time
+        ).filter(
+            # func.lower(Report.test_status['status'].cast(String)).in_(('"finished"', '"failed"', '"success"'))
+            Report.end_time.isnot(None),
+            Report.retention.isnot(None),
+        ).all():
+            retention = RetentionModel.parse_obj(retention)
+            ttl = retention.compute_ttl(start_time, end_time)
+            if ttl < datetime.utcnow():
+                log.critical('Report %s will be deleted by retention. Retention: %s', report_id, retention)
+            else:
+                log.info('Report %s is ok. TTL: %s', report_id, ttl)

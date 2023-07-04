@@ -18,8 +18,7 @@
 """ Module """
 from queue import Empty
 
-from pylon.core.tools import log  # pylint: disable=E0611,E0401
-from pylon.core.tools import module  # pylint: disable=E0611,E0401
+from pylon.core.tools import module, log  # pylint: disable=E0611,E0401
 
 from .init_db import init_db
 
@@ -107,7 +106,6 @@ class Module(module.ModuleModel):
             )
         except Empty:
             log.warning('No integrations plugin present')
-            ...
 
         self.descriptor.init_slots()
 

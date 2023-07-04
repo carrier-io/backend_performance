@@ -55,6 +55,8 @@ class API(Resource):
         ).first()
         if not report:
             return 'Not found', 404
+        report.retention = None  # we remove retention for baseline report
+
         connector = MinioConnector(build_id=report.build_id, test_name=report.name)
         summary = connector.get_aggregated_test_results()
 

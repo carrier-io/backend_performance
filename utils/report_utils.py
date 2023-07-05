@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from typing import Tuple, Union, Optional, List
 from pydantic import BaseModel, validator, ValidationError
 
-from tools import data_tools, constants as c, MinioClient, rpc_tools
+from tools import data_tools, MinioClient, rpc_tools
 
 from pylon.core.tools import log
 
@@ -331,16 +331,19 @@ def delete_project_reports(project: Union['Project', int], report_ids: List[int]
         for test_name, build_ids in i['names'].items():
             bucket_name = str(test_name).replace("_", "").replace(" ", "").lower()
             patt = re.compile(r'|'.join(build_ids))
-            minio_files = minio_client.list_files(bucket_name)
-            files_to_delete = [
-                {'Key': f['name']}
-                for f in minio_files
-                if re.search(patt, f['name'])
-            ]
-            minio_client.s3_client.delete_objects(
-                Bucket=minio_client.format_bucket_name(bucket_name),
-                Delete={'Objects': files_to_delete},
-            )
+            try:
+                minio_files = minio_client.list_files(bucket_name)
+                files_to_delete = [
+                    {'Key': f['name']}
+                    for f in minio_files
+                    if re.search(patt, f['name'])
+                ]
+                minio_client.s3_client.delete_objects(
+                    Bucket=minio_client.format_bucket_name(bucket_name),
+                    Delete={'Objects': files_to_delete},
+                )
+            except Exception as e:
+                log.warning('Exception while deleting from bucket %s: %s', bucket_name, e)
             # tmp.append(dict(
             #     Bucket=minio_client.format_bucket_name(bucket_name),
             #     Delete={'Objects': files_to_delete},

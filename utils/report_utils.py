@@ -1,11 +1,16 @@
+import re
 from collections import defaultdict
 from datetime import datetime, timezone
-from typing import Tuple, Union, Optional
+from typing import Tuple, Union, Optional, List
 from pydantic import BaseModel, validator, ValidationError
 
-from tools import data_tools, constants as c
+from tools import data_tools, MinioClient, rpc_tools
 
 from pylon.core.tools import log
+
+from ..models.baselines import Baseline
+from ..models.reports import Report
+# from influxdb.exceptions import InfluxDBClientError
 
 
 def _create_dataset_for_users(timeline, data, scope, metric, axe):
@@ -88,8 +93,9 @@ def create_dataset(timeline, data, scope, metric, axe):
             else:
                 dataset['data'].append(None)
         _data['datasets'].append(dataset)
-        
+
     return _data
+
 
 def comparison_data(timeline, data):
     labels = []
@@ -187,9 +193,6 @@ def render_analytics_control(requests: list) -> dict:
     return control
 
 
-
-
-
 # def _check_equality(func, *, second_func=None):
 #     log.info('calculate_proper_timeframe')
 #     def wrapper(*args, **kwargs):
@@ -201,7 +204,7 @@ def render_analytics_control(requests: list) -> dict:
 #     return wrapper
 
 def calculate_proper_timeframe(build_id: str, test_name: str, lg_type: str, low_value: int, high_value: int,
-                               start_time: datetime, end_time: datetime, aggregation: str, 
+                               start_time: datetime, end_time: datetime, aggregation: str,
                                time_as_ts: bool = False, source: str = None,
                                ) -> Union[Tuple[str, str, str], Tuple[int, int, str]]:
     start_time_ts = start_time.timestamp()
@@ -215,7 +218,7 @@ def calculate_proper_timeframe(build_id: str, test_name: str, lg_type: str, low_
     start_time_ts += start_shift
     if time_as_ts:
         return int(start_time_ts), int(end_time_ts)
-    
+
     t_format = "%Y-%m-%dT%H:%M:%SZ"
     _start_time = datetime.fromtimestamp(start_time_ts).strftime(t_format)
     _end_time = datetime.fromtimestamp(end_time_ts).strftime(t_format)
@@ -284,3 +287,79 @@ def timeframe(args: dict, time_as_ts: bool = False) -> tuple:
     #                                   high_value, args['start_time'], end_time, args.get('aggregator', 'auto'),
     #                                   time_as_ts=time_as_ts)
     return calculate_proper_timeframe(**_parsed_args.dict(), time_as_ts=time_as_ts)
+
+
+def delete_project_reports(project: Union['Project', int], report_ids: List[int]) -> None:
+    if isinstance(project, int):
+        project = rpc_tools.RpcMixin().rpc.call.project_get_or_404(
+            project_id=project)
+
+    # query only needed fields
+    query_result = Report.query.with_entities(
+        Report.build_id, Report.name, Report.lg_type, Report.test_config
+    ).filter(
+        Report.project_id == project.id,
+        Report.id.in_(report_ids)
+    ).all()
+
+    minio_delete_build_ids = dict()
+    for build_id, name, lg_type, test_config in query_result:
+        # delete influx tables
+        # try:
+        #     InfluxConnector(build_id=build_id, test_name=name, lg_type=lg_type).delete_test_data()
+        # except InfluxDBClientError as e:
+        #     log.warning('InfluxDBClientError %s', e)
+
+        # collect s3 data for deletion
+        s3_settings = test_config.get(
+            'integrations', {}).get('system', {}).get('s3_integration', {'integration_id': 1})
+        if s3_settings:
+            try:
+                minio_delete_build_ids[s3_settings['integration_id']]['names'][name].add(build_id)
+            except KeyError:
+                minio_delete_build_ids[s3_settings['integration_id']] = {
+                    'settings': s3_settings,
+                    'names': defaultdict(set)
+                }
+                minio_delete_build_ids[s3_settings['integration_id']]['names'][name].add(build_id)
+
+    # log.info('DEELEETE  %s', minio_delete_build_ids)
+    # delete files from s3
+    # tmp = []
+    for i in minio_delete_build_ids.values():
+        minio_client = MinioClient(project, **i['settings'])
+        for test_name, build_ids in i['names'].items():
+            bucket_name = str(test_name).replace("_", "").replace(" ", "").lower()
+            patt = re.compile(r'|'.join(build_ids))
+            try:
+                minio_files = minio_client.list_files(bucket_name)
+                files_to_delete = [
+                    {'Key': f['name']}
+                    for f in minio_files
+                    if re.search(patt, f['name'])
+                ]
+                minio_client.s3_client.delete_objects(
+                    Bucket=minio_client.format_bucket_name(bucket_name),
+                    Delete={'Objects': files_to_delete},
+                )
+            except Exception as e:
+                log.warning('Exception while deleting from bucket %s: %s', bucket_name, e)
+            # tmp.append(dict(
+            #     Bucket=minio_client.format_bucket_name(bucket_name),
+            #     Delete={'Objects': files_to_delete},
+            # ))
+    # log.info('DELETE REPORT %s', tmp)
+
+    # delete baselines
+    Baseline.query.filter(
+        Baseline.project_id == project.id,
+        Baseline.report_id.in_(report_ids)
+    ).delete()
+    Baseline.commit()
+
+    # delete reports
+    Report.query.filter(
+        Report.project_id == project.id,
+        Report.id.in_(report_ids)
+    ).delete()
+    Report.commit()

@@ -26,7 +26,7 @@ def compile_tests(project_id, file_name, runner):
                           tty=True, user='0:0')
 
 
-def get_backend_test_data(event) -> dict:
+def get_backend_test_data(event: dict) -> dict:
     users_count = 0
     duration = 0
     vusers_var_names = ["vusers", "users", "users_count", "ramp_users", "user_count"]
@@ -89,8 +89,10 @@ def run_test(test: 'Test', config_only: bool = False, execution: bool = False, e
     event = test.configure_execution_json(
         execution=execution
     )
+    logger_stop_words = event.pop('logger_stop_words', [])
 
     if config_only:
+        event['logger_stop_words'] = list(logger_stop_words)
         return event
 
     test_data = get_backend_test_data(event)
@@ -122,7 +124,7 @@ def run_test(test: 'Test', config_only: bool = False, execution: bool = False, e
     event["cc_env_vars"]["REPORT_ID"] = str(report.id)
     event["cc_env_vars"]["build_id"] = test_data["build_id"]
 
-    resp = TaskManager(test.project_id).run_task([event])
+    resp = TaskManager(test.project_id).run_task([event], logger_stop_words=logger_stop_words)
     resp['redirect'] = f'/task/{resp["task_id"]}/results'  # todo: where this should lead to?
 
     test.rpc.call.create_test_statistics(report.to_json(), 'backend_performance')
@@ -174,7 +176,9 @@ def parse_test_data(project_id: int, request_data: dict,
     errors = list()
     common_params = request_data.pop('common_params', {})
     cloud_settings = common_params.get('env_vars', {}).get('cloud_settings')
+    request_data.setdefault('integrations', {})
 
+    request_data.setdefault('integrations', {})
     if cloud_settings:
         integration_name = cloud_settings.get("integration_name")
 
@@ -188,7 +192,7 @@ def parse_test_data(project_id: int, request_data: dict,
         }
         request_data['integrations'] = integrations
 
-    s3_settings = request_data.get('integrations', {}).get('system', {}).get('s3_integration')
+    s3_settings = request_data['integrations'].get('system', {}).get('s3_integration')
     if not s3_settings:
         default_integration = rpc.call.integrations_get_defaults(
             project_id=project_id, name='s3_integration'

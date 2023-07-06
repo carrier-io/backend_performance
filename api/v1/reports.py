@@ -1,24 +1,23 @@
+import re
 from traceback import format_exc
 from typing import List
 
 from pydantic import parse_obj_as
-from sqlalchemy import and_
 from json import loads
 
 from flask_restful import Resource
 from io import BytesIO
-from urllib.parse import urlunparse, urlparse
+from flask import request
 from pylon.core.tools import log
-from flask import current_app, request
 
 from ...models.pd.report import ReportCreateSerializer, ReportGetSerializer
 from ...models.pd.test_parameters import PerformanceTestParamsRun
-from ...models.baselines import Baseline
 from ...models.reports import Report
 from ...models.tests import Test
 from ...connectors.influx_connector import InfluxConnector
+from ...utils.report_utils import delete_project_reports
+
 from tools import MinioClient, api_tools, auth, LokiLogFetcher
-from influxdb.exceptions import InfluxDBClientError
 
 
 class API(Resource):
@@ -90,32 +89,33 @@ class API(Resource):
             project_id=project.id,
             environment=args["environment"],
             type=args["type"],
-            end_time=None,
+            # end_time=None,
             start_time=args["start_time"],
-            failures=0,
-            total=0,
-            thresholds_missed=0,
-            throughput=0,
+            # failures=0,
+            # total=0,
+            # thresholds_missed=0,
+            # throughput=0,
             vusers=args["vusers"],
-            pct50=0,
-            pct75=0,
-            pct90=0,
-            pct95=0,
-            pct99=0,
-            _max=0,
-            _min=0,
-            mean=0,
+            # pct50=0,
+            # pct75=0,
+            # pct90=0,
+            # pct95=0,
+            # pct99=0,
+            # _max=0,
+            # _min=0,
+            # mean=0,
             duration=args["duration"],
             build_id=args["build_id"],
             lg_type=args["lg_type"],
-            onexx=0,
-            twoxx=0,
-            threexx=0,
-            fourxx=0,
-            fivexx=0,
-            requests=[],
-            test_uid=args.get("test_id")
+            # onexx=0,
+            # twoxx=0,
+            # threexx=0,
+            # fourxx=0,
+            # fivexx=0,
+            # requests=[],
+            test_uid=args.get("test_id"),
         )
+
         # report_model = ReportCreateSerializer(**args, project_id=project.id, test_uid=args.get("test_id"), name=args['test_name'])
         # report2 = Report(**report_model.dict(by_alias=True))
         # d1 = report.to_json()
@@ -197,35 +197,20 @@ class API(Resource):
             delete_ids = list(map(int, request.args["id[]"].split(',')))
         except TypeError:
             return 'IDs must be integers', 400
-        # query only needed fields
-        query_result = Report.query.with_entities(
-            Report.build_id, Report.name, Report.lg_type
-        ).filter(
-            and_(Report.project_id == project.id, Report.id.in_(delete_ids))
-        ).all()
-        for build_id, name, lg_type in query_result:
-            try:
-                connector = InfluxConnector(build_id=build_id, test_name=name, lg_type=lg_type)
-                connector.delete_test_data()
-            except InfluxDBClientError as e:
-                log.warning('InfluxDBClientError %s', e)
 
-        # bulk delete baselines
-        Baseline.query.filter(
-            Baseline.project_id == project.id,
-            Baseline.report_id.in_(delete_ids)
-        ).delete()
-        Baseline.commit()
+        delete_project_reports(project, delete_ids)
 
-        # bulk delete reports
-        Report.query.filter(
-            Report.project_id == project.id,
-            Report.id.in_(delete_ids)
-        ).delete()
-        Report.commit()
-        return {"message": "deleted"}, 204
+        return None, 204
 
+    @auth.decorators.check_api({
+        "permissions": ["performance.backend.reports.create"],
+        "recommended_roles": {
+            "default": {"admin": True, "editor": True, "viewer": False},
+            "administration": {"admin": True, "editor": True, "viewer": False},
+        }
+    })
     def patch(self, project_id: int):
+        # used as dump logs flag in control tower
         report = Report.query.filter(
             Report.project_id == project_id,
             Report.build_id == request.json["build_id"]

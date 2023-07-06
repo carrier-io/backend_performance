@@ -13,10 +13,12 @@
 #     limitations under the License.
 from uuid import uuid4
 
-from sqlalchemy import String, Column, Integer, Float, Text, JSON
+from pydantic import ValidationError
+from ..utils.retention_utils import RetentionModel
+from sqlalchemy import String, Column, Integer, Float, JSON
 from sqlalchemy.dialects.postgresql import ARRAY
 
-from tools import db_tools, db
+from tools import db_tools, db, VaultClient
 
 
 class Report(db_tools.AbstractBaseMixin, db.Base):
@@ -29,29 +31,29 @@ class Report(db_tools.AbstractBaseMixin, db.Base):
     name = Column(String(128), unique=False)
     environment = Column(String(128), unique=False)
     type = Column(String(128), unique=False)
-    end_time = Column(String(128), unique=False, nullable=True)
+    end_time = Column(String(128), unique=False, nullable=True, default=None)
     start_time = Column(String(128), unique=False)
-    failures = Column(Integer, unique=False)
-    total = Column(Integer, unique=False)
-    thresholds_missed = Column(Integer, unique=False, nullable=True)
-    throughput = Column(Float, unique=False)
+    failures = Column(Integer, unique=False, default=0)
+    total = Column(Integer, unique=False, default=0)
+    thresholds_missed = Column(Integer, unique=False, nullable=True, default=0)
+    throughput = Column(Float, unique=False, default=0)
     vusers = Column(Integer, unique=False)
-    pct50 = Column(Float, unique=False)
-    pct75 = Column(Float, unique=False)
-    pct90 = Column(Float, unique=False)
-    pct95 = Column(Float, unique=False)
-    pct99 = Column(Float, unique=False)
-    _max = Column(Float, unique=False)
-    _min = Column(Float, unique=False)
-    mean = Column(Float, unique=False)
-    duration = Column(Integer, unique=False)
+    pct50 = Column(Float, unique=False, default=0)
+    pct75 = Column(Float, unique=False, default=0)
+    pct90 = Column(Float, unique=False, default=0)
+    pct95 = Column(Float, unique=False, default=0)
+    pct99 = Column(Float, unique=False, default=0)
+    _max = Column(Float, unique=False, default=0)
+    _min = Column(Float, unique=False, default=0)
+    mean = Column(Float, unique=False, default=0)
+    duration = Column(Integer, unique=False, default=0)
     build_id = Column(String(128), unique=True)
     lg_type = Column(String(16), unique=False)
-    onexx = Column(Integer, unique=False)
-    twoxx = Column(Integer, unique=False)
-    threexx = Column(Integer, unique=False)
-    fourxx = Column(Integer, unique=False)
-    fivexx = Column(Integer, unique=False)
+    onexx = Column(Integer, unique=False, default=0)
+    twoxx = Column(Integer, unique=False, default=0)
+    threexx = Column(Integer, unique=False, default=0)
+    fourxx = Column(Integer, unique=False, default=0)
+    fivexx = Column(Integer, unique=False, default=0)
     requests = Column(ARRAY(String), default=[])
     tags = Column(JSON, unique=False, default=[])
     test_status = Column(
@@ -65,7 +67,7 @@ class Report(db_tools.AbstractBaseMixin, db.Base):
     test_config = Column(JSON, nullable=False, unique=False)
     # engagement id
     engagement = Column(String(64), nullable=True, default=None)
-
+    retention = Column(JSON, nullable=True)
 
     @property
     def serialized(self):
@@ -83,6 +85,16 @@ class Report(db_tools.AbstractBaseMixin, db.Base):
             self.test_config = Test.query.filter(
                 Test.uid == self.test_uid
             ).first().api_json()
+
+        if not self.id and not self.retention:
+            try:
+                self.retention = RetentionModel(days=int(
+                    VaultClient(self.project_id).get_all_secrets().get(
+                        'backend_performance_results_retention', 30
+                    )
+                )).dict(exclude_unset=True)
+            except ValidationError:
+                ...
         super().insert()
 
     def add_tags(self, tags_to_add: list) -> list:
@@ -97,12 +109,12 @@ class Report(db_tools.AbstractBaseMixin, db.Base):
         self.commit()
         return added_tags
 
-    def delete_tags(self, tags_to_delete: list) -> str:
-        commom_tags = set(tag.lower() for tag in tags_to_delete) & \
-            set(tag['title'].lower() for tag in self.tags)   
-        self.tags = [tag for tag in self.tags if tag['title'].lower() not in commom_tags]
-        self.commit() 
-        return commom_tags
+    def delete_tags(self, tags_to_delete: list) -> set:
+        common_tags = set(tag.lower() for tag in tags_to_delete) & \
+                      set(tag['title'].lower() for tag in self.tags)
+        self.tags = [tag for tag in self.tags if tag['title'].lower() not in common_tags]
+        self.commit()
+        return common_tags
 
     def replace_tags(self, tags: list):
         self.tags = tags

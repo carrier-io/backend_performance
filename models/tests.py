@@ -208,7 +208,10 @@ class Test(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin):
         self.location = location
         if execution:
             vault_client = VaultClient.from_project(self.project_id)
+            vault_client.track_used_secrets = True
             execution_json = vault_client.unsecret(execution_json)
+            execution_json['logger_stop_words'] = vault_client.used_secrets
+
 
         return execution_json
 

@@ -9,7 +9,7 @@ from flask import request
 from tools import api_tools, auth
 from ...models.tests import Test
 from ...models.pd.test_parameters import PerformanceTestParam
-from ...utils.utils import run_test, parse_test_data, compile_tests
+from ...utils.utils import run_test, parse_test_data, handle_artifact_source
 
 
 class API(Resource):
@@ -125,18 +125,11 @@ class API(Resource):
         )
 
         if test_data['source']['name'] == 'artifact':
-            file = request.files.get('file')
             project = self.module.context.rpc_manager.call.project_get_or_404(
                 project_id=project_id)
-            bucket = "tests"
-            api_tools.upload_file(bucket, file, project, create_if_not_exists=True)
-            compile_file_name = file.filename
-
-            if compile_tests_flag:  # compiling tests only if source is artifact
-                if not project:
-                    project = self.module.context.rpc_manager.call.project_get_or_404(
-                        project_id=project_id)
-                compile_tests(project.id, compile_file_name, test_data["runner"])
+            handle_artifact_source(project, request.files['file'],
+                                   compile_tests_flag=compile_tests_flag,
+                                   runner=test_data["runner"])
 
         test = Test(**test_data)
         test.insert()

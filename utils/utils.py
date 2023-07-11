@@ -1,6 +1,6 @@
 import json
 from queue import Empty
-from typing import Union, Tuple
+from typing import Union, Tuple, Optional
 
 import docker
 import re
@@ -11,7 +11,7 @@ from pylon.core.tools import log
 
 from ..constants import JOB_CONTAINER_MAPPING, JOB_TYPE_MAPPING
 
-from tools import TaskManager, rpc_tools
+from tools import TaskManager, rpc_tools, api_tools
 
 
 def compile_tests(project_id, file_name, runner):
@@ -162,7 +162,7 @@ def parse_test_data(project_id: int, request_data: dict,
     :param common_kwargs: kwargs for common_test_parameters
             (test parameters apart from test_params table. E.g. name, description)
     :param test_create_rpc_kwargs: for each test_data key a rpc is called - these kwargs will be passed to rpc call
-    :param raise_immediately: weather to raise validation error on first encounter or raise after collecting all errors
+    :param raise_immediately: whether to raise validation error on first encounter or raise after collecting all errors
     :param skip_validation_if_undefined: if no rpc to validate test_data key is found
             data will remain untouched if True or erased if False
     :return:
@@ -177,7 +177,6 @@ def parse_test_data(project_id: int, request_data: dict,
     cloud_settings = common_params.get('env_vars', {}).get('cloud_settings')
     request_data.setdefault('integrations', {})
 
-    request_data.setdefault('integrations', {})
     if cloud_settings:
         integration_name = cloud_settings.get("integration_name")
 
@@ -215,6 +214,8 @@ def parse_test_data(project_id: int, request_data: dict,
             return test_data, errors
 
     for k, v in request_data.items():
+        log.info('calling backend_performance_test_create_%s', k)
+        log.info('\tvalue %s', v)
         try:
             test_data.update(rpc.call_function_with_timeout(
                 func=f'backend_performance_test_create_{k}',
@@ -257,3 +258,12 @@ def str_to_timestamp(t: Union[str, datetime]) -> float:
     # log.info('new t %s', t)
     # timestamp = datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%S").timestamp()
     return datetime.fromisoformat(iso).timestamp()
+
+
+def handle_artifact_source(project, request_file, bucket: str = 'tests',
+                           compile_tests_flag: bool = False, runner: Optional[str] = None) -> None:
+    api_tools.upload_file(bucket, request_file, project, create_if_not_exists=True)
+    compile_file_name = request_file.filename
+
+    if compile_tests_flag:  # compiling tests only if source is artifact
+        compile_tests(project.id, compile_file_name, runner)

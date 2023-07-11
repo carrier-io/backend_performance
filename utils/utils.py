@@ -214,8 +214,6 @@ def parse_test_data(project_id: int, request_data: dict,
             return test_data, errors
 
     for k, v in request_data.items():
-        log.info('calling backend_performance_test_create_%s', k)
-        log.info('\tvalue %s', v)
         try:
             test_data.update(rpc.call_function_with_timeout(
                 func=f'backend_performance_test_create_{k}',

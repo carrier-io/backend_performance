@@ -8,7 +8,7 @@ from pylon.core.tools import log
 from tools import auth
 from ...models.tests import Test
 from ...models.pd.test_parameters import PerformanceTestParam, PerformanceTestParams
-from ...utils.utils import run_test, parse_test_data
+from ...utils.utils import run_test, parse_test_data, handle_artifact_source
 
 
 class API(Resource):
@@ -62,6 +62,7 @@ class API(Resource):
         """ Update test data and run on demand """
         project = self.module.context.rpc_manager.call.project_get_or_404(
             project_id=project_id)
+        compile_tests_flag = request.json.pop('compile_tests', False)
         run_test_ = request.json.pop('run_test', False)
         test_data, errors = parse_test_data(
             project_id=project_id,
@@ -72,6 +73,14 @@ class API(Resource):
 
         if errors:
             return errors, 400
+
+        if test_data['source']['name'] == 'artifact':
+            if request.files.get('file'):
+                handle_artifact_source(project, request.files['file'],
+                                       compile_tests_flag=compile_tests_flag,
+                                       runner=test_data["runner"])
+            else:
+                log.warning('TODO: check if file exists in artifacts %s', test_data.get('source'))
 
         test_data['test_parameters'].append(
             PerformanceTestParam(

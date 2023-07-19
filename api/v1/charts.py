@@ -66,7 +66,7 @@ class API(Resource):
             return MinioConnector(**args)
         else:
             if source == "errors":
-                log.info('Using LokiConnector')
+                log.info('Using LokiConnector %s', args)
                 return LokiConnector(**args)
             elif source == "engine_health":
                 project_id = Report.query.with_entities(Report.project_id).filter(

@@ -24,7 +24,7 @@ const ChartLegend = {
     components: {
         LegendItem: LegendItem
     },
-    props: ['chart_object_name', 'select_all_enabled', 'item_container_classes'],
+    props: ['chart_object_name', 'select_all_enabled', 'item_container_classes', 'chart_data_loaded'],
     data() {
         return {
             all_selected: true,
@@ -52,6 +52,9 @@ const ChartLegend = {
                 this.handle_chart_changes(i)
             })
             this.chart_object.update()
+        },
+        chart_data_loaded(new_value) {
+            new_value && this.reload()
         }
     },
     template: `

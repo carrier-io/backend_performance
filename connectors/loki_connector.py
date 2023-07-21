@@ -11,6 +11,7 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
+from typing import Optional
 
 import requests
 
@@ -22,11 +23,11 @@ from ..utils.report_utils import timeframe
 
 class LokiConnector:
     
-    def __init__(self, **args) -> None:
-        self.test_name = args['test_name']
-        self.query_range_url = LokiLogFetcher.make_url()  # todo: here we should consider making url from project
-        self.start_time, self.end_time = timeframe(args, time_as_ts=True)
-
+    def __init__(self, *, test_name: str, project_id: Optional[int] = None, **kwargs) -> None:
+        self.test_name = test_name
+        self.query_range_url = LokiLogFetcher.make_url(project_id)  # todo: here we should consider making url from project
+        kwargs['test_name'] = self.test_name
+        self.start_time, self.end_time = timeframe(kwargs, time_as_ts=True)
 
     def get_issues(self) -> list:
         data = {

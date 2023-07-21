@@ -2,15 +2,16 @@ import re
 from collections import defaultdict
 from datetime import datetime, timezone
 from typing import Tuple, Union, Optional, List
-from pydantic import BaseModel, validator, ValidationError
 
-from tools import data_tools, MinioClient, rpc_tools
+from influxdb.exceptions import InfluxDBClientError
+from pydantic import BaseModel, validator, ValidationError
 
 from pylon.core.tools import log
 
 from ..models.baselines import Baseline
 from ..models.reports import Report
-# from influxdb.exceptions import InfluxDBClientError
+
+from tools import data_tools, MinioClient, rpc_tools
 
 
 def _create_dataset_for_users(timeline, data, scope, metric, axe):
@@ -290,6 +291,7 @@ def timeframe(args: dict, time_as_ts: bool = False) -> tuple:
 
 
 def delete_project_reports(project: Union['Project', int], report_ids: List[int]) -> None:
+    from ..connectors.influx_connector import InfluxConnector
     if isinstance(project, int):
         project = rpc_tools.RpcMixin().rpc.call.project_get_or_404(
             project_id=project)
@@ -305,10 +307,10 @@ def delete_project_reports(project: Union['Project', int], report_ids: List[int]
     minio_delete_build_ids = dict()
     for build_id, name, lg_type, test_config in query_result:
         # delete influx tables
-        # try:
-        #     InfluxConnector(build_id=build_id, test_name=name, lg_type=lg_type).delete_test_data()
-        # except InfluxDBClientError as e:
-        #     log.warning('InfluxDBClientError %s', e)
+        try:
+            InfluxConnector(build_id=build_id, test_name=name, lg_type=lg_type).delete_test_data()
+        except InfluxDBClientError as e:
+            log.warning('InfluxDBClientError %s', e)
 
         # collect s3 data for deletion
         s3_settings = test_config.get(

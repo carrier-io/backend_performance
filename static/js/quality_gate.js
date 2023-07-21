@@ -27,7 +27,7 @@ const QualityGate = {
                     request_error_rate_deviation,
                     request_throughput_deviation,
                     percentage_of_failed_requests,
-                    rt_baseline_comparison_mecric,
+                    rt_baseline_comparison_metric,
                 } = this
                 return {
                     SLA: {
@@ -35,7 +35,7 @@ const QualityGate = {
                         },
                     baseline: {
                         checked: baseline,
-                        rt_baseline_comparison_mecric: rt_baseline_comparison_mecric
+                        rt_baseline_comparison_metric: rt_baseline_comparison_metric
                         },
                     settings: {
                         summary_results: {
@@ -91,7 +91,7 @@ const QualityGate = {
                 request_error_rate_deviation: data.settings.per_request_results.error_rate_deviation,
                 request_throughput_deviation: data.settings.per_request_results.throughput_deviation,
                 percentage_of_failed_requests: data.settings.per_request_results.percentage_of_failed_requests,
-                rt_baseline_comparison_mecric: data.baseline.rt_baseline_comparison_mecric
+                rt_baseline_comparison_metric: data.baseline.rt_baseline_comparison_metric
             }
             Object.assign(this.$data, {...this.initialState(), ...data_to_load})
         },
@@ -120,8 +120,8 @@ const QualityGate = {
             request_error_rate_deviation: 1,
             request_throughput_deviation: 1,
             percentage_of_failed_requests: 20,
-            rt_baseline_comparison_mecric: "pct95",
-            is_adv_settins_open: false,
+            rt_baseline_comparison_metric: "pct95",
+            is_adv_settings_open: false,
             errors: {},
 
         })
@@ -151,12 +151,12 @@ const QualityGate = {
                 role="button" 
                 aria-expanded="false" 
                 aria-controls="selector_advanced_settings"
-                @click="is_adv_settins_open = !is_adv_settins_open"
+                @click="is_adv_settings_open = !is_adv_settings_open"
             >
             <div>
                 <p class="font-h6 font-semibold text-gray-600">ADVANCED SETTINGS 
                     <button class="btn btn-nooutline-secondary p-0 pb-1 ml-1 collapsed">
-                        <i class="icon__16x16 icon-arrow-down__16" :class="is_adv_settins_open ? '' : 'rotate-270'"></i>
+                        <i class="icon__16x16 icon-arrow-down__16" :class="is_adv_settings_open ? '' : 'rotate-270'"></i>
                     </button>
                 </p>
             </div>
@@ -335,14 +335,14 @@ const QualityGate = {
                             </div>
                             <div class="col mb-2 d-flex flex-column w-100">
                                 <select class="selectpicker bootstrap-select__b" data-style="btn"
-                                    v-model="rt_baseline_comparison_mecric">
+                                    v-model="rt_baseline_comparison_metric">
                                     <option value="max">Maximum</option>
                                     <option value="min">Minimum</option>
                                     <option value="avg">Average</option>
                                     <option value="pct95">Percentile 95</option>
                                     <option value="pct50">Percentile 50</option>
                                 </select>
-                                <div class="invalid-feedback" style="display: block;">[[ errors.baseline_rt_baseline_comparison_mecric ]]</div>
+                                <div class="invalid-feedback" style="display: block;">[[ errors.baseline_rt_baseline_comparison_metric ]]</div>
                             </div>
                         </div>
 

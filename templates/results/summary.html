@@ -135,8 +135,9 @@
                             <Chart-Legend
                                 @register="register"
                                 instance_name="requests_chart_legend"
-                                :chart_object_name="master.current_chart"
                                 item_container_classes="custom-chart-legend"
+                                :chart_object_name="master.current_chart"
+                                :chart_data_loaded="master.chart_data_loaded"
                             ></Chart-Legend>
                         </div>
                     </div>

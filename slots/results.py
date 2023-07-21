@@ -30,6 +30,11 @@ class Slot:  # pylint: disable=E1101,R0903
         result_id = payload.request.args.get('result_id')
         if result_id:
             report = Report.query.get_or_404(result_id)
+            if not self.context.rpc_manager.call.admin_check_user_in_project(
+                    project_id=report.project_id,
+                    user_id=payload.auth.id
+            ):
+                return theme.access_denied_part
             test_data = report.to_json()
             test_data["is_baseline_report"] = report.is_baseline_report
             try:

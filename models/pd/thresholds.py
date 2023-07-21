@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Literal
 from pydantic import BaseModel, validator, AnyUrl, parse_obj_as, root_validator, constr
 
 from ..tests import Test
@@ -10,9 +10,9 @@ class ThresholdPD(BaseModel):
     test: str
     environment: str
     scope: str
-    target: str
-    aggregation: str
-    comparison: str
+    target: Literal['throughput', 'error_rate', 'response_time']
+    aggregation: Literal['max', 'min', 'avg', 'pct95', 'pct50']
+    comparison: Literal['gte', 'lte', 'lt', 'gt', 'eq']
     value: float
 
     @validator('test')
@@ -42,17 +42,17 @@ class ThresholdPD(BaseModel):
         ).first(), 'Such scope does not exist'
         return value
 
-    @validator('target')
-    def validate_target(cls, value: str):
-        assert value in {'throughput', 'error_rate', 'response_time'}, f'Target {value} is not supported'
-        return value
-
-    @validator('aggregation')
-    def validate_aggregation(cls, value: str):
-        assert value in {'max', 'min', 'avg', 'pct95', 'pct50'}, f'Aggregation {value} is not supported'
-        return value
-
-    @validator('comparison')
-    def validate_comparison(cls, value: str):
-        assert value in {'gte', 'lte', 'lt', 'gt', 'eq'}, f'Comparison {value} is not supported'
-        return value
+    # @validator('target')
+    # def validate_target(cls, value: str):
+    #     assert value in {'throughput', 'error_rate', 'response_time'}, f'Target {value} is not supported'
+    #     return value
+    #
+    # @validator('aggregation')
+    # def validate_aggregation(cls, value: str):
+    #     assert value in {'max', 'min', 'avg', 'pct95', 'pct50'}, f'Aggregation {value} is not supported'
+    #     return value
+    #
+    # @validator('comparison')
+    # def validate_comparison(cls, value: str):
+    #     assert value in {'gte', 'lte', 'lt', 'gt', 'eq'}, f'Comparison {value} is not supported'
+    #     return value

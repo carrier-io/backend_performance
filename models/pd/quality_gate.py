@@ -5,9 +5,8 @@ class QualityGateSLA(BaseModel):
     checked: bool
 
 
-class QualityGateBaseline(BaseModel):
-    checked: bool
-    rt_baseline_comparison_mecric: str
+class QualityGateBaseline(QualityGateSLA):
+    rt_baseline_comparison_metric: str
 
 
 class QualityGateSettingsSummary(BaseModel):
@@ -19,13 +18,7 @@ class QualityGateSettingsSummary(BaseModel):
     throughput_deviation: PositiveInt
 
 
-class QualityGateSettingsRequests(BaseModel):
-    check_response_time: bool
-    response_time_deviation: PositiveInt
-    check_error_rate: bool
-    error_rate_deviation: conint(ge=0, le=100)
-    check_throughput: bool
-    throughput_deviation: PositiveInt
+class QualityGateSettingsRequests(QualityGateSettingsSummary):
     percentage_of_failed_requests: conint(ge=0, le=100)
 
 

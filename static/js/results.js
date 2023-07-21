@@ -67,14 +67,13 @@ const SummaryController = {
             samplers: [],
             sampler_type: 'REQUEST',
             status_type: 'all',
-            // todo: change to 'auto'
-            // aggregator: '30s',
             aggregator: 'auto',
             update_interval: 0,
             auto_update_id: null,
             status_percentage: 0,
             active_tab_id: undefined,
-            current_chart: 'presetLine'
+            current_chart: 'presetLine',
+            chart_data_loaded: false
         }
     },
     async mounted() {
@@ -250,6 +249,7 @@ const SummaryController = {
             }
         },
         async load_request_data(url, y_label) {
+            this.chart_data_loaded = false
             $('#chart-loader').show();
             const $preset = $("#preset")
             if (!$preset.is(":visible")) {
@@ -281,11 +281,11 @@ const SummaryController = {
                     window.presetLine.data = data
                     window.presetLine.update()
                 }
-
                 $('#chart-loader').hide();
             } else {
                 // todo: handle fetch error
             }
+            this.chart_data_loaded = true
         },
         handle_download(event) {
             console.log('todo handle download')

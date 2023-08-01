@@ -127,9 +127,9 @@ def run_test(test: 'Test', config_only: bool = False, execution: bool = False, e
     resp = TaskManager(test.project_id).run_task([event], logger_stop_words=logger_stop_words)
     resp['redirect'] = f'/task/{resp["task_id"]}/results'  # todo: where this should lead to?
 
-    test.rpc.call.create_test_statistics(report.to_json(), 'backend_performance')
     test.rpc.call.increment_statistics(test.project_id, 'performance_test_runs')
-
+    test.event_manager.fire_event('usage_create_test_resource_usage', report.to_json())
+    
     resp['result_id'] = report.id  # for test rerun
     return resp
 

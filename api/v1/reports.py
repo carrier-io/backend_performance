@@ -178,9 +178,6 @@ class API(Resource):
         report.vusers = args["vusers"]
         report.duration = args["duration"]
         report.commit()
-        # if report.test_status['status'].lower() in ('finished', 'error', 'failed', 'success'):
-        #     self.module.context.rpc_manager.call.create_test_statistics(
-        #         report.to_json(), 'backend_performance')
         return {"message": f"Report {report.build_id} updated"}, 201
 
     @auth.decorators.check_api({

@@ -49,6 +49,11 @@ JMETER_MAPPING = {
 }
 
 GATLING_MAPPING = {
+    "maven-3.7": {
+        "container": f"getcarrier/gatling_maven_runner:{c.CURRENT_RELEASE}-3.7",
+        "job_type": "perfgun",
+        "influx_db": "{{secret.gatling_db}}"
+    },
     "v3.7": {
         "container": f"getcarrier/perfgun:{c.CURRENT_RELEASE}-3.7",
         "job_type": "perfgun",

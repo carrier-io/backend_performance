@@ -54,6 +54,38 @@ const stopTest = async () => {
     resp.ok ? location.reload() : console.warn('stop test failed', resp)
 }
 
+const run_post_processing = async report_id => {
+    console.log('Running post processing for report', report_id)
+    const api_url = V.build_api_url('backend_performance', 'post_processing', {
+        trailing_slash: true
+    })
+    const resp = await fetch(api_url + getSelectedProjectId() + '/' + report_id, {
+        method: 'POST'
+    })
+    resp.ok ?
+        showNotify('SUCCESS', 'Post processing started')
+        :
+        showNotify('ERROR', 'Failed to start post processing')
+}
+
+const trigger_logs_dump = async report_id => {
+    const api_url = V.build_api_url('backend_performance', 'reports', {
+        trailing_slash: true
+    })
+    const resp = await fetch(api_url + getSelectedProjectId(), {
+        method: 'PATCH',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({report_id})
+    })
+    const data = await resp.json()
+    if (resp.ok) {
+        showNotify('SUCCESS', `Log ${data.file_name} created`)
+        V.registered_components?.table_artifacts?.table_action('refresh')
+    } else {
+        showNotify('ERROR', `Failed to dump logs. ${data.message}`)
+    }
+}
+
 
 const SummaryController = {
     props: ['initial_samplers', 'initial_aggregations', 'start_time', 'end_time', 'test_name', 'initial_status_percentage', 'lg_type', 'build_id'],

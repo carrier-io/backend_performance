@@ -20,14 +20,7 @@ from ...utils.report_utils import delete_project_reports
 from tools import MinioClient, api_tools, auth, LokiLogFetcher
 
 
-class API(Resource):
-    url_params = [
-        '<int:project_id>',
-    ]
-
-    def __init__(self, module):
-        self.module = module
-
+class ProjectAPI(api_tools.APIModeHandler):
     @auth.decorators.check_api({
         "permissions": ["performance.backend.reports.view"],
         "recommended_roles": {
@@ -35,7 +28,7 @@ class API(Resource):
             "administration": {"admin": True, "editor": True, "viewer": True},
         }
     })
-    def get(self, project_id: int):
+    def get(self, project_id: int, **kwargs):
         args = request.args
         if args.get("report_id"):
             report = Report.query.filter(
@@ -56,7 +49,7 @@ class API(Resource):
             "administration": {"admin": True, "editor": True, "viewer": False},
         }
     })
-    def post(self, project_id: int):
+    def post(self, project_id: int, **kwargs):
         '''
             create report from control tower?
         '''
@@ -141,7 +134,7 @@ class API(Resource):
             "administration": {"admin": True, "editor": True, "viewer": False},
         }
     })
-    def put(self, project_id: int):
+    def put(self, project_id: int, **kwargs):
         args = request.json
         project = self.module.context.rpc_manager.call.project_get_or_404(
             project_id=project_id)
@@ -187,7 +180,7 @@ class API(Resource):
             "administration": {"admin": True, "editor": False, "viewer": False},
         }
     })
-    def delete(self, project_id: int):
+    def delete(self, project_id: int, **kwargs):
         project = self.module.context.rpc_manager.call.project_get_or_404(
             project_id=project_id)
         try:
@@ -206,12 +199,17 @@ class API(Resource):
             "administration": {"admin": True, "editor": True, "viewer": False},
         }
     })
-    def patch(self, project_id: int):
+    def patch(self, project_id: int, **kwargs):
         # used as dump logs flag in control tower
-        report = Report.query.filter(
-            Report.project_id == project_id,
-            Report.build_id == request.json["build_id"]
-        ).first()
+        _filter = [Report.project_id == project_id]
+        if request.json.get('build_id'):
+            _filter.append(Report.build_id == request.json["build_id"])
+        elif request.json.get('report_id'):
+            _filter.append(Report.id == request.json["report_id"])
+        else:
+            return {'message': 'Report not found'}, 404
+
+        report = Report.query.filter(*_filter).first()
         created_file_name = write_test_run_logs_to_minio_bucket(report)
         if created_file_name:
             return {"message": "updated", "file_name": created_file_name}, 201
@@ -243,3 +241,15 @@ def write_test_run_logs_to_minio_bucket(report: Report) -> str:
         return file_name
     except:
         log.warning('Request to loki failed with error %s', format_exc())
+
+
+class API(api_tools.APIBase):
+    url_params = [
+        '<int:project_id>',
+        '<string:mode>/<int:project_id>',
+    ]
+
+    mode_handlers = {
+        'default': ProjectAPI,
+        # 'administration': AdminAPI,
+    }

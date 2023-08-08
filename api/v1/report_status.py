@@ -47,4 +47,4 @@ class API(Resource):
         self.sio.emit("backend_test_status_updated", {"status": test_status.dict(), 'report_id': report_id})
         if test_status.percentage == 100:
             self.sio.emit('backend_test_finished', report.to_json())
-        return {"message": f"status changed to {test_status.status}"}, 200
+        return {"message": test_status.status}, 200

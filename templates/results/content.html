@@ -47,11 +47,18 @@
                     <i class="icon__18x18 icon-settings"></i>
                 </button>
                 {% if test_data['test_status']['status'].lower() not in ['finished', 'error', 'failed',
-                'success'] %}
+                'success', 'cancelled', 'canceled'] %}
                     <button class="btn btn-painted mx-1"
                             id="stop-test" onclick="stopTest()"
                             style="--text-color:rgb(243, 38, 38); --brd-color:rgb(242, 180, 180);">
                         Stop test
+                    </button>
+                {% endif %}
+                {% if test_data['test_status']['status'].lower() not in ['finished', 'success', 'failed'] %}
+                    <button class="btn btn-secondary mx-1"
+                            onclick="run_post_processing({{ test_data['id'] }})"
+                            style="--text-color:rgb(243, 38, 38); --brd-color:rgb(242, 180, 180);">
+                        Run post processing
                     </button>
                 {% endif %}
 
@@ -63,9 +70,13 @@
                         <i class="fa fa-ellipsis-v"></i>
                     </button>
 
+
                     <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
                         <li class="dropdown-item" data-toggle="modal" data-target="#{{ retention_modal_id }}">
                             <i class='fa fa-calendar-times mr-2'></i>Change retention policy
+                        </li>
+                        <li class="dropdown-item" onclick="trigger_logs_dump({{ test_data['id'] }})">
+                            <i class='fa fa-history mr-2'></i>Trigger logs dump
                         </li>
                     </ul>
                 </div>

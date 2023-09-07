@@ -10,24 +10,28 @@
             </div>
             <div class="d-flex justify-content-end">
                 {% if test_data['test_status']['status'].lower() in ['finished', 'error', 'failed','success'] %}
-                    <button hidden class="btn btn-secondary btn-icon btn-icon__purple mr-2"
-                            onclick="downloadReport()"
-                            data-toggle="tooltip"
-                            data-placement="top"
-                            title="Download report">
-                        <i class="icon__18x18 icon-download"></i>
-                    </button>
-                    {% if test_data['is_baseline_report'] %}
-                        <button class="btn btn-secondary mr-2" id="set_baseline" onclick="deleteBaseline()"
-                                data-toggle="tooltip" data-placement="top" title="Set current report as baseline">
-                            Remove from baseline
-                        </button>
-                    {% else %}
-                        <button class="btn btn-secondary mr-2" id="set_baseline" onclick="setBaseline()"
-                                data-toggle="tooltip" data-placement="top" title="Set current report as baseline">
-                            Set as baseline
-                        </button>
-                    {% endif %}
+                <button class="btn btn-secondary mr-2" id="ai_analysis" onclick="ai_analysis()"
+                        data-toggle="tooltip" data-placement="top" title="AI analysis">
+                    AI analysis
+                </button>
+                <button hidden class="btn btn-secondary btn-icon btn-icon__purple mr-2"
+                        onclick="downloadReport()"
+                        data-toggle="tooltip"
+                        data-placement="top"
+                        title="Download report">
+                    <i class="icon__18x18 icon-download"></i>
+                </button>
+                {% if test_data['is_baseline_report'] %}
+                <button class="btn btn-secondary mr-2" id="set_baseline" onclick="deleteBaseline()"
+                        data-toggle="tooltip" data-placement="top" title="Set current report as baseline">
+                    Remove from baseline
+                </button>
+                {% else %}
+                <button class="btn btn-secondary mr-2" id="set_baseline" onclick="setBaseline()"
+                        data-toggle="tooltip" data-placement="top" title="Set current report as baseline">
+                    Set as baseline
+                </button>
+                {% endif %}
                 {% endif %}
                 <button hidden class="btn btn-secondary mx-1" id="not_worse_than" onclick="setThresholds()"
                         data-toggle="tooltip" data-placement="top" title="Set current report as thresholds">
@@ -48,18 +52,18 @@
                 </button>
                 {% if test_data['test_status']['status'].lower() not in ['finished', 'error', 'failed',
                 'success', 'cancelled', 'canceled'] %}
-                    <button class="btn btn-painted mx-1"
-                            id="stop-test" onclick="stopTest()"
-                            style="--text-color:rgb(243, 38, 38); --brd-color:rgb(242, 180, 180);">
-                        Stop test
-                    </button>
+                <button class="btn btn-painted mx-1"
+                        id="stop-test" onclick="stopTest()"
+                        style="--text-color:rgb(243, 38, 38); --brd-color:rgb(242, 180, 180);">
+                    Stop test
+                </button>
                 {% endif %}
                 {% if test_data['test_status']['status'].lower() not in ['finished', 'success', 'failed'] %}
-                    <button class="btn btn-secondary mx-1"
-                            onclick="run_post_processing({{ test_data['id'] }})"
-                            style="--text-color:rgb(243, 38, 38); --brd-color:rgb(242, 180, 180);">
-                        Run post processing
-                    </button>
+                <button class="btn btn-secondary mx-1"
+                        onclick="run_post_processing({{ test_data['id'] }})"
+                        style="--text-color:rgb(243, 38, 38); --brd-color:rgb(242, 180, 180);">
+                    Run post processing
+                </button>
                 {% endif %}
 
                 <div class="dropdown dropleft dropdown_action mx-1">
@@ -84,12 +88,13 @@
             </div>
         </div>
         <div id="progressbar-body">
-            {% if test_data['test_status']['status'].lower() not in ['finished', 'error', 'failed', 'success', 'canceled'] %}
-                <performancetestprogress
-                        :test_status='{{ test_data.test_status | tojson }}'
-                        :project_id="{{ test_data.project_id }}"
-                        :test_id="{{ test_data.id }}"
-                ></performancetestprogress>
+            {% if test_data['test_status']['status'].lower() not in ['finished', 'error', 'failed', 'success',
+            'canceled'] %}
+            <performancetestprogress
+                    :test_status='{{ test_data.test_status | tojson }}'
+                    :project_id="{{ test_data.project_id }}"
+                    :test_id="{{ test_data.id }}"
+            ></performancetestprogress>
             {% endif %}
         </div>
         <b-e-result-info
@@ -101,62 +106,62 @@
     <hr class="my-0">
     <div class="p-28 pt-3">
         {% if test_data['test_status']['status'].lower() in ['failed', 'error'] %}
-            <p class="mb-0 font-semibold" style="color: var(--red)">
-                <i class="fas fa-exclamation-circle error"></i>
-                Status description</p>
-            <p class="mb-0">{{ test_data['test_status']['description'] }}</p>
+        <p class="mb-0 font-semibold" style="color: var(--red)">
+            <i class="fas fa-exclamation-circle error"></i>
+            Status description</p>
+        <p class="mb-0">{{ test_data['test_status']['description'] }}</p>
         {% elif test_data['test_status']['status'].lower() in ['success'] %}
-            <p class="mb-0 font-semibold" style="color: var(--green)">
-                <i class="fas fa fa-check-circle"></i>
-                Status description</p>
-            <p class="mb-0">{{ test_data['test_status']['description'] }}</p>
+        <p class="mb-0 font-semibold" style="color: var(--green)">
+            <i class="fas fa fa-check-circle"></i>
+            Status description</p>
+        <p class="mb-0">{{ test_data['test_status']['description'] }}</p>
         {% else %}
-            <p class="mb-0 font-semibold" style="color: var(--gray);">
-                <i class="fas fa-exclamation-circle"></i>
-                Status description</p>
-            <p class="mb-0">{{ test_data['test_status']['description'] }}</p>
+        <p class="mb-0 font-semibold" style="color: var(--gray);">
+            <i class="fas fa-exclamation-circle"></i>
+            Status description</p>
+        <p class="mb-0">{{ test_data['test_status']['description'] }}</p>
         {% endif %}
     </div>
 </div>
 
 
 {% with test_data=test_data %}
-    {% include 'backend_performance:results/summary.html' %}
+{% include 'backend_performance:results/summary.html' %}
 {% endwith %}
 
 {% if test_data['test_status']['status'].lower() in ['finished', 'error', 'failed', 'success'] %}
-    <div class="card card-12 pb-4 card-table">
-        <div class="card-header">
-            <div class="row">
-                <div class="col-4">
-                    <p class="font-h3 font-bold ">Summary</p>
-                </div>
+<div class="card card-12 pb-4 card-table">
+    <div class="card-header">
+        <div class="row">
+            <div class="col-4">
+                <p class="font-h3 font-bold ">Summary</p>
             </div>
         </div>
-        <div class="card-body">
-            <table class="table table-border"
-                   id="summary_table"
-                   data-toggle="table"
-                   data-page-size=10
-                   data-pagination="true"
-                   data-pagination-parts='["pageInfoShort", "pageList"]'>
-                <thead class="thead-light">
-                <tr>
-                    <th scope="col" data-sortable="true" data-field="request_name">Name</th>
-                    <th scope="col" data-sortable="true" data-field="total">Ttl req, count</th>
-                    <th scope="col" data-sortable="true" data-field="throughput">Thrghpt, req/sec</th>
-                    <th scope="col" data-sortable="true" data-field="ko">Errors, count</th>
-                    <th scope="col" data-sortable="true" data-field="min">Min, ms</th>
-                    <th scope="col" data-sortable="true" data-field="mean">Median, ms</th>
-                    <th scope="col" data-sortable="true" data-field="pct95">Pct95, ms</th>
-                    <th scope="col" data-sortable="true" data-field="max">Max, ms</th>
-                </tr>
-                </thead>
-                <tbody>
-                </tbody>
-            </table>
-        </div>
     </div>
+    <div class="card-body">
+        <table class="table table-border"
+               id="summary_table"
+               data-toggle="table"
+               data-page-size=10
+               data-pagination="true"
+               data-pagination-parts='["pageInfoShort", "pageList"]'>
+            <thead class="thead-light">
+            <tr>
+                <th scope="col" data-sortable="true" data-field="request_name">Name</th>
+                <th scope="col" data-sortable="true" data-field="total">Ttl req, count</th>
+                <th scope="col" data-sortable="true" data-field="throughput">Thrghpt, req/sec</th>
+                <th scope="col" data-sortable="true" data-field="ko">Errors, count</th>
+                <th scope="col" data-sortable="true" data-field="min">Min, ms</th>
+                <th scope="col" data-sortable="true" data-field="mean">Median, ms</th>
+                <th scope="col" data-sortable="true" data-field="pct95">Pct95, ms</th>
+                <th scope="col" data-sortable="true" data-field="max">Max, ms</th>
+            </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+</div>
 {% endif %}
 
 <div class="card card-12 pb-4 card-table">
@@ -195,19 +200,19 @@
     {% include 'backend_performance:results/engine_health.html' %}
 
     {% if test_data['test_status']['status'].lower() in ['finished', 'error', 'failed', 'success', 'canceled'] %}
-        {% with result_id=test_data.id %}
-            {% include 'backend_performance:results/artifacts_table.html' %}
-        {% endwith %}
+    {% with result_id=test_data.id %}
+    {% include 'backend_performance:results/artifacts_table.html' %}
+    {% endwith %}
     {% else %}
-        <Performance-Logs-App
-                @register="register"
-                instance_name="perf_logs"
-                :project_id="{{ test_data.project_id }}"
-                :report_id="{{ test_data.id }}"
-        ></Performance-Logs-App>
+    <Performance-Logs-App
+            @register="register"
+            instance_name="perf_logs"
+            :project_id="{{ test_data.project_id }}"
+            :report_id="{{ test_data.id }}"
+    ></Performance-Logs-App>
     {% endif %}
     {% with test_config = test_data['test_config'] %}
-        {% include 'backend_performance:results/config_modal.html' %}
+    {% include 'backend_performance:results/config_modal.html' %}
     {% endwith %}
 </div>
 <Retention-Modal

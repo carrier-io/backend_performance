@@ -39,6 +39,18 @@ const deleteBaseline = async () => {
     resp.ok ? showNotify('SUCCESS', 'Baseline deleted') : showNotify('ERROR', 'Error deleting baseline')
 }
 
+const ai_analysis = async () => {
+    const resp = await fetch(`/api/v1/backend_performance/ai_analysis/${getSelectedProjectId()}/${result_test_id}`, {
+        method: 'GET'
+    })
+    if (resp.ok) {
+        showNotify('SUCCESS', 'Done. You can find the summary in the artifacts table')
+        V.registered_components?.table_artifacts?.table_action('refresh')
+    } else {
+        showNotify('ERROR', 'Error executing AI analysis')
+    }
+}
+
 const stopTest = async () => {
     const resp = await fetch(`/api/v1/backend_performance/report_status/${getSelectedProjectId()}/${result_test_id}`, {
         method: 'PUT',

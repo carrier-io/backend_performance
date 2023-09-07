@@ -15,6 +15,8 @@ from ..models.reports import Report
 from ..models.tests import Test
 from ..models.runners import Runner
 from ..constants import JMETER_MAPPING, GATLING_MAPPING, EXECUTABLE_MAPPING
+from ..utils.charts_utils import requests_summary, summary_table
+from ..connectors.minio_connector import MinioConnector
 
 
 class RPC:
@@ -141,3 +143,14 @@ class RPC:
         _create_runner_objects(GATLING_MAPPING, 'gatling')
         _create_runner_objects(EXECUTABLE_MAPPING, 'executable_jar')
         db_tools.bulk_save(runners)
+
+    @web.rpc('get_requests_summary')
+    def get_requests_summary(self, args):
+        connector = MinioConnector(**args)
+        return requests_summary(connector)
+
+    @web.rpc('get_table_summary')
+    def get_table_summary(self, args):
+        connector = MinioConnector(**args)
+        return summary_table(connector)
+

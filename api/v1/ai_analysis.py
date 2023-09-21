@@ -1,3 +1,5 @@
+from flask import request
+
 from ...models.reports import Report
 from tools import MinioClient, auth, api_tools, VaultClient
 from pylon.core.tools import log
@@ -9,6 +11,7 @@ import json
 class ProjectAPI(api_tools.APIModeHandler):
 
     def get(self, project_id: int, report_id: int, **kwargs):
+        ignore_template_error = request.args.get('ignore_template_error', False)
         project = self.module.context.rpc_manager.call.project_get_or_404(
             project_id=project_id)
         vc = VaultClient(project)
@@ -58,7 +61,8 @@ class ProjectAPI(api_tools.APIModeHandler):
             predict_input = json.dumps({key: value})
             try:
                 text_prompt = self.module.context.rpc_manager.call.prompts_prepare_text_prompt(
-                    project_id, None, predict_input, _context, _examples, variables
+                    project_id, None, predict_input, _context, _examples, variables,
+                    ignore_template_error=ignore_template_error
                 )
             except Exception as e:
                 log.info(e)
@@ -79,7 +83,8 @@ class ProjectAPI(api_tools.APIModeHandler):
         __input = ""
         try:
             text_prompt = self.module.context.rpc_manager.call.prompts_prepare_text_prompt(
-                project_id=project_id, prompt_id=None, input_=__input, context=context, variables=variables
+                project_id=project_id, prompt_id=None, input_=__input, context=context, variables=variables,
+                ignore_template_error=ignore_template_error
             )
         except Exception as e:
             log.info(e)

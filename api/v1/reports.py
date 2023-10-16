@@ -62,6 +62,9 @@ class ProjectAPI(api_tools.APIModeHandler):
         #     return {"Forbidden": "The number of performance test runs allowed in the project has been exceeded"}
 
         # test_config = None
+        test = Test.query.filter(
+            Test.uid == args.get('test_id')
+        ).first()
         if 'test_params' in args:
             try:
                 test = Test.query.filter(
@@ -78,7 +81,7 @@ class ProjectAPI(api_tools.APIModeHandler):
                 #return f'Error parsing params from control tower: {e}', 400
 
         report = Report(
-            name=args["test_name"],
+            name=test.name,
             project_id=project.id,
             environment=args["environment"],
             type=args["type"],

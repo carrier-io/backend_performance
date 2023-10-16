@@ -75,7 +75,7 @@ class ProjectAPI(api_tools.APIModeHandler):
                 )
             except Exception as e:
                 log.error('Error parsing params from control tower %s', format_exc())
-                return f'Error parsing params from control tower: {e}', 400
+                #return f'Error parsing params from control tower: {e}', 400
 
         report = Report(
             name=args["test_name"],

@@ -159,6 +159,7 @@ class API(Resource):
                 test_parameters=test_data.pop('test_parameters')
             ))
             test_data['test_parameters'] = merged_test_parameters.dict()['test_parameters']
+            test_data["integrations"] = test.integrations
 
         test.__dict__.update(test_data)
 

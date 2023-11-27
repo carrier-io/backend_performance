@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional, Union
 
-from pydantic import ValidationError, parse_obj_as, List
+from pydantic import ValidationError, parse_obj_as
 from sqlalchemy import desc
 
 from pylon.core.tools import web, log
@@ -12,8 +12,6 @@ from ..models.pd.performance_test import TestCommon, TestOverrideable
 from ..models.pd.quality_gate import QualityGate
 from ..models.pd.test_parameters import PerformanceTestParamsCreate, PerformanceTestParamsRun
 from ..models.reports import Report
-# from ..models.summary_table_presets import BackendPerformanceSummaryTablePreset
-# from ..models.pd.summary_presets import SummaryPresetsPD
 from ..models.tests import Test
 from ..models.runners import Runner
 from ..constants import JMETER_MAPPING, GATLING_MAPPING, EXECUTABLE_MAPPING
@@ -155,41 +153,3 @@ class RPC:
     def get_table_summary(self, args):
         connector = MinioConnector(**args)
         return summary_table(connector)
-
-    # @web.rpc('backend_performance_get_summary_table_presets', 'get_summary_table_presets')
-    # @rpc_tools.wrap_exceptions(RuntimeError)
-    # def get_summary_table_presets(self, project_id: int):
-    #     query = BackendPerformanceSummaryTablePreset.query.filter(
-    #         BackendPerformanceSummaryTablePreset.project_id == project_id,
-    #         ).all()
-    #     return parse_obj_as(List[SummaryPresetsPD], query)
-    #
-    # @web.rpc('backend_performance_create_summary_table_presets', 'create_summary_table_presets')
-    # @rpc_tools.wrap_exceptions(RuntimeError)
-    # def create_summary_table_presets(self, project_id: int, preset: dict):
-    #     preset = SummaryPresetsPD.validate(preset).dict()
-    #     preset_db = BackendPerformanceSummaryTablePreset(project_id=project_id, **preset)
-    #     preset_db.insert()
-    #     return preset_db.to_json()
-    #
-    # @web.rpc('backend_performance_update_summary_table_presets', 'update_summary_table_presets')
-    # @rpc_tools.wrap_exceptions(RuntimeError)
-    # def update_summary_table_presets(self, project_id: int, preset: dict):
-    #     preset = SummaryPresetsPD.validate(preset).dict()
-    #     preset_db = BackendPerformanceSummaryTablePreset.query.filter(
-    #         BackendPerformanceSummaryTablePreset.project_id == project_id,
-    #         BackendPerformanceSummaryTablePreset.name == preset['name'],
-    #         ).first()
-    #     preset_db.fields = preset['fields']
-    #     preset_db.commit()
-    #     return preset_db.to_json()
-    #
-    # @web.rpc('backend_performance_delete_summary_table_presets', 'delete_summary_table_presets')
-    # @rpc_tools.wrap_exceptions(RuntimeError)
-    # def delete_summary_table_presets(self, project_id: int, preset_name: str):
-    #     if preset_db := BackendPerformanceSummaryTablePreset.query.filter(
-    #         BackendPerformanceSummaryTablePreset.project_id == project_id,
-    #         BackendPerformanceSummaryTablePreset.name == preset_name
-    #         ).one_or_none():
-    #         preset_db.delete()
-    #         preset_db.commit()

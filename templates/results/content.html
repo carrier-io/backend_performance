@@ -130,38 +130,50 @@
 {% endwith %}
 
 {% if test_data['test_status']['status'].lower() in ['finished', 'error', 'failed', 'success'] %}
-<div class="card card-12 pb-4 card-table">
-    <div class="card-header">
-        <div class="row">
-            <div class="col-4">
-                <p class="font-h3 font-bold ">Summary</p>
-            </div>
-        </div>
-    </div>
-    <div class="card-body">
-        <table class="table table-border"
-               id="summary_table"
-               data-toggle="table"
-               data-page-size=10
-               data-pagination="true"
-               data-pagination-parts='["pageInfoShort", "pageList"]'>
-            <thead class="thead-light">
-            <tr>
-                <th scope="col" data-sortable="true" data-field="request_name">Name</th>
-                <th scope="col" data-sortable="true" data-field="total">Ttl req, count</th>
-                <th scope="col" data-sortable="true" data-field="throughput">Thrghpt, req/sec</th>
-                <th scope="col" data-sortable="true" data-field="ko">Errors, count</th>
-                <th scope="col" data-sortable="true" data-field="min">Min, ms</th>
-                <th scope="col" data-sortable="true" data-field="mean">Median, ms</th>
-                <th scope="col" data-sortable="true" data-field="pct95">Pct95, ms</th>
-                <th scope="col" data-sortable="true" data-field="max">Max, ms</th>
-            </tr>
-            </thead>
-            <tbody>
-            </tbody>
-        </table>
-    </div>
-</div>
+
+<preset-table
+    :query_params='{
+        "start_time": {{ test_data['start_time'] | tojson | safe }},
+        "end_time": {{ test_data['end_time'] | tojson | safe }},
+        "test_name": {{ test_data['name'] | tojson | safe }},
+        "lg_type": {{ test_data['lg_type'] | tojson | safe }},
+        "build_id": {{ test_data['build_id'] | tojson | safe }},
+        "low_value": 0,
+        "high_value": 100,
+        "sampler": "REQUEST",
+    }'
+    block_name="Summary"
+    filter_name="request_name"
+    summary_url="/api/v1/backend_performance/charts/requests/table?"
+>
+    <template v-slot:table-header>
+        <tr>
+            <th scope="col" data-field="request_name" data-sortable="true">Name</th>
+            <th data-field="total" data-sortable="true">TTL REQ, COUNT</th>
+            <th data-field="throughput" data-sortable="true">THRGHPT, REQ/SEC</th>
+            <th data-field="ko" data-sortable="true">ERRORS, COUNT</th>
+            <th data-field="min" data-sortable="true">MIN, MS</th>
+            <th data-field="max" data-sortable="true">MAX, MS</th>
+            <th data-field="mean" data-sortable="true">MEDIAN, MS</th>
+            <th data-field="pct50" data-sortable="true">PCT50, MS</th>
+            <th data-field="pct75" data-sortable="true">PCT75, MS</th>
+            <th data-field="pct90" data-sortable="true">PCT90, MS</th>
+            <th data-field="pct95" data-sortable="true">PCT95, MS</th>
+            <th data-field="pct99" data-sortable="true">PCT99, MS</th>
+            <th data-field="1xx" data-sortable="true">1xx</th>
+            <th data-field="2xx" data-sortable="true">2xx</th>
+            <th data-field="3xx" data-sortable="true">3xx</th>
+            <th data-field="4xx" data-sortable="true">4xx</th>
+            <th data-field="5xx" data-sortable="true">5xx</th>
+            <th data-field="NaN" data-sortable="true">NaN</th>
+            <th data-field="duration" data-sortable="true">duration</th>
+            <th data-field="env" data-sortable="true">env</th>
+            <th data-field="simulation" data-sortable="true">simulation</th>
+            <th data-field="test_type" data-sortable="true">test type</th>
+        </tr>
+    </template>
+</preset-table>
+
 {% endif %}
 
 <div class="card card-12 pb-4 card-table">

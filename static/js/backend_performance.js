@@ -224,6 +224,44 @@ const format_customization_for_api = customization_list => customization_list.re
     return accum
 }, {})
 
+var selectionsEvents = [
+    'check.bs.table',
+    'uncheck.bs.table',
+    'uncheck-all.bs.table',
+    'check-all.bs.table',
+]
+
+function reloadTables() {
+    vueVm.registered_components['create_modal'].removeTableEvents('#tests-list');
+    // todo: remove reload page
+    window.location.reload();
+    // function waitForTableLoad(tableId) {
+    //     return new Promise(resolve => {
+    //         const onPostBodyHandler = function () {
+    //             console.log(`Таблица #${tableId} загружена`);
+    //             $(`#${tableId}`).off('post-body.bs.table', onPostBodyHandler);
+    //             resolve();
+    //         };
+    //         $(`#${tableId}`).on('post-body.bs.table', onPostBodyHandler);
+    //     });
+    // }
+    // $('#results_table').bootstrapTable('filterBy', {});
+    // $('#threshold-list').bootstrapTable('filterBy', {});
+    //
+    // $('#tests-list').bootstrapTable('refresh', { silent: true });
+    // $('#results_table').bootstrapTable('refresh');
+    // $('#threshold-list').bootstrapTable('refresh');
+    //
+    // const tablePromises = [
+    //     waitForTableLoad('tests-list'),
+    //     waitForTableLoad('results_table'),
+    //     waitForTableLoad('threshold-list'),
+    // ];
+    //
+    // Promise.all(tablePromises).then(() => {
+    //     vueVm.registered_components['create_modal'].setTableEvents('#tests-list');
+    // });
+}
 
 const TestCreateModal = {
     delimiters: ['[[', ']]'],
@@ -526,6 +564,32 @@ const TestCreateModal = {
         }
     },
     methods: {
+        filterTableByName(selectedTestNames, tableId, columnName) {
+            $(tableId).bootstrapTable('filterBy', {
+                tests: selectedTestNames
+            }, {
+                'filterAlgorithm': (row, filters) => {
+                    const tests = filters ? filters.tests : [];
+                    return tests.includes(row[columnName]);
+                }
+            })
+        },
+        setTableEvents(tableId) {
+            const table = $(tableId);
+            selectionsEvents.forEach(eventName => {
+                table.on(eventName, (row, $element) => {
+                    const selectedTestNames = $(tableId).bootstrapTable('getSelections').map(row => row.name);
+                    this.filterTableByName(selectedTestNames, '#threshold-list', 'test');
+                    this.filterTableByName(selectedTestNames, '#results_table', 'name');
+                });
+            })
+        },
+        removeTableEvents(tableId) {
+            const table = $(tableId);
+            selectionsEvents.forEach(eventName => {
+                table.off(eventName);
+            })
+        },
         get_error_msg(field_name) {
             return this.errors[field_name]?.reduce((acc, item) => {
                 return acc === '' ? item.msg : [acc, item.msg].join('; ')
@@ -597,36 +661,49 @@ const TestCreateModal = {
             if (typeof source === 'object') {
                 data.append('file', source)
             }
-            const resp = await fetch(`/api/v1/backend_performance/tests/${getSelectedProjectId()}`, {
+            fetch(`/api/v1/backend_performance/tests/${getSelectedProjectId()}`, {
                 method: 'POST',
                 body: data
+            }).then(res => {
+                if (res.ok) {
+                    this.hide()
+                    reloadTables(run_test);
+                    // vueVm.registered_components.table_tests?.table_action('refresh',  { silent: true })
+                    // vueVm.registered_components.table_tests_overview?.table_action('refresh')
+                    // run_test && vueVm.registered_components.table_results?.table_action('refresh')
+                    // run_test && vueVm.registered_components.table_reports_overview?.table_action('refresh')
+                } else {
+                    this.handleError(res)
+                }
             })
-            if (resp.ok) {
-                this.hide()
-                vueVm.registered_components.table_tests?.table_action('refresh')
-                vueVm.registered_components.table_tests_overview?.table_action('refresh')
-                run_test && vueVm.registered_components.table_results?.table_action('refresh')
-                run_test && vueVm.registered_components.table_reports_overview?.table_action('refresh')
-            } else {
-                await this.handleError(resp)
-            }
         },
         async handleUpdate(run_test = false) {
             this.clearErrors()
-            const resp = await fetch(`/api/v1/backend_performance/test/${getSelectedProjectId()}/${this.id}`, {
+            // const resp = await fetch(`/api/v1/backend_performance/test/${getSelectedProjectId()}/${this.id}`, {
+            //     method: 'PUT',
+            //     headers: {'Content-Type': 'application/json'},
+            //     body: JSON.stringify({...this.get_data(), run_test})
+            // })
+            // if (resp.ok) {
+            //     this.hide()
+            //     fetchTests();
+            //     run_test && vueVm.registered_components.table_results?.table_action('refresh')
+            // } else {
+            //     await this.handleError(resp)
+            // }
+            fetch(`/api/v1/backend_performance/test/${getSelectedProjectId()}/${this.id}`, {
                 method: 'PUT',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({...this.get_data(), run_test})
+            }).then(res => {
+                if (res.ok) {
+                    this.hide()
+                    reloadTables(run_test);
+                    // run_test && vueVm.registered_components.table_results?.table_action('refresh')
+                } else {
+                    this.handleError(res)
+                }
             })
-            if (resp.ok) {
-                this.hide()
-                vueVm.registered_components.table_tests?.table_action('refresh')
-                vueVm.registered_components.table_tests_overview?.table_action('refresh')
-                run_test && vueVm.registered_components.table_results?.table_action('refresh')
-                run_test && vueVm.registered_components.table_reports_overview?.table_action('refresh')
-            } else {
-                await this.handleError(resp)
-            }
         },
         async handleError(response) {
             try {
@@ -968,15 +1045,14 @@ const TestRunModal = {
 }
 register_component('TestRunModal', TestRunModal)
 
-const test_delete = ids => {
+const test_delete = (ids) => {
     const url = `/api/v1/backend_performance/tests/${getSelectedProjectId()}?` + $.param({"id[]": ids})
     fetch(url, {
         method: 'DELETE'
     }).then(
         response => {
             if (response.ok) {
-                vueVm.registered_components.table_tests?.table_action('refresh')
-                vueVm.registered_components.table_tests_overview?.table_action('refresh')
+                reloadTables();
             }
         }
     )
@@ -988,13 +1064,34 @@ const results_delete = ids => {
         method: 'DELETE'
     }).then(response => response.ok && vueVm.registered_components.table_results?.table_action('refresh'))
 }
-
 $(document).on('vue_init', () => {
+    function initReloadTables() {
+        function waitForTableLoad(tableId) {
+            return new Promise(resolve => {
+                const onPostBodyHandler = function () {
+                    $(`#${tableId}`).off('post-body.bs.table', onPostBodyHandler);
+                    resolve();
+                };
+                $(`#${tableId}`).on('post-body.bs.table', onPostBodyHandler);
+            });
+        }
+        const tablePromises = [
+            waitForTableLoad('tests-list'),
+            waitForTableLoad('results_table'),
+            waitForTableLoad('threshold-list'),
+        ];
+
+        Promise.all(tablePromises).then(() => {
+            vueVm.registered_components['create_modal'].setTableEvents('#tests-list');
+        });
+    }
+    initReloadTables();
+
     $('#delete_tests').on('click', e => {
         const ids_to_delete = vueVm.registered_components.table_tests?.table_action('getSelections').map(
             item => item.id
         ).join(',')
-        ids_to_delete && test_delete(ids_to_delete)
+        ids_to_delete && test_delete(ids_to_delete);
     })
     $('#delete_results').on('click', e => {
         const ids_to_delete = vueVm.registered_components.table_results?.table_action('getSelections').map(

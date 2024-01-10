@@ -7,7 +7,9 @@
         :table_attributes="{
                         'data-url': '/api/v1/backend_performance/thresholds/{{ tools.session_project.get() }}',
                         'data-page-size': 4,
-                        id: 'threshold-list'
+                        id: 'threshold-list',
+                        'data-side-pagination':'client',
+                        'data-unique-id':'id',
                     }"
         container_classes="h-100"
 >
@@ -27,7 +29,7 @@
     <template #table_headers>
         <th scope="col" data-checkbox="true"></th>
         <th data-visible="false" data-field="id">index</th>
-        <th scope="col" data-sortable="true" data-field="test" data-formatter=threshold_formatters.test_env>Test</th>
+        <th data-sortable="true" data-field="test" data-formatter=threshold_formatters.test_env>Test</th>
         <th scope="col" data-sortable="true" class="align-top" data-field="scope">Scope</th>
         <th scope="col" data-sortable="true" data-field="aggregation" class="w-100" data-formatter=threshold_formatters.rules>Rule</th>
         <th scope="col" data-align="right"

@@ -9,9 +9,11 @@
                     :wide-table-row="true"
                     header='Backend tests'
                     :table_attributes="{
-                        'data-url': '/api/v1/backend_performance/tests/{{ tools.session_project.get() }}',
                         'data-page-size': 5,
                         id: 'tests-list',
+                        'data-url': '/api/v1/backend_performance/tests/{{ tools.session_project.get() }}',
+                        'data-side-pagination':'client',
+                        'data-unique-id':'id',
                     }"
                     container_classes="h-100"
             >
@@ -72,7 +74,9 @@
             :adaptive-height="true"
             :table_attributes="{
                 'data-url': '/api/v1/backend_performance/reports/{{ tools.session_project.get() }}',
-                id: 'results_table'
+                id: 'results_table',
+                'data-side-pagination':'client',
+                'data-unique-id':'id',
             }"
             container_classes="mt-3"
     >

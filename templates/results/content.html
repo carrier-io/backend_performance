@@ -89,7 +89,7 @@
         </div>
         <div id="progressbar-body">
             {% if test_data['test_status']['status'].lower() not in ['finished', 'error', 'failed', 'success',
-            'canceled'] %}
+            'canceled', 'cancelled'] %}
             <performancetestprogress
                     :test_status='{{ test_data.test_status | tojson }}'
                     :project_id="{{ test_data.project_id }}"

@@ -24,5 +24,6 @@ class API(api_tools.APIBase):
         manager.run_task(
             report=report.to_json(),
             influx_db=influx_db,
-            queue_name=report.test_config['location']
+            #queue_name=report.test_config['location']
+            queue_name="default"
         )

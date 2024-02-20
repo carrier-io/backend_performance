@@ -91,6 +91,22 @@ def run_test(test: 'Test', config_only: bool = False, execution: bool = False, e
     )
     logger_stop_words = event.pop('logger_stop_words', [])
 
+    from ...projects.models.quota import ProjectQuota
+    quota = ProjectQuota.query.filter_by(project_id=test.project_id).first().to_json()
+    requested_resources = {"cpu": test.parallel_runners * test.env_vars["cpu_quota"],
+                           "memory": test.parallel_runners * test.env_vars["memory_quota"]}
+    test_duration_limit = quota.get("test_duration_limit")
+    if not test_duration_limit:
+        test_duration_limit = -1
+    cpu_limit = quota.get("cpu_limit")
+    memory_limit = quota.get("memory_limit")
+    if cpu_limit and cpu_limit != -1 and requested_resources["cpu"] > cpu_limit:
+        return {"quota": quota, "requested_resources": requested_resources, "error_type": "limits",
+                "message": "Not enough cpu resources to execute the test. Check project's limits", "code": 400}
+    if memory_limit and memory_limit !=-1 and requested_resources["memory"] > memory_limit:
+        return {"quota": quota, "requested_resources": requested_resources, "error_type": "limits",
+                "message": "Not enough memory resources to execute the test. Check project's limits", "code": 400}
+
     if config_only:
         event['logger_stop_words'] = list(logger_stop_words)
         return event
@@ -123,9 +139,8 @@ def run_test(test: 'Test', config_only: bool = False, execution: bool = False, e
     report.insert()
     event["cc_env_vars"]["REPORT_ID"] = str(report.id)
     event["cc_env_vars"]["build_id"] = test_data["build_id"]
-
-    resp = TaskManager(test.project_id).run_task([event], logger_stop_words=logger_stop_words)
-    resp['redirect'] = f'/task/{resp["task_id"]}/results'  # todo: where this should lead to?
+    event["cc_env_vars"]["test_duration_limit"] = str(test_duration_limit)
+    resp = TaskManager(test.project_id).run_task(event=[event], logger_stop_words=logger_stop_words, queue_name="__internal")
 
     test.rpc.call.increment_statistics(test.project_id, 'performance_test_runs')
     test.event_manager.fire_event('usage_create_test_resource_usage', report.to_json())

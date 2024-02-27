@@ -73,7 +73,8 @@ class MinioConnector(BaseConnector):
     
     
     def get_backend_users(self, aggregation: str) -> Tuple[list, dict]:
-        file_name = f'users_{self.build_id}_1s.csv.gz'
+       # file_name = f'users_{self.build_id}_1s.csv.gz'
+        file_name = f'users_{self.build_id}_{aggregation}.csv.gz'
         response = self.client.select_object_content(self.bucket_name, file_name, self.time_addon)
         timestamps = []
         results = {"users": {}}

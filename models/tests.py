@@ -20,7 +20,7 @@ from typing import List, Union, Optional
 from pylon.core.tools import log
 from sqlalchemy import Column, Integer, String, JSON, ARRAY, and_
 
-from tools import db_tools, db, rpc_tools, VaultClient
+from tools import db_tools, db, rpc_tools, VaultClient, TaskManager
 from tools import constants as c
 from .pd.execution_json import ExecutionParams, CcEnvVars
 from ..constants import JOB_CONTAINER_MAPPING
@@ -193,11 +193,17 @@ class Test(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin, rpc_tools.Ev
         self.location = "__internal" if self.location.startswith(
             "kubernetes") else self.location
 
+        _cc_env_vars = CcEnvVars.from_orm(self).dict(exclude_none=True)
+        try:
+            _cc_env_vars.update(TaskManager.get_cc_env_vars())
+        except Exception as e:
+            log.info("Failed to update cc env vars")
+
         execution_json = {
             'test_id': self.uid,
             "container": self.container,
             "execution_params": json.dumps(exec_params),
-            "cc_env_vars": CcEnvVars.from_orm(self).dict(exclude_none=True),
+            "cc_env_vars": _cc_env_vars,
             "job_name": self.name,
             "job_type": self.job_type,
             "concurrency": self.parallel_runners,

@@ -108,7 +108,7 @@ const BEResultInfo = {
                 </div>
                 <div class="">
                     <div class="card card-sm card-blue">
-                        <div class="card-header">{{ test_data["pct50"] }} ms</div>
+                        <div class="card-header">{{ test_data["mean"] }} ms</div>
                         <div class="card-body">MEDIAN RESP. TIME</div>
                     </div>
                 </div>

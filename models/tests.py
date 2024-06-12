@@ -196,6 +196,8 @@ class Test(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin, rpc_tools.Ev
         _cc_env_vars = CcEnvVars.from_orm(self).dict(exclude_none=True)
         try:
             _cc_env_vars.update(TaskManager.get_cc_env_vars())
+            if not self.location.startswith("kubernetes"):
+                _cc_env_vars["EXECUTOR_RUNTIME"] = "docker"
         except Exception as e:
             log.info("Failed to update cc env vars")
 

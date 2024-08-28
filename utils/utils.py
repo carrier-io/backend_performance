@@ -84,7 +84,7 @@ def _calculate_limit(limit, total):
     return len(total) if limit == 'All' else limit
 
 
-def run_test(test: 'Test', config_only: bool = False, execution: bool = False, engagement_id: str = None
+def run_test(test: 'Test', config_only: bool = False, execution: bool = False, engagement_id: str = None, timeout=18000
 ) -> dict:
     event = test.configure_execution_json(
         execution=execution
@@ -140,7 +140,8 @@ def run_test(test: 'Test', config_only: bool = False, execution: bool = False, e
     event["cc_env_vars"]["REPORT_ID"] = str(report.id)
     event["cc_env_vars"]["build_id"] = test_data["build_id"]
     event["cc_env_vars"]["test_duration_limit"] = str(test_duration_limit)
-    resp = TaskManager(test.project_id).run_task(event=[event], logger_stop_words=logger_stop_words, queue_name="__internal")
+    resp = TaskManager(test.project_id).run_task(event=[event], logger_stop_words=logger_stop_words,
+                                                 queue_name="__internal", timeout=timeout)
 
     test.rpc.call.increment_statistics(test.project_id, 'performance_test_runs')
     test.event_manager.fire_event('usage_create_test_resource_usage', report.to_json())

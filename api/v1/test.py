@@ -122,6 +122,7 @@ class API(Resource):
     })
     def post(self, project_id: int, test_id: Union[int, str]):
         """ Run test with possible overridden params """
+        timeout = request.json.pop('timeout', 18000)
         config_only_flag = request.json.pop('type', False)
         execution_flag = request.json.pop('execution', True)
         engagement_id = request.json.get('integrations', {}).get('reporters', {}) \
@@ -170,5 +171,5 @@ class API(Resource):
                 'api_json': test.api_json(),
             }, 200
         resp = run_test(test, config_only=config_only_flag, execution=execution_flag,
-                        engagement_id=engagement_id)
+                        engagement_id=engagement_id, timeout=timeout)
         return resp, resp.get('code', 200)

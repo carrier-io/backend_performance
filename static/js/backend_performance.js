@@ -612,6 +612,7 @@ const TestCreateModal = {
             const data = {
                 common_params: {
                     name: this.name,
+                    timeout: this.timeout,
                     test_type: this.test_type,
                     env_type: this.env_type,
                     entrypoint: this.entrypoint,
@@ -868,6 +869,16 @@ const TestRunModal = {
                     <div class="modal-body">
                         <slot name="test_parameters"></slot>
                         <div class="form-group">
+                            <p class="font-h5 font-semibold">Timeout</p>
+                            <p class="font-h6 font-weight-400">Timeout for test run in seconds, default is 5 hours (18000)</p>
+                            <div class="custom-input mb-3 mt-2 mr-3">
+                                <input type="number" min="1" max="360000"
+                                    placeholder="Timeout, sec"
+                                    v-model='timeout'
+                                >
+                            </div>
+                        </div>
+                        <div class="form-group">
                             <p class="font-h5 font-semibold">Custom CMD</p>
                             <p class="font-h6 font-weight-400">You may also add a command for test runner</p>
                             <div class="custom-input mb-3 mt-2 mr-3"
@@ -989,6 +1000,7 @@ const TestRunModal = {
                     parallel_runners: this.parallel_runners,
                     location: this.location
                 },
+                timeout: this.timeout,
                 test_parameters: test_params,
                 integrations: integrations,
             }

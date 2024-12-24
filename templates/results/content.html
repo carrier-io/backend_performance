@@ -10,7 +10,13 @@
             </div>
             <div class="d-flex justify-content-end">
                 {% if test_data['test_status']['status'].lower() in ['finished', 'error', 'failed','success', 'cancelled', 'canceled'] %}
-                <button class="btn btn-secondary mr-2" id="ai_analysis" onclick="ai_analysis()"
+<!--                <button class="btn btn-secondary mr-2" id="ai_analysis" onclick="ai_analysis()"-->
+<!--                        data-toggle="tooltip" data-placement="top" title="AI analysis">-->
+<!--                    AI analysis-->
+<!--                </button>-->
+                <button class="btn btn-secondary mr-2" id="ai_analysis"
+                        data-toggle="modal"
+                        data-target="#ai_analysis_modal"
                         data-toggle="tooltip" data-placement="top" title="AI analysis">
                     AI analysis
                 </button>
@@ -225,6 +231,7 @@
     {% endif %}
     {% with test_config = test_data['test_config'] %}
     {% include 'backend_performance:results/config_modal.html' %}
+    {% include 'backend_performance:results/ai_analysis_modal.html' %}
     {% endwith %}
 </div>
 <Retention-Modal

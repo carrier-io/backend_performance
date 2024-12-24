@@ -66,6 +66,8 @@ def _create_dataset_for_users(timeline, data, scope, metric, axe):
 def create_dataset(timeline, data, scope, metric, axe):
     labels = []
     for ts in timeline:
+        if "Z" not in ts:
+            ts += "Z"
         labels.append(datetime.strptime(ts, "%Y-%m-%dT%H:%M:%SZ").strftime("%m-%d %H:%M:%S"))
     _data = {
         "labels": labels,

@@ -25,15 +25,15 @@ from ..utils.report_utils import timeframe
 
 
 class InfluxConnector(BaseConnector):
-    
+
     def __init__(self, **args) -> None:
         super().__init__(**args)
         self.db_name = args.get('db_name')
         self.client = self._get_client(self.project_id, self.db_name)
         if self.aggregation == 'auto':
             self.aggregation = self.calculate_auto_aggregation()
-        
-        
+
+
     def _get_project_id(self, build_id: str) -> int:
         resp = Report.query.with_entities(Report.project_id).filter(Report.build_id == build_id).first()
         return resp[0]
@@ -83,10 +83,10 @@ class InfluxConnector(BaseConnector):
 
 
     def get_requests_summary_data(
-            self, 
-            timestamps=None, 
-            users=None, 
-            scope=None, 
+            self,
+            timestamps=None,
+            users=None,
+            scope=None,
             aggr='pct95'
         ) -> Tuple[list, dict, dict]:
 
@@ -173,7 +173,7 @@ class InfluxConnector(BaseConnector):
         data = None
         axe = 'count'
         if self.metric == "Users":
-            timestamps, data = self.get_backend_users(self.aggregation)        
+            timestamps, data = self.get_backend_users(self.aggregation)
         elif self.metric == "Throughput":
             timestamps, data, _ = self.get_tps_analytics(scope=self.scope)
         elif self.metric == "Errors":
@@ -240,9 +240,9 @@ class InfluxConnector(BaseConnector):
 
     def get_backend_requests_analytics(
         self,
-        timestamps=None, 
-        users=None, 
-        scope=None, 
+        timestamps=None,
+        users=None,
+        scope=None,
         aggr='pct95'
     ) -> Tuple[list, dict, dict]:
 
@@ -279,10 +279,10 @@ class InfluxConnector(BaseConnector):
 
 
     def get_response_codes_analytics(
-            self, 
-            timestamps=None, 
-            users=None, 
-            scope=None, 
+            self,
+            timestamps=None,
+            users=None,
+            scope=None,
             aggr="2xx"
         ) -> Tuple[list, dict, dict]:
         if not (timestamps and users):
@@ -323,14 +323,14 @@ class InfluxConnector(BaseConnector):
 
     def get_engine_health_cpu(self):
         query = f'''
-            SELECT 
+            SELECT
                 mean(usage_system) as "system",
                 mean(usage_user) as "user",
                 mean(usage_softirq) as "softirq",
                 mean(usage_iowait) as "iowait"
-            FROM "cpu" 
+            FROM "cpu"
             WHERE "build_id" = '{self.build_id}'
-            AND cpu = 'cpu-total' 
+            AND cpu = 'cpu-total'
             AND time >= '{self.start_time}'
             AND time <= '{self.end_time}'
             GROUP BY time({self.aggregation}), host
@@ -340,10 +340,10 @@ class InfluxConnector(BaseConnector):
 
     def get_engine_health_memory(self):
         query = f'''
-            SELECT 
-                HeapMemoryUsage.used as "heap memory", 
+            SELECT
+                HeapMemoryUsage.used as "heap memory",
                 NonHeapMemoryUsage.used as "non-heap memory"
-            FROM "java_memory" 
+            FROM "java_memory"
             WHERE "build_id" = '{self.build_id}'
             AND time >= '{self.start_time}'
             AND time <= '{self.end_time}'
@@ -354,19 +354,19 @@ class InfluxConnector(BaseConnector):
 
     def get_engine_health_load(self):
         query = f'''
-            SELECT 
+            SELECT
                 mean(load1) as "load1",
                 mean(load5) as "load5",
                 mean(load15) as "load15"
-            FROM "system" 
+            FROM "system"
             WHERE "build_id" = '{self.build_id}'
             AND time >= '{self.start_time}'
             AND time <= '{self.end_time}'
             GROUP BY time({self.aggregation}), host
         '''
         return self._get_engine_health(query)
-    
-    
+
+
     def get_build_data(self, status='all') -> list:
         status_addon = ""
         if status != 'all':
@@ -402,7 +402,7 @@ class InfluxConnector(BaseConnector):
 
     def get_aggregations_list(self) -> list:
         return ["1s", "5s", "30s", "1m", "5m", "10m"]
-    
+
 
     def delete_test_data(self):
         query_one = f"DELETE from {self.test_name} where build_id='{self.build_id}'"
@@ -438,6 +438,7 @@ class InfluxConnector(BaseConnector):
             "lg_type": self.lg_type,
             "requests": []
         }
+
         q_start_time = f"select time, active from {self.lg_type}_{self.project_id}..\"users\" " \
                     f"where build_id='{self.build_id}' order by time asc limit 1"
         q_end_time = f"select time, active from {self.lg_type}_{self.project_id}..\"users\" " \
@@ -445,7 +446,8 @@ class InfluxConnector(BaseConnector):
         q_response_codes = f"select \"1xx\", \"2xx\", \"3xx\", \"4xx\", \"5xx\", \"ko\" as KO, " \
                         f"\"total\" as Total, \"throughput\" from comparison_{self.project_id}..api_comparison " \
                         f"where build_id='{self.build_id}' and request_name='All'"
-        q_total_users = f"show tag values on comparison_{self.project_id} with key=\"users\" where build_id='{self.build_id}'"
+        #q_total_users = f"show tag values on comparison_{self.project_id} with key=\"users\" where build_id='{self.build_id}'"
+        q_total_users = f"select max(\"active\") from {self.lg_type}_{self.project_id}..\"users_1s\" where build_id='{self.build_id}'"
         q_env = f"show tag values on comparison_{self.project_id} with key=\"env\" where build_id='{self.build_id}'"
         q_type = f"show tag values on comparison_{self.project_id} with key=\"test_type\" where build_id='{self.build_id}'"
         q_requests_name = f"show tag values on comparison_{self.project_id} with key=\"request_name\" " \
@@ -453,7 +455,8 @@ class InfluxConnector(BaseConnector):
         test["start_time"] = list(self.client.query(q_start_time)["users"])[0]["time"]
         test["end_time"] = list(self.client.query(q_end_time)["users"])[0]["time"]
         test["duration"] = round(str_to_timestamp(test["end_time"]) - str_to_timestamp(test["start_time"]), 1)
-        test["vusers"] = list(self.client.query(q_total_users)["api_comparison"])[0]["value"]
+        #test["vusers"] = list(self.client.query(q_total_users)["api_comparison"])[0]["value"]
+        test["vusers"] = list(self.client.query(q_total_users)["users_1s"])[0]["max"]
         test["environment"] = list(self.client.query(q_env)["api_comparison"])[0]["value"]
         test["type"] = list(self.client.query(q_type)["api_comparison"])[0]["value"]
         test["requests"] = [name["value"] for name in self.client.query(q_requests_name)["api_comparison"]]

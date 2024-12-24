@@ -24,7 +24,7 @@ from ..connectors.base_connector import BaseConnector
 
 
 class MinioConnector(BaseConnector):
-    
+
     def __init__(self, **args) -> None:
         super().__init__(**args)
         self.s3_config = args.get('s3_config', {})
@@ -43,7 +43,7 @@ class MinioConnector(BaseConnector):
     def _get_project_id(self, build_id: str) -> int:
         resp = Report.query.with_entities(Report.project_id).filter(Report.build_id == build_id).first()
         return resp[0]
-    
+
     def get_client(self, project_id: int) -> MinioClient:
         return MinioClient.from_project_id(project_id, **self.s3_config)
 
@@ -70,44 +70,48 @@ class MinioConnector(BaseConnector):
                 aggregation = "30s"
                 break
         return aggregation
-    
-    
+
+
     def get_backend_users(self, aggregation: str) -> Tuple[list, dict]:
        # file_name = f'users_{self.build_id}_1s.csv.gz'
         file_name = f'users_{self.build_id}_{aggregation}.csv.gz'
         response = self.client.select_object_content(self.bucket_name, file_name, self.time_addon)
-        timestamps = []
+       # timestamps = []
+        timestamps = self._calculate_timestamps(datetime.strptime(self.start_time, "%Y-%m-%dT%H:%M:%SZ"),
+                                                datetime.strptime(self.end_time, "%Y-%m-%dT%H:%M:%SZ"))
         results = {"users": {}}
         # aggregation of users
         _tmp = []
         if 'm' in aggregation:
             aggregation = f"{str(int(aggregation.replace('m', '')) * 60)}s"
+        for _time in timestamps:
+            results["users"][_time] = None
         for line in response:
             _tmp.append(int(line['sum']) if line['sum'] != 'None' else 0)
-            results["users"][line['time']] = None
-            if line['time'] not in timestamps:
-                timestamps.append(line['time'])
+            #results["users"][line['time']] = None
+            # if line['time'] not in timestamps:
+            #     timestamps.append(line['time'])
             if (len(_tmp) % int(aggregation.replace('s', ''))) == 0:
-                results["users"][line['time']] = max(_tmp)
+                results["users"][line['time'].replace("Z", "")] = max(_tmp)
                 _tmp = []
         return timestamps, results
-    
-    
+
+
     def get_requests_summary_data(
-            self, 
-            timestamps=None, 
-            users=None, 
-            scope=None, 
-            aggr='pct95', 
+            self,
+            timestamps=None,
+            users=None,
+            scope=None,
+            aggr='pct95',
         ) -> Tuple[list, dict, dict]:
-        
+
         group_by = False
         file_name = f'{self.build_id}_{self.aggregation}.csv.gz'
         aggr = aggr.lower()
-        
+
         scope_addon = ""
         status_addon = ""
-        
+
         if scope and scope != 'All':
             scope_addon = f" and request_name='{scope}'"
         if scope != 'All':
@@ -115,17 +119,17 @@ class MinioConnector(BaseConnector):
         if self.status != 'all':
             # status_addon = f" {'and' if scope_addon else 'where'} status='{self.status.upper()}'"
             status_addon = f" and status='{self.status.upper()}'"
-        
+
         expression_addon = self.time_addon + scope_addon + status_addon + self.sampler_addon
-        
+
         if not (timestamps and users):
             timestamps, users = self.get_backend_users(self.aggregation)
-        
+
         response = self.client.select_object_content(self.bucket_name, file_name, expression_addon)
         # log.info('get_requests_summary_data resp %s', response)
 
         results = {}
-        
+
         if group_by:
             for line in response:
                 if not line.get('request_name'):
@@ -139,7 +143,7 @@ class MinioConnector(BaseConnector):
                 results['response'][line['time']] = int(line[aggr])
 
         # log.info('get_requests_summary_data results %s', results)
-        
+
         return timestamps, results, users
 
 
@@ -152,11 +156,11 @@ class MinioConnector(BaseConnector):
         expression_addon = self.time_addon + status_addon + self.sampler_addon
 
         response = self.client.select_object_content(self.bucket_name, file_name, expression_addon)
-        
+
         results = {"responses": {}}
         for line in response:
             results["responses"][line['time']] = int(line['pct95'])
-        
+
         return timestamps, results, users
 
 
@@ -170,16 +174,16 @@ class MinioConnector(BaseConnector):
             scope_addon = f" and request_name='{scope}'"
         if self.status != 'all':
             status_addon = f" and status='{self.status.upper()}'"
-            
+
         expression_addon = self.time_addon + scope_addon + status_addon + self.sampler_addon
         log.info(expression_addon)
-        
-        response = self.client.select_object_content(self.bucket_name, file_name, expression_addon)    
+
+        response = self.client.select_object_content(self.bucket_name, file_name, expression_addon)
 
         results = {'throughput': {}}
         for line in response:
             results['throughput'][line['time']] = results['throughput'].get(line['time'], 0) + int(line['total'])
-        
+
         return timestamps, results, users
 
 
@@ -187,7 +191,7 @@ class MinioConnector(BaseConnector):
         data = None
         axe = 'count'
         if self.metric == "Users":
-            timestamps, data = self.get_backend_users(self.aggregation)        
+            timestamps, data = self.get_backend_users(self.aggregation)
         elif self.metric == "Throughput":
             timestamps, data, _ = self.get_tps_analytics(scope=self.scope)
         elif self.metric == "Errors":
@@ -201,12 +205,12 @@ class MinioConnector(BaseConnector):
 
 
     def get_tps_analytics(
-            self, 
-            timestamps=None, 
-            users=None, 
-            scope=None, 
+            self,
+            timestamps=None,
+            users=None,
+            scope=None,
         ) -> Tuple[list, dict, dict]:
-        
+
         scope_addon = ""
         status_addon = ""
         file_name = f'{self.build_id}_{self.aggregation}.csv.gz'
@@ -219,11 +223,11 @@ class MinioConnector(BaseConnector):
             scope_addon = scope_addon[0: -4] + ")"
         if self.status != 'all':
             status_addon = f" and status='{self.status.upper()}'"
-            
+
         expression_addon = self.time_addon + scope_addon + status_addon + self.sampler_addon
-        
-        response = self.client.select_object_content(self.bucket_name, file_name, expression_addon) 
-            
+
+        response = self.client.select_object_content(self.bucket_name, file_name, expression_addon)
+
         data = {}
         for line in response:
             if not line.get('request_name'):
@@ -237,12 +241,12 @@ class MinioConnector(BaseConnector):
 
 
     def get_errors_analytics(
-            self, 
-            timestamps=None, 
-            users=None, 
+            self,
+            timestamps=None,
+            users=None,
             scope=None
         ) -> Tuple[list, dict, dict]:
-        
+
         scope_addon = ""
         status_addon = ""
         file_name = f'{self.build_id}_{self.aggregation}.csv.gz'
@@ -254,11 +258,11 @@ class MinioConnector(BaseConnector):
                 scope_addon += f"request_name='{each}' OR "
             scope_addon = scope_addon[0: -4] + ")"
         status_addon = f" and status='KO'"
-        
+
         expression_addon = self.time_addon + scope_addon + status_addon + self.sampler_addon
-        
+
         response = self.client.select_object_content(self.bucket_name, file_name, expression_addon)
-        
+
         data = {}
         for line in response:
             if not line.get('request_name'):
@@ -266,18 +270,18 @@ class MinioConnector(BaseConnector):
             if line['request_name'] not in data:
                 data[line['request_name']] = {}
             data[line['request_name']][line['time']] = data[line['request_name']].get(line['time'], 0) + 1
-        
+
         return timestamps, data, users
 
 
     def get_backend_requests_analytics(
-            self, 
-            timestamps=None, 
-            users=None, 
-            scope=None, 
-            aggr='pct95', 
+            self,
+            timestamps=None,
+            users=None,
+            scope=None,
+            aggr='pct95',
         ) -> Tuple[list, dict, dict]:
-        
+
         scope_addon = ""
         status_addon = ""
         file_name = f'{self.build_id}_{self.aggregation}.csv.gz'
@@ -294,34 +298,34 @@ class MinioConnector(BaseConnector):
             status_addon = f" and status='{self.status.upper()}'"
 
         expression_addon = self.time_addon + scope_addon + status_addon + self.sampler_addon
-        
-        response = self.client.select_object_content(self.bucket_name, file_name, expression_addon)     
-        
+
+        response = self.client.select_object_content(self.bucket_name, file_name, expression_addon)
+
         data = {}
         for line in response:
             if not line.get('request_name'):
                 continue
             if line['request_name'] not in data:
                 data[line['request_name']] = {}
-            data[line['request_name']][line['time']] = int(line[aggr])   
+            data[line['request_name']][line['time']] = int(line[aggr])
 
         return timestamps, data, users
 
 
     def get_response_codes_analytics(
-            self, 
-            timestamps=None, 
-            users=None, 
-            scope=None, 
-            aggr="2xx", 
+            self,
+            timestamps=None,
+            users=None,
+            scope=None,
+            aggr="2xx",
         ) -> Tuple[list, dict, dict]:
-        
+
         scope_addon = ""
         status_addon = ""
         file_name = f'{self.build_id}_{self.aggregation}.csv.gz'
         if not (timestamps and users):
             timestamps, users = self.get_backend_users(self.aggregation)
-        
+
         if scope and 'All' not in scope:
             scope_addon = " and ("
             for each in scope:
@@ -329,11 +333,11 @@ class MinioConnector(BaseConnector):
             scope_addon = scope_addon[0: -4] + ")"
         if self.status != 'all':
             status_addon = f" and status='{self.status.upper()}'"
-            
+
         expression_addon = self.time_addon + scope_addon + status_addon + self.sampler_addon
-        
+
         response = self.client.select_object_content(self.bucket_name, file_name, expression_addon)
-        
+
         data = {}
         for line in response:
             if not line.get('request_name'):
@@ -353,7 +357,7 @@ class MinioConnector(BaseConnector):
             line.pop('time')
             if line['Error key'] in issues:
                 issues[line['Error key']]["count"] += 1
-            else: 
+            else:
                 issues[line['Error key']] = line
                 issues[line['Error key']]["count"] = 1
         return list(issues.values())
@@ -410,8 +414,8 @@ class MinioConnector(BaseConnector):
         expression_addon = f" where simulation='{self.test_name}'"
         response = self.client.select_object_content(self.bucket_name, file_name, expression_addon)
         return self._str_to_digits(response)
-    
-    
+
+
     def get_sampler_types(self) -> list:
         aggr_list = ["1s", "5s", "30s", "1m", "5m", "10m"]
         for aggr in aggr_list:

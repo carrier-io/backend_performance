@@ -40,12 +40,15 @@ const deleteBaseline = async () => {
 }
 
 const ai_analysis = async () => {
+      var email_list = $('#bp_llm_emails_list').val()
+      var store_report = $('#bp_llm_store_report').val()
     const resp = await fetch(`/api/v1/backend_performance/ai_analysis/${getSelectedProjectId()}/${result_test_id}`, {
-        method: 'GET'
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({email_list: email_list, store_report: store_report})
     })
     if (resp.ok) {
-        showNotify('SUCCESS', 'Done. You can find the summary in the artifacts table')
-        V.registered_components?.table_artifacts?.table_action('refresh')
+        showNotify('SUCCESS', 'Task started')
     } else {
         showNotify('ERROR', 'Error executing AI analysis')
     }

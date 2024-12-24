@@ -171,7 +171,7 @@ class ProjectAPI(api_tools.APIModeHandler):
         report.fivexx = test_data["5xx"]
         report.requests = test_data["requests"]
         report.test_status = args["test_status"]
-        report.vusers = args["vusers"]
+        report.vusers = test_data["vusers"]
         report.duration = args["duration"]
         report.commit()
         return {"message": f"Report {report.build_id} updated"}, 201

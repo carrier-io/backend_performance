@@ -1,0 +1,66 @@
+{% set modal_id = 'ai_analysis_modal' %}
+{% set source_container_id = "source_card_config" %}
+{% set test_config = test_config or {} %}
+{%- macro get_test_param_by_name(name) -%}
+{%- for i in test_config['test_parameters'] -%}
+{%- if i['name'] == name -%}
+{{- i['default'] | trim -}}
+{%- endif -%}
+{%- endfor -%}
+{%- endmacro -%}
+
+
+<div class="modal modal-small fixed-left fade shadow-sm" tabindex="-1" role="dialog" id="{{ modal_id }}">
+    <div class="modal-dialog modal-dialog-aside" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="row w-100">
+                    <div class="col">
+                        <h2>AI analysis task</h2>
+                    </div>
+                    <div class="col-xs">
+                        <button type="button" class="btn btn-secondary mr-2" id="run_ai_analysis"
+                                onclick="ai_analysis()" data-dismiss="modal" aria-label="Run task">
+                            Run
+                        </button>
+                    </div>
+                    <div class="col-xs">
+                        <button type="button" class="btn btn-secondary mr-2" data-dismiss="modal" aria-label="Close">
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-body">
+                <div class="section">
+                    <div class="row">
+                        <div class="col">
+                            <div class="form-group">
+                                <h9>Emails list</h9>
+                                <p>
+                                    <h13>Specify the list of recipients.</h13>
+                                </p>
+                                <input type="text" class="form-control form-control-alternative" id="bp_llm_emails_list"
+                                       placeholder="Emails list"
+                                       value=""
+                                >
+                            </div>
+                            <div class="form-group">
+                                <h9>Store report</h9>
+                                <p>
+                                    <h13>Set true to store report in artifacts.</h13>
+                                </p>
+                                <select class="form-control form-control-alternative" id="bp_llm_store_report">
+                                    <option>true</option>
+                                    <option>false</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

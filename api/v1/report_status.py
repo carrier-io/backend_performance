@@ -1,5 +1,6 @@
 from flask import request, make_response
 from flask_restful import Resource
+from datetime import datetime
 
 from ...models.pd.report import StatusField
 from ...models.reports import Report
@@ -42,6 +43,9 @@ class API(Resource):
         test_status = StatusField.parse_obj(request.json["test_status"])
         if test_status.description == "Failed update report":
             report.end_time = report.start_time
+        if test_status.status == "Canceled":
+            # check time zone
+            report.end_time = datetime.utcnow().isoformat("T") + "Z"
         report.test_status = test_status.dict()
         report.commit()
         self.sio.emit("backend_test_status_updated", {"status": test_status.dict(), 'report_id': report_id})

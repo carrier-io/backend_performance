@@ -338,7 +338,8 @@ var threshold_formatters = {
             component_proxy.set(row)
         },
         'click .action_delete': function (e, value, row, index) {
-            threshold_delete(row.id)
+            const modal = vueVm.registered_components.confirm_delete_threshold;
+            modal.show(row.id, row.test);
         }
     }
 }

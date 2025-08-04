@@ -84,9 +84,8 @@ var test_formatters = {
         },
 
         "click .test_delete": function (e, value, row, index) {
-            console.log('test_delete', row)
-            test_delete(row.id)
-
+            const modal = vueVm.registered_components.confirm_delete_test
+            modal.show(row.id, row.name)
         },
 
         "click .int_docker": async function (e, value, row, index) {

@@ -346,8 +346,12 @@ var threshold_formatters = {
 
 $(() => {
     $('#delete_thresholds').on('click', () => {
-        const table_proxy = vueVm.registered_components.table_thresholds
-        const ids = table_proxy?.table_action('getSelections').map(i => i.id).join(',')
-        ids && threshold_delete(ids) && table_proxy?.table_action('refresh')
-    })
+        const table_proxy = vueVm.registered_components.table_thresholds;
+        const selected = table_proxy?.table_action('getSelections');
+        const ids = selected.map(i => i.id);
+        const names = selected.map(i => i.test);
+        if (ids.length > 0) {
+            vueVm.registered_components.confirm_delete_threshold.show(ids, names);
+        }
+    });
 })

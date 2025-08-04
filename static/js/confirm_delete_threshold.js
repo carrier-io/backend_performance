@@ -4,8 +4,8 @@ const ConfirmDeleteThresholdModal = {
     data() {
         return {
             is_open: false,
-            threshold_id: null,
-            threshold_name: '',
+            threshold_ids: [],
+            threshold_names: [],
         }
     },
     template: `
@@ -19,7 +19,12 @@ const ConfirmDeleteThresholdModal = {
                         </button>
                     </div>
                     <div class="modal-body">
-                        <p>Are you sure you want to delete the threshold "<b>[[ threshold_name ]]</b>"?</p>
+                        <p v-if="threshold_ids.length === 1">
+                            Are you sure you want to delete the threshold "<b>[[ threshold_names[0] || threshold_ids[0] ]]</b>"?
+                        </p>
+                        <p v-else>
+                            Are you sure you want to delete <b>[[ threshold_ids.length ]]</b> thresholds?
+                        </p>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" @click="hide">Cancel</button>
@@ -30,9 +35,9 @@ const ConfirmDeleteThresholdModal = {
         </div>
     `,
     methods: {
-        show(threshold_id, threshold_name) {
-            this.threshold_id = threshold_id;
-            this.threshold_name = threshold_name;
+        show(ids, names = []) {
+            this.threshold_ids = Array.isArray(ids) ? ids : [ids];
+            this.threshold_names = Array.isArray(names) ? names : [names];
             this.is_open = true;
             $(this.$el).modal('show');
         },
@@ -41,7 +46,7 @@ const ConfirmDeleteThresholdModal = {
             $(this.$el).modal('hide');
         },
         confirmDelete() {
-            threshold_delete(this.threshold_id);
+            threshold_delete(this.threshold_ids.join(','));
             this.hide();
         }
     }

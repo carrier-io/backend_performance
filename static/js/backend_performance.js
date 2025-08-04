@@ -1103,10 +1103,13 @@ $(document).on('vue_init', () => {
     initReloadTables();
 
     $('#delete_tests').on('click', e => {
-        const ids_to_delete = vueVm.registered_components.table_tests?.table_action('getSelections').map(
-            item => item.id
-        ).join(',')
-        ids_to_delete && test_delete(ids_to_delete);
+        const selected = vueVm.registered_components.table_tests?.table_action('getSelections');
+        if (!selected || selected.length === 0) return;
+        const ids = selected.map(item => item.id);
+        const names = selected.map(item => item.name);
+        if (vueVm.registered_components.confirm_delete_test) {
+            vueVm.registered_components.confirm_delete_test.show(ids, names);
+        }
     })
     $('#delete_results').on('click', e => {
         const selected = vueVm.registered_components.table_results?.table_action('getSelections');

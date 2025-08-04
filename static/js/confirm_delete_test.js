@@ -3,8 +3,8 @@ const ConfirmDeleteTestModal = {
     data() {
         return {
             is_open: false,
-            test_id: null,
-            test_name: '',
+            test_ids: [],
+            test_names: [],
         }
     },
     template: `
@@ -18,7 +18,15 @@ const ConfirmDeleteTestModal = {
                         </button>
                     </div>
                     <div class="modal-body">
-                        <p>Are you sure you want to delete the test "<b>[[ test_name ]]</b>"?</p>
+                        <template v-if="test_ids.length > 1">
+                            <p>Are you sure you want to delete <b>[[ test_ids.length ]]</b> tests?</p>
+                            <ul>
+                                <li v-for="name in test_names" :key="name">[[ name ]]</li>
+                            </ul>
+                        </template>
+                        <template v-else>
+                            <p>Are you sure you want to delete the test "<b>[[ test_names[0] ]]</b>"?</p>
+                        </template>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" @click="hide">Cancel</button>
@@ -29,9 +37,17 @@ const ConfirmDeleteTestModal = {
         </div>
     `,
     methods: {
-        show(test_id, test_name) {
-            this.test_id = test_id;
-            this.test_name = test_name;
+        show(test_ids, test_names) {
+            if (Array.isArray(test_ids)) {
+                this.test_ids = test_ids;
+            } else {
+                this.test_ids = [test_ids];
+            }
+            if (Array.isArray(test_names)) {
+                this.test_names = test_names;
+            } else {
+                this.test_names = [test_names];
+            }
             this.is_open = true;
             $(this.$el).modal('show');
         },
@@ -40,7 +56,8 @@ const ConfirmDeleteTestModal = {
             $(this.$el).modal('hide');
         },
         confirmDelete() {
-            test_delete(this.test_id);
+            // Backend expects a single id[]=10,2 format (comma-separated string)
+            test_delete(this.test_ids.join(','));
             this.hide();
         }
     }

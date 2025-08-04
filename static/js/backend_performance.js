@@ -1109,10 +1109,11 @@ $(document).on('vue_init', () => {
         ids_to_delete && test_delete(ids_to_delete);
     })
     $('#delete_results').on('click', e => {
-        const ids_to_delete = vueVm.registered_components.table_results?.table_action('getSelections').map(
-            item => item.id
-        ).join(',')
-        ids_to_delete && results_delete(ids_to_delete)
+        const selected = vueVm.registered_components.table_results?.table_action('getSelections');
+        const ids_to_delete = selected.map(item => item.id);
+        if (ids_to_delete.length > 0) {
+            vueVm.registered_components.confirm_delete_result.show(ids_to_delete, selected);
+        }
     })
     socket.on("backend_test_status_updated", data => {
         $('#results_table').bootstrapTable('updateByUniqueId', {

@@ -347,6 +347,7 @@ function errors_detail_formatter(index, row) {
     return `
         <p><b>Method:</b>${row['Method']}</p>
         <p><b>Request Params:</b>${row['Request params']}</p>
+        <p><b>Request Body:</b>${row['Request body']}</p>
         <p><b>Headers:</b>${row['Headers']}</p>
         <p><b>Response body:</b></p>
         <textarea disabled style="width: 100%">${row['Response body']}</textarea>

@@ -1,6 +1,11 @@
 from tools import constants as c
 
 JMETER_MAPPING = {
+    "v5.6.3": {
+        "container": f"getcarrier/perfmeter:beta-3.0-5.6.3",
+        "job_type": "perfmeter",
+        "influx_db": "{{secret.jmeter_db}}"
+    },
     "v5.5": {
         "container": f"getcarrier/perfmeter:{c.CURRENT_RELEASE}-5.5",
         "job_type": "perfmeter",
@@ -49,6 +54,11 @@ JMETER_MAPPING = {
 }
 
 GATLING_MAPPING = {
+    "maven": {
+        "container": f"getcarrier/gatling_maven_runner:{c.CURRENT_RELEASE}",
+        "job_type": "perfgun",
+        "influx_db": "{{secret.gatling_db}}"
+    },
     "maven-3.7-logback-errors": {
         "container": f"getcarrier/gatling_maven_runner:{c.CURRENT_RELEASE}-debug",
         "job_type": "perfgun",

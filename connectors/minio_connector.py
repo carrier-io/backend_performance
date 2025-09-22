@@ -351,7 +351,14 @@ class MinioConnector(BaseConnector):
 
     def get_issues(self) -> list:
         file_name = f'errors_{self.build_id}.csv.gz'
-        response = self.client.select_object_content(self.bucket_name, file_name, self.time_addon)
+        end_time_without_z = self.end_time[:-1]
+        end_time_dt = datetime.fromisoformat(end_time_without_z)
+        # Add 5 minutes using timedelta
+        end_time_dt_plus_5_minutes = end_time_dt + timedelta(minutes=5)
+        # Convert back to ISO format with 'Z'
+        end_time_plus_5_minutes = end_time_dt_plus_5_minutes.isoformat(timespec='seconds') + 'Z'
+        timestamps = f" where time>='{self.start_time}' and time<='{end_time_plus_5_minutes}'"
+        response = self.client.select_object_content(self.bucket_name, file_name, timestamps)
         issues = {}
         for line in response:
             line.pop('time')

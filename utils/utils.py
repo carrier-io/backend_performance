@@ -61,6 +61,12 @@ def get_backend_test_data(event: dict) -> dict:
                 if '-dduration' in exec_params['GATLING_TEST_PARAMS'].lower():
                     duration = re.findall("-dduration=(.+?) ",
                                           exec_params['GATLING_TEST_PARAMS'].lower())[0]
+                if '-dtest_type' in exec_params['GATLING_TEST_PARAMS'].lower():
+                    test_type = re.findall("-dtest_type=(.+?) ",
+                                          exec_params['GATLING_TEST_PARAMS'].lower())[0]
+                if '-denv_type' in exec_params['GATLING_TEST_PARAMS'].lower():
+                    environment = re.findall("-denv_type=(.+?) ",
+                                          exec_params['GATLING_TEST_PARAMS'].lower())[0]
                 for each in vusers_var_names:
                     if f'-d{each}' in exec_params['GATLING_TEST_PARAMS'].lower():
                         pattern = f'-d{each}=(.+?) '

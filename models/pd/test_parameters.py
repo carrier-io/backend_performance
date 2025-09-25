@@ -14,7 +14,8 @@ class PerformanceTestParam(TestParameter):
 
 
 class PerformanceTestParamCreate(PerformanceTestParam):
-    _reserved_names = special_params
+   # _reserved_names = special_params
+    _reserved_names = {'test_name'}
 
     @validator('name')
     def reserved_names(cls, value):

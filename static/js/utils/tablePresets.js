@@ -30,7 +30,7 @@ const defaultPresetsTableData = [
         checked: true,
     },
     {
-        title: "medium",
+        title: "avg",
         field: "mean",
         checked: true,
     },

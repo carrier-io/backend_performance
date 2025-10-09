@@ -150,7 +150,7 @@ def run_test(test: 'Test', config_only: bool = False, execution: bool = False, e
                                                  queue_name="__internal", timeout=timeout)
 
     test.rpc.call.increment_statistics(test.project_id, 'performance_test_runs')
-    test.event_manager.fire_event('usage_create_test_resource_usage', report.to_json())
+    #test.event_manager.fire_event('usage_create_test_resource_usage', report.to_json())
     
     resp['result_id'] = report.id  # for test rerun
     return resp

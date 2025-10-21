@@ -114,7 +114,7 @@ const SummaryController = {
             samplers: [],
             sampler_type: 'REQUEST',
             status_type: 'all',
-            aggregator: 'auto',
+            aggregator: '5s',
             update_interval: 0,
             auto_update_id: null,
             status_percentage: 0,

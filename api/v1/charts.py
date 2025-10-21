@@ -42,7 +42,6 @@ class API(Resource):
     def __init__(self, module):
         self.module = module
 
-    @auth.decorators.check_api(["performance.backend.reports.view"])
     def get(self, source: str, target: str):
         connector = None
         args = request.args.to_dict(flat=True)

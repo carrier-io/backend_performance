@@ -42,10 +42,12 @@ class Slot:  # pylint: disable=E1101,R0903
             except:
                 test_data["failure_rate"] = 0
                 
-            connector = _get_connector(test_data)
-            test_data["samplers"] = connector.get_sampler_types()
-            test_data["aggregations"] = connector.get_aggregations_list()
-            
+            #connector = _get_connector(test_data)
+            test_data["samplers"] = ["REQUEST", "TRANSACTION"]
+            #test_data["samplers"] = connector.get_sampler_types()
+            #test_data["aggregations"] = connector.get_aggregations_list()
+            test_data["aggregations"] = ["1s", "5s", "30s", "1m", "5m", "10m"]
+
             analytics_control = render_analytics_control(test_data["requests"])
 
             with context.app.app_context():

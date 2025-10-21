@@ -49,14 +49,12 @@
                                 :value="master.aggregator"
                                 @change="master.handle_aggregator_change"
                         >
-                            <option>auto</option>
-                            {#                    <option>1s</option>#}
-                            {#                    <option>5s</option>#}
-                            {#                    <option>30s</option>#}
-                            {#                    <option>1m</option>#}
-                            {#                    <option>5m</option>#}
-                            {#                    <option>10m</option>#}
-                            <option v-for="i in master.aggregations" :key="i" :value="i">[[ i ]]</option>
+                            <option>1s</option>
+                            <option>5s</option>
+                            <option>30s</option>
+                            <option>1m</option>
+                            <option>5m</option>
+                            <option>10m</option>
                         </select>
                     </div>
                     <div class="complex-list">

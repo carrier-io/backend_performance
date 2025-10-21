@@ -58,17 +58,17 @@ class MinioConnector(BaseConnector):
 
 
     def calculate_auto_aggregation(self) -> str:
-        aggregation = "1s"
-        aggr_list = ["1s", "5s", "30s", "1m", "5m", "10m"]
-        for i in range(len(aggr_list)):
-            aggr = aggr_list[i]
-            file_name = f'{self.build_id}_{aggr}.csv.gz'
-            response = self.client.select_object_content(self.bucket_name, file_name)
-            if len(response) > c.MAX_DOTS_ON_CHART and aggregation != "10m":
-                aggregation = aggr_list[i + 1]
-            if len(response) == 0 and aggregation != "1s":
-                aggregation = "30s"
-                break
+        aggregation = "10m"
+        # aggr_list = ["1s", "5s", "30s", "1m", "5m", "10m"]
+        # for i in range(len(aggr_list)):
+        #     aggr = aggr_list[i]
+        #     file_name = f'{self.build_id}_{aggr}.csv.gz'
+        #     response = self.client.select_object_content(self.bucket_name, file_name)
+        #     if len(response) > c.MAX_DOTS_ON_CHART and aggregation != "10m":
+        #         aggregation = aggr_list[i + 1]
+        #     if len(response) == 0 and aggregation != "1s":
+        #         aggregation = "30s"
+        #         break
         return aggregation
 
 

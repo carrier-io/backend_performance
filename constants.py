@@ -2,52 +2,12 @@ from tools import constants as c
 
 JMETER_MAPPING = {
     "v5.6.3": {
-        "container": f"getcarrier/perfmeter:beta-3.0-5.6.3",
+        "container": f"getcarrier/perfmeter:{c.CURRENT_RELEASE}-5.6.3",
         "job_type": "perfmeter",
         "influx_db": "{{secret.jmeter_db}}"
     },
     "v5.5": {
         "container": f"getcarrier/perfmeter:{c.CURRENT_RELEASE}-5.5",
-        "job_type": "perfmeter",
-        "influx_db": "{{secret.jmeter_db}}"
-    },
-    "v5.4.1": {
-        "container": f"getcarrier/perfmeter:{c.CURRENT_RELEASE}-5.4.1",
-        "job_type": "perfmeter",
-        "influx_db": "{{secret.jmeter_db}}"
-    },
-    "v5.3": {
-        "container": f"getcarrier/perfmeter:{c.CURRENT_RELEASE}-5.3",
-        "job_type": "perfmeter",
-        "influx_db": "{{secret.jmeter_db}}"
-    },
-    "v5.2.1": {
-        "container": f"getcarrier/perfmeter:{c.CURRENT_RELEASE}-5.2.1",
-        "job_type": "perfmeter",
-        "influx_db": "{{secret.jmeter_db}}"
-    },
-    "v5.2": {
-        "container": f"getcarrier/perfmeter:{c.CURRENT_RELEASE}-5.2",
-        "job_type": "perfmeter",
-        "influx_db": "{{secret.jmeter_db}}"
-    },
-    "v5.1.1": {
-        "container": f"getcarrier/perfmeter:{c.CURRENT_RELEASE}-5.1.1",
-        "job_type": "perfmeter",
-        "influx_db": "{{secret.jmeter_db}}"
-    },
-    "v5.1": {
-        "container": f"getcarrier/perfmeter:{c.CURRENT_RELEASE}-5.1",
-        "job_type": "perfmeter",
-        "influx_db": "{{secret.jmeter_db}}"
-    },
-    "v5.0": {
-        "container": f"getcarrier/perfmeter:{c.CURRENT_RELEASE}-5.0",
-        "job_type": "perfmeter",
-        "influx_db": "{{secret.jmeter_db}}"
-    },
-    "v4.0": {
-        "container": f"getcarrier/perfmeter:{c.CURRENT_RELEASE}-4.0",
         "job_type": "perfmeter",
         "influx_db": "{{secret.jmeter_db}}"
     },

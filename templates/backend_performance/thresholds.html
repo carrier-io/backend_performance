@@ -10,11 +10,14 @@
                         id: 'threshold-list',
                         'data-side-pagination':'client',
                         'data-unique-id':'id',
+                        'data-search': true,
+                        'data-search-selector': '.custom-threshold-table-search'
                     }"
         container_classes="h-100"
 >
     <template #actions>
-        <div class="d-flex justify-content-end">
+        <div class="d-flex justify-content-end align-items-center">
+            <input type="text" class="form-control form-control-sm mr-2 custom-threshold-table-search" placeholder="Search thresholds..." style="width: 200px; max-width: 250px;">
             <button type="button" class="btn btn-secondary btn-icon btn-icon__purple mr-2" data-toggle="modal"
                     data-target="#threshold_modal">
                 <i class="icon__18x18 icon-create-element"></i>

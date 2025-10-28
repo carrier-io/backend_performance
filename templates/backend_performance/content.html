@@ -14,11 +14,14 @@
                         'data-url': '/api/v1/backend_performance/tests/{{ tools.session_project.get() }}',
                         'data-side-pagination':'client',
                         'data-unique-id':'id',
+                        'data-search': true,
+                        'data-search-selector': '.custom-test-table-search'
                     }"
                     container_classes="h-100"
             >
                 <template #actions="{master}">
-                    <div class="d-flex justify-content-end">
+                    <div class="d-flex justify-content-end align-items-center">
+                        <input type="text" class="form-control form-control-sm mr-2 custom-test-table-search" placeholder="Search tests..." style="width: 200px; max-width: 250px;">
                         <button type="button" class="btn btn-basic btn-icon mr-2" data-toggle="modal"
                                 data-target="#{{ modal_id }}">
                             <i class="icon__18x18 icon-create-element icon__white"></i>
@@ -77,11 +80,14 @@
                 id: 'results_table',
                 'data-side-pagination':'client',
                 'data-unique-id':'id',
+                'data-search': true,
+                'data-search-selector': '.custom-report-table-search'
             }"
             container_classes="mt-3"
     >
         <template #actions="{master}">
-            <div class="d-flex justify-content-end">
+            <div class="d-flex justify-content-end align-items-center">
+                <input type="text" class="form-control form-control-sm mr-2 custom-report-table-search" placeholder="Search reports..." style="width: 200px; max-width: 250px;">
                 <button type="button" class="btn btn-secondary btn-icon btn-icon__purple" id="delete_results">
                     <i class="icon__18x18 icon-delete"></i>
                 </button>

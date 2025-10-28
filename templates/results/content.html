@@ -188,6 +188,9 @@
             <div class="col-4">
                 <p class="font-h3 font-bold">Errors</p>
             </div>
+            <div class="col-8 d-flex justify-content-end align-items-center">
+                <input type="text" class="form-control form-control-sm custom-errors-search" style="width: 220px; max-width: 250px;" placeholder="Search errors...">
+            </div>
         </div>
     </div>
     <div class="card-body">
@@ -201,7 +204,9 @@
                data-detail-view="true"
                data-detail-view-icon="false"
                data-detail-view-by-click="true"
-               data-detail-formatter="errors_detail_formatter">
+               data-detail-formatter="errors_detail_formatter"
+               data-search="true"
+               data-search-selector=".custom-errors-search">
             <thead class="thead-light">
             <tr>
                 <th data-sortable="true" data-field="Request name">Request name</th>

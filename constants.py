@@ -2,12 +2,12 @@ from tools import constants as c
 
 JMETER_MAPPING = {
     "v5.6.3": {
-        "container": f"getcarrier/perfmeter:{c.CURRENT_RELEASE}-5.6.3",
+        "container": f"getcarrier/perfmeter:beta-3.1-5.6.3",
         "job_type": "perfmeter",
         "influx_db": "{{secret.jmeter_db}}"
     },
     "v5.5": {
-        "container": f"getcarrier/perfmeter:{c.CURRENT_RELEASE}-5.5",
+        "container": f"getcarrier/perfmeter:beta-3.1-5.5",
         "job_type": "perfmeter",
         "influx_db": "{{secret.jmeter_db}}"
     },
@@ -15,40 +15,10 @@ JMETER_MAPPING = {
 
 GATLING_MAPPING = {
     "maven": {
-        "container": f"getcarrier/gatling_maven_runner:{c.CURRENT_RELEASE}",
+        "container": f"getcarrier/gatling_maven_runner:beta-3.1",
         "job_type": "perfgun",
         "influx_db": "{{secret.gatling_db}}"
     },
-    "maven-3.7-logback-errors": {
-        "container": f"getcarrier/gatling_maven_runner:{c.CURRENT_RELEASE}-debug",
-        "job_type": "perfgun",
-        "influx_db": "{{secret.gatling_db}}"
-    },
-    "maven-3.7": {
-        "container": f"getcarrier/gatling_maven_runner:{c.CURRENT_RELEASE}-3.7",
-        "job_type": "perfgun",
-        "influx_db": "{{secret.gatling_db}}"
-    },
-    "v3.7": {
-        "container": f"getcarrier/perfgun:{c.CURRENT_RELEASE}-3.7",
-        "job_type": "perfgun",
-        "influx_db": "{{secret.gatling_db}}"
-    },
-    "v3.6": {
-        "container": f"getcarrier/perfgun:{c.CURRENT_RELEASE}-3.6",
-        "job_type": "perfgun",
-        "influx_db": "{{secret.gatling_db}}"
-    },
-    "v3.1": {
-        "container": f"getcarrier/perfgun:{c.CURRENT_RELEASE}-3.1",
-        "job_type": "perfgun",
-        "influx_db": "{{secret.gatling_db}}"
-    },
-    "v2.3": {
-        "container": f"getcarrier/perfgun:{c.CURRENT_RELEASE}-2.3",
-        "job_type": "perfgun",
-        "influx_db": "{{secret.gatling_db}}"
-    }
 }
 
 # if c.LOCAL_DEV:
@@ -63,23 +33,23 @@ GATLING_MAPPING = {
     #     "influx_db": "{{secret.gatling_db}}"
     # }
 
-EXECUTABLE_MAPPING = {
-    "gatling": {
-        "container": f"getcarrier/executable_jar_runner:{c.CURRENT_RELEASE}-gatling",
-        "job_type": "perfgun",
-        "influx_db": "{{secret.gatling_db}}"
-    },
-    "base (in development)": {
-        "container": f"getcarrier/executable_jar_runner:{c.CURRENT_RELEASE}-base",
-        "job_type": "perfgun",
-        "influx_db": "{{secret.gatling_db}}"
-    }
-}
+# EXECUTABLE_MAPPING = {
+#     "gatling": {
+#         "container": f"getcarrier/executable_jar_runner:{c.CURRENT_RELEASE}-gatling",
+#         "job_type": "perfgun",
+#         "influx_db": "{{secret.gatling_db}}"
+#     },
+#     "base (in development)": {
+#         "container": f"getcarrier/executable_jar_runner:{c.CURRENT_RELEASE}-base",
+#         "job_type": "perfgun",
+#         "influx_db": "{{secret.gatling_db}}"
+#     }
+# }
 
 JOB_CONTAINER_MAPPING = {
     **JMETER_MAPPING,
-    **GATLING_MAPPING,
-    **EXECUTABLE_MAPPING
+    **GATLING_MAPPING
+    # **EXECUTABLE_MAPPING
 }
 
 JOB_TYPE_MAPPING = {

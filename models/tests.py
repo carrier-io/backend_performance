@@ -229,9 +229,12 @@ class Test(db_tools.AbstractBaseMixin, db.Base, rpc_tools.RpcMixin, rpc_tools.Ev
             test['job_type'] = self.job_type
         if test.get('test_parameters') and 'test_parameters' not in exclude_fields:
             if keep_custom_test_parameters:
-                exclude_fields = set(exclude_fields) - set(
-                    i.name for i in PerformanceTestParams.from_orm(self).test_parameters
-                )
+                try:
+                    exclude_fields = set(exclude_fields) - set(
+                        i.name for i in PerformanceTestParams.from_orm(self).test_parameters
+                    )
+                except:
+                    ...
             test['test_parameters'] = self.all_test_parameters.exclude_params(
                 exclude_fields
             ).dict()['test_parameters']

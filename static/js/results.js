@@ -42,10 +42,11 @@ const deleteBaseline = async () => {
 const ai_analysis = async () => {
       var email_list = $('#bp_llm_emails_list').val()
       var store_report = $('#bp_llm_store_report').val()
+      var include_trend = $('#bp_llm_include_trend').val()
     const resp = await fetch(`/api/v1/backend_performance/ai_analysis/${getSelectedProjectId()}/${result_test_id}`, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({email_list: email_list, store_report: store_report})
+        body: JSON.stringify({email_list: email_list, store_report: store_report, include_trend: include_trend})
     })
     if (resp.ok) {
         showNotify('SUCCESS', 'Task started')

@@ -76,7 +76,10 @@ const BEResultInfo = {
         },
         format_date(d) {
             const date_obj = new Date(d)
-            return isNaN(date_obj) ? '' : date_obj.toLocaleString()
+            if (isNaN(date_obj)) return ''
+            return date_obj.toLocaleDateString('en-GB', { timeZone: 'UTC' })
+                + ' ' + date_obj.toLocaleTimeString('en-GB', { timeZone: 'UTC' })
+                + ' UTC'
         }
     },
     template: `

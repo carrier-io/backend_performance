@@ -131,7 +131,11 @@ var report_formatters = {
         return `<a class="test form-control-label font-h5" href="./results?result_id=${row.id}" role="button">${row.name}</a>`
     },
     date_formatter(value) {
-        return new Date(value).toLocaleString()
+        const d = new Date(value)
+        if (isNaN(d)) return ''
+        return d.toLocaleDateString('en-GB', { timeZone: 'UTC' })
+            + ' ' + d.toLocaleTimeString('en-GB', { timeZone: 'UTC' })
+            + ' UTC'
     }
 }
 

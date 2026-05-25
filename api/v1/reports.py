@@ -1,4 +1,5 @@
 import re
+from datetime import datetime, timedelta
 from traceback import format_exc
 from typing import List
 
@@ -150,8 +151,11 @@ class ProjectAPI(api_tools.APIModeHandler):
             Report.project_id == project.id,
             Report.build_id == args["build_id"]
         ).first()
-        report.end_time = test_data["end_time"]
         report.start_time = test_data["start_time"]
+        report.end_time = test_data["end_time"]
+        if report.end_time == report.start_time:
+            start_dt = datetime.fromisoformat(report.start_time.strip('Z'))
+            report.end_time = (start_dt + timedelta(seconds=int(args["duration"]))).strftime("%Y-%m-%dT%H:%M:%SZ")
         report.failures = test_data["failures"]
         report.total = test_data["total"]
         report.thresholds_missed = args.get("missed", 0)

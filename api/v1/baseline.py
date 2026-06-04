@@ -72,6 +72,8 @@ class API(Resource):
         if added_tag:
             other_reports = Report.query.filter(
                 Report.project_id == project.id,
+                Report.name == report.name,
+                Report.environment == report.environment,
                 Report.id != report_id
             ).all()
             for report in other_reports:
